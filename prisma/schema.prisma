@@ -1,0 +1,308 @@
+// Calorness database schema
+// Everything is stored in metric (kg, cm, ml, g). The UI converts to the
+// user's preferred units, so math and comparisons never mix unit systems.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // pooled connection (used by the app)
+  directUrl = env("DIRECT_URL") // direct connection (used by migrations)
+}
+
+// ─── Auth (shape required by the Auth.js Prisma adapter) ───────────────────
+
+model User {
+  id            String     @id @default(cuid())
+  name          String?
+  email         String?    @unique
+  emailVerified DateTime?
+  image         String?
+  unitSystem    UnitSystem @default(IMPERIAL)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  goal            Goal?
+  customExercises Exercise[]
+  routines        Routine[]
+  workouts        Workout[]
+  customFoods     Food[]
+  diaryEntries    DiaryEntry[]
+  waterEntries    WaterEntry[]
+  bodyweights     BodyweightEntry[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum UnitSystem {
+  IMPERIAL
+  METRIC
+}
+
+// ─── Training (Hevy-style) ─────────────────────────────────────────────────
+
+// Library exercises have createdById = null. Users can add their own.
+model Exercise {
+  id               String           @id @default(cuid())
+  slug             String           @unique
+  name             String
+  category         ExerciseCategory @default(STRENGTH)
+  equipment        String?
+  primaryMuscles   String[]
+  secondaryMuscles String[]
+  instructions     String[]
+  images           String[]
+  createdById      String?
+  createdBy        User?            @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt        DateTime         @default(now())
+
+  routineExercises RoutineExercise[]
+  workoutExercises WorkoutExercise[]
+
+  @@index([name])
+  @@index([createdById])
+}
+
+enum ExerciseCategory {
+  STRENGTH
+  CARDIO
+  STRETCHING
+  PLYOMETRICS
+}
+
+// A saved template, like "Push A" or "Upper body"
+model Routine {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  notes     String?
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercises RoutineExercise[]
+  workouts  Workout[]
+
+  @@index([userId])
+}
+
+model RoutineExercise {
+  id            String  @id @default(cuid())
+  routineId     String
+  exerciseId    String
+  order         Int
+  targetSets    Int     @default(3)
+  targetRepsMin Int?
+  targetRepsMax Int?
+  restSeconds   Int     @default(90)
+  supersetGroup Int? // exercises sharing a number are performed as a superset
+  notes         String?
+
+  routine  Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+
+  @@index([routineId])
+}
+
+// One actual gym session
+model Workout {
+  id        String    @id @default(cuid())
+  userId    String
+  routineId String?
+  name      String
+  notes     String?
+  startedAt DateTime  @default(now())
+  endedAt   DateTime? // null while the workout is in progress
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  routine   Routine?          @relation(fields: [routineId], references: [id], onDelete: SetNull)
+  exercises WorkoutExercise[]
+
+  @@index([userId, startedAt])
+}
+
+model WorkoutExercise {
+  id            String  @id @default(cuid())
+  workoutId     String
+  exerciseId    String
+  order         Int
+  supersetGroup Int?
+  notes         String?
+
+  workout  Workout      @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  exercise Exercise     @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+  sets     WorkoutSet[]
+
+  @@index([workoutId])
+  @@index([exerciseId])
+}
+
+model WorkoutSet {
+  id                String  @id @default(cuid())
+  workoutExerciseId String
+  order             Int
+  type              SetType @default(NORMAL)
+  weightKg          Float?
+  reps              Int?
+  durationSec       Int? // for timed holds and cardio
+  distanceM         Float? // for cardio
+  rpe               Float? // rate of perceived exertion, 1–10
+  completed         Boolean @default(false)
+
+  workoutExercise WorkoutExercise @relation(fields: [workoutExerciseId], references: [id], onDelete: Cascade)
+
+  @@index([workoutExerciseId])
+}
+
+enum SetType {
+  WARMUP
+  NORMAL
+  DROP
+  FAILURE
+}
+
+// ─── Nutrition (MyFitnessPal-style) ───────────────────────────────────────
+
+// Foods are cached locally from USDA / Open Food Facts, or created by users.
+// Nutrient values are per one serving.
+model Food {
+  id          String     @id @default(cuid())
+  source      FoodSource
+  externalId  String? // USDA fdcId or Open Food Facts code
+  barcode     String?
+  name        String
+  brand       String?
+  servingSize Float
+  servingUnit String // "g", "ml", "cup", "slice", ...
+  calories    Float
+  proteinG    Float
+  carbsG      Float
+  fatG        Float
+  fiberG      Float?
+  sugarG      Float?
+  sodiumMg    Float?
+  createdById String?
+  createdBy   User?      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+
+  diaryEntries DiaryEntry[]
+
+  @@unique([source, externalId])
+  @@index([barcode])
+  @@index([name])
+}
+
+enum FoodSource {
+  USDA
+  OPEN_FOOD_FACTS
+  CUSTOM
+}
+
+model DiaryEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  foodId    String
+  date      DateTime @db.Date // the user's local calendar day
+  meal      Meal
+  servings  Float    @default(1)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  food Food @relation(fields: [foodId], references: [id], onDelete: Restrict)
+
+  @@index([userId, date])
+}
+
+enum Meal {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACKS
+}
+
+model WaterEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime @db.Date
+  ml        Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+}
+
+// ─── Body + goals ─────────────────────────────────────────────────────────
+
+model BodyweightEntry {
+  id       String   @id @default(cuid())
+  userId   String
+  date     DateTime @db.Date
+  weightKg Float
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model Goal {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  goalType       GoalType @default(MAINTAIN)
+  calories       Int
+  proteinG       Int
+  carbsG         Int
+  fatG           Int
+  waterMl        Int      @default(2500)
+  targetWeightKg Float?
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum GoalType {
+  LOSE
+  MAINTAIN
+  GAIN
+}
