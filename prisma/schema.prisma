@@ -9,7 +9,7 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL") // pooled connection (used by the app)
-  directUrl = env("DIRECT_URL") // direct connection (used by migrations)
+  directUrl = env("DATABASE_URL_UNPOOLED") // direct connection (used by migrations)
 }
 
 // ─── Auth (shape required by the Auth.js Prisma adapter) ───────────────────
