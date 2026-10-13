@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+/*
+  Calorness design tokens
+  Base: steel blue, like a squat rack. Text: chalk.
+  Accents: the four Olympic bumper-plate colors, each mapped to one number
+  the app tracks everywhere:
+    red    (25 kg plate) → calories, and primary actions
+    blue   (20 kg plate) → protein
+    yellow (15 kg plate) → carbs
+    green  (10 kg plate) → fat
+*/
+@theme {
+  --color-rack: #17212b;
+  --color-rack-raised: #1f2c39;
+  --color-rack-line: #2f3f4f;
+  --color-chalk: #eceee8;
+  --color-chalk-muted: #97a4b0;
+
+  --color-plate-red: #d8453e;
+  --color-plate-blue: #4a86dc;
+  --color-plate-yellow: #e8b931;
+  --color-plate-green: #41a86d;
+
+  --font-sans: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-barlow-condensed), var(--font-barlow), sans-serif;
+}
+
+html {
+  background: var(--color-rack);
+  color: var(--color-chalk);
+  /* stop iOS from enlarging text when the phone rotates */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  min-height: 100dvh;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-plate-yellow);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
