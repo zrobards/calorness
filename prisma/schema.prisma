@@ -311,3 +311,20 @@ enum GoalType {
   MAINTAIN
   GAIN
 }
+
+// ─── Home-screen app sign-in handoff ──────────────────────────────────────
+// On iPhone, an app added to the home screen keeps its own cookies, separate
+// from the browser window GitHub sign-in happens in. The app creates a
+// request, you approve it after signing in, and the app trades the approved
+// request for its own session. Requests expire after 10 minutes and work once.
+model LoginRequest {
+  id         String    @id // long random secret, never shown in full
+  code       String // short code shown on both screens so you can match them
+  userId     String?
+  approvedAt DateTime?
+  consumedAt DateTime?
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+
+  @@index([expiresAt])
+}
