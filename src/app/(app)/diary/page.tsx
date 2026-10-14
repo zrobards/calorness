@@ -32,7 +32,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
       </PageHeader>
 
       {goal ? (
-        <section className="mx-5 rounded-2xl bg-rack-raised p-5" aria-label="Day summary">
+        <section className="animate-rise mx-5 rounded-2xl bg-rack-raised p-5" aria-label="Day summary">
           <CalorieRing eaten={totals.calories} goal={goal.calories} />
           <dl className="mt-4 mb-5 grid grid-cols-3 text-center">
             <div><dd className="font-display text-xl font-semibold tabular-nums">{goal.calories.toLocaleString("en-US")}</dd><dt className="text-xs text-chalk-muted">Goal</dt></div>
@@ -62,9 +62,10 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         </Link>
       )}
 
-      {meals.map((m) => (
+      {meals.map((m, index) => (
         <MealSection
           key={m.meal}
+          index={index}
           meal={m.meal}
           label={m.label}
           day={day}

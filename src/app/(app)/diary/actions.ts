@@ -60,7 +60,7 @@ export async function lookupBarcode(code: string) {
 
 const candidateSchema = z.object({
   id: z.string().optional(),
-  source: z.enum(["USDA", "OPEN_FOOD_FACTS", "CUSTOM"]),
+  source: z.enum(["USDA", "OPEN_FOOD_FACTS", "CUSTOM", "AI_ESTIMATE"]),
   externalId: z.string().nullable(),
   barcode: z.string().nullable(),
   name: z.string().min(1).max(200),
@@ -85,7 +85,7 @@ async function ensureFood(userId: string, candidate: z.infer<typeof candidateSch
     });
     if (existing) return existing.id;
   }
-  if (candidate.source === "CUSTOM" || !candidate.externalId) throw new Error("Unknown food");
+  if (candidate.source === "CUSTOM" || candidate.source === "AI_ESTIMATE" || !candidate.externalId) throw new Error("Unknown food");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id, ...data } = candidate;
   const food = await db.food.upsert({

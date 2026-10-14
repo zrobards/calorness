@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, ViewTransition } from "react";
 import { BottomNav, NavBar } from "@/components/BottomNav";
 import { requireUser } from "@/lib/auth";
 
@@ -10,7 +10,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Reading the session happens per request, so it streams in behind a
           Suspense boundary while the nav renders instantly. */}
       <Suspense fallback={<PageLoading />}>
-        <AuthGate>{children}</AuthGate>
+        <AuthGate>
+          {/* crossfades between pages instead of a hard cut */}
+          <ViewTransition>{children}</ViewTransition>
+        </AuthGate>
       </Suspense>
       <Suspense fallback={<NavBar pathname={null} />}>
         <BottomNav />
@@ -27,8 +30,8 @@ async function AuthGate({ children }: { children: React.ReactNode }) {
 function PageLoading() {
   return (
     <div className="px-5 pt-16" aria-busy="true" aria-label="Loading">
-      <div className="h-9 w-40 animate-pulse rounded-lg bg-rack-raised" />
-      <div className="mt-6 h-40 animate-pulse rounded-2xl bg-rack-raised" />
+      <div className="skeleton h-9 w-40 rounded-lg" />
+      <div className="skeleton mt-6 h-40 rounded-2xl" />
     </div>
   );
 }
