@@ -38,6 +38,7 @@ tracking that shares data with training.
 
 **Quick log (the center + button)**
 - Snap a photo of a meal, or upload one you already took, and Claude (Anthropic's AI) lists each food with calories and macros
+- Packaged foods use real label values: the AI reads the brand and flavor, then Calorness finds the product in your foods, USDA, and Open Food Facts and swaps the guess for the label numbers (or asks you to pick the flavor). A barcode anywhere in the photo is read first for an exact match at no AI cost
 - Make the estimate accurate before saving: adjust amounts, edit any item's weight (calories and macros scale with it) or numbers, add foods it missed, or tell the AI what it got wrong ("the chicken was fried, 2 cups of rice") and it re-checks the photo
 - Describe a meal in words, or say it out loud with speech-to-text
 - Barcode scan and one-tap "log again" for recent foods, with Undo

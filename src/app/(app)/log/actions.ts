@@ -8,6 +8,8 @@ import { estimateFoods, readLabel } from "@/lib/ai/foodVision";
 import { aiFoodItemSchema } from "@/lib/ai/parse";
 import { dayToDate, MEALS } from "@/lib/nutrition/diary";
 import { saveAiItems } from "@/lib/nutrition/aiLog";
+import { groundItems } from "@/lib/ai/ground";
+import { candidateSchema, ensureFood } from "@/lib/nutrition/foods";
 
 const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
@@ -33,12 +35,16 @@ export async function aiEstimate(input: {
     return { error: "Add a photo or describe what you ate." };
   }
   const { imageBase64, mediaType, text, previous, correction } = parsed.data;
-  return estimateFoods({
+  const result = await estimateFoods({
     image: imageBase64 ? { base64: imageBase64, mediaType: mediaType ?? "image/jpeg" } : undefined,
     text,
     previous,
     correction,
   });
+  if ("error" in result) return result;
+  // Packaged foods: swap the guess for the real label values when we can find the product
+  const user = await requireUser();
+  return { ...result, items: await groundItems(user.id, result.items) };
 }
 
 /** Save reviewed AI estimates as foods and log them in one go. */
@@ -48,13 +54,28 @@ export async function logAiItems(input: { day: string; meal: string; items: unkn
     .object({
       day: daySchema,
       meal: z.enum(MEALS),
-      items: z.array(aiFoodItemSchema).min(1).max(20),
+      items: z
+        .array(
+          aiFoodItemSchema.extend({
+            // set when the user picked the real product from the database
+            match: z.object({ food: candidateSchema, servings: z.number().positive().max(50) }).optional(),
+            // set when the user typed their own numbers
+            edited: z.boolean().optional(),
+          }),
+        )
+        .min(1)
+        .max(20),
     })
     .safeParse(input);
   if (!parsed.success) return { error: "Something in that list doesn't look right." };
   const { day, meal, items } = parsed.data;
 
-  await saveAiItems(user.id, day, meal, items);
+  const matched = items.filter((i) => i.match);
+  for (const i of matched) {
+    const foodId = await ensureFood(user.id, i.match!.food);
+    await db.diaryEntry.create({ data: { userId: user.id, foodId, servings: i.match!.servings, meal, date: dayToDate(day) } });
+  }
+  await saveAiItems(user.id, day, meal, items.filter((i) => !i.match));
   revalidatePath("/diary");
   revalidatePath("/log");
   return { ok: true, count: items.length };
