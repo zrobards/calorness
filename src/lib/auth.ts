@@ -11,6 +11,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { db } from "@/lib/db";
 import { handoffStatus } from "@/lib/handoff";
+import { emailSchema, passwordSchema, verifyPassword } from "@/lib/password";
 
 export const DEMO_EMAIL = "demo@calorness.app";
 
@@ -26,6 +27,9 @@ if (process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET) {
     GitHubProvider({
       clientId: process.env.AUTH_GITHUB_ID,
       clientSecret: process.env.AUTH_GITHUB_SECRET,
+      // GitHub only gives out verified emails, so it's safe to let GitHub
+      // sign-in open an email + password account with the same address
+      allowDangerousEmailAccountLinking: true,
     }),
   );
   providerList.push({ id: "github", name: "GitHub" });
@@ -60,6 +64,24 @@ if (process.env.DEMO_LOGIN_ENABLED === "true") {
   );
   providerList.push({ id: "demo", name: "Demo account" });
 }
+
+// Email + password. Works everywhere, including the iPhone home-screen app,
+// because it never leaves the app for another website.
+providers.push(
+  CredentialsProvider({
+    id: "password",
+    name: "Email",
+    credentials: { email: { type: "email" }, password: { type: "password" } },
+    async authorize(credentials) {
+      const email = emailSchema.safeParse(credentials?.email);
+      const password = passwordSchema.safeParse(credentials?.password);
+      if (!email.success || !password.success) return null;
+      const user = await db.user.findUnique({ where: { email: email.data } });
+      if (!(await verifyPassword(password.data, user?.passwordHash))) return null;
+      return { id: user!.id, name: user!.name, email: user!.email, image: user!.image };
+    },
+  }),
+);
 
 // Home-screen app handoff (see LoginRequest in schema.prisma). Always on; it
 // only accepts a request that a signed-in browser has approved.
