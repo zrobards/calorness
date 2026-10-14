@@ -36,6 +36,7 @@ tracking that shares data with training.
 - Barcode scan and one-tap "log again" for recent foods, with Undo
 - Picks the meal from the time of day, shows calories and protein left, and starts your next routine in one tap
 - Home-screen shortcuts on Android (long-press the icon): Snap, Scan, Describe, Train
+- iPhone Shortcut / widget: tap, take a photo (or dictate), and a notification shows what was logged, without opening the app. Powered by a small API (`POST /api/quick-log`) with per-user keys made in Profile, stored as SHA-256 hashes, revocable, and rate limited
 
 **Training (Hevy-style)**
 - Exercise library of 876 exercises with photos, instructions, and muscle groups, searchable and filterable
