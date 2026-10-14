@@ -10,6 +10,10 @@ export const aiFoodItemSchema = z.object({
   carbs_g: z.number().min(0).max(500),
   fat_g: z.number().min(0).max(500),
   confidence: z.enum(["high", "medium", "low"]),
+  // For packaged foods, so we can look up the real label values
+  packaged: z.boolean().optional(),
+  brand: z.string().max(80).nullable().optional(),
+  product: z.string().max(160).nullable().optional(),
 });
 
 export const aiFoodResultSchema = z.object({
@@ -40,6 +44,9 @@ export const LOG_FOODS_TOOL = {
             carbs_g: { type: "number" },
             fat_g: { type: "number" },
             confidence: { type: "string", enum: ["high", "medium", "low"] },
+            packaged: { type: "boolean", description: "True for a branded, packaged product (yogurt cup, protein bar, chips, bottled drink), whether the package is visible or named" },
+            brand: { type: "string", description: "Brand for packaged products, e.g. 'Chobani'" },
+            product: { type: "string", description: "Full product name including line and flavor as printed, e.g. 'Chobani Flip Key Lime Crumble'" },
           },
           required: ["name", "portion", "grams", "calories", "protein_g", "carbs_g", "fat_g", "confidence"],
         },
