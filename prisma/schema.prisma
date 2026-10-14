@@ -88,6 +88,8 @@ model Exercise {
   name             String
   category         ExerciseCategory @default(STRENGTH)
   equipment        String?
+  level            String? // beginner, intermediate, expert
+  mechanic         String? // compound or isolation
   primaryMuscles   String[]
   secondaryMuscles String[]
   instructions     String[]
@@ -215,6 +217,7 @@ model Food {
   brand       String?
   servingSize Float
   servingUnit String // "g", "ml", "cup", "slice", ...
+  servingLabel String? // how the label describes it, like "1 container (150 g)"
   calories    Float
   proteinG    Float
   carbsG      Float
