@@ -1,45 +1,81 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Target } from "lucide-react";
+import { Dumbbell, Target } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { MacroBars } from "@/components/MacroBars";
+import { CalorieRing } from "@/components/diary/CalorieRing";
+import { DayNav, shiftDay } from "@/components/diary/DayNav";
+import { MealSection } from "@/components/diary/MealSection";
+import { WaterCard } from "@/components/diary/WaterCard";
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { getDiaryDay, toCandidate } from "@/lib/nutrition/diary";
+import { getUnitSystem } from "@/lib/training";
+import { APP_TIME_ZONE } from "@/lib/fitness/dates";
+import { compactNumber, displayWeight, weightUnit } from "@/lib/fitness/units";
 
 export const metadata: Metadata = { title: "Diary" };
 
-const MEALS = ["Breakfast", "Lunch", "Dinner", "Snacks"];
-
-export default async function DiaryPage() {
+export default async function DiaryPage({ searchParams }: { searchParams: Promise<{ day?: string }> }) {
   const user = await requireUser();
-  const goal = await db.goal.findUnique({ where: { userId: user.id } });
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: APP_TIME_ZONE }); // YYYY-MM-DD
+  const { day: dayParam } = await searchParams;
+  const day = dayParam && /^\d{4}-\d{2}-\d{2}$/.test(dayParam) ? dayParam : today;
+
+  const [diary, unitSystem] = await Promise.all([getDiaryDay(user.id, day), getUnitSystem(user.id)]);
+  const { goal, totals, meals, workouts } = diary;
 
   return (
     <>
-      <PageHeader title="Diary" />
+      <PageHeader title="Diary">
+        <DayNav day={day} today={today} />
+      </PageHeader>
+
       {goal ? (
-        <>
-          <section className="mx-5 rounded-2xl bg-rack-raised p-5" aria-label="Today's totals">
-            <MacroBars eaten={{ calories: 0, proteinG: 0, carbsG: 0, fatG: 0 }} goal={goal} />
-          </section>
-          <ul className="mx-5 mt-4 divide-y divide-rack-line rounded-2xl bg-rack-raised">
-            {MEALS.map((meal) => (
-              <li key={meal} className="flex items-center justify-between px-5 py-4">
-                <span className="font-display text-xl font-semibold">{meal}</span>
-                <span className="text-sm text-chalk-muted">0 cal</span>
-              </li>
-            ))}
-          </ul>
-        </>
+        <section className="mx-5 rounded-2xl bg-rack-raised p-5" aria-label="Day summary">
+          <CalorieRing eaten={totals.calories} goal={goal.calories} />
+          <dl className="mt-4 mb-5 grid grid-cols-3 text-center">
+            <div><dd className="font-display text-xl font-semibold tabular-nums">{goal.calories.toLocaleString("en-US")}</dd><dt className="text-xs text-chalk-muted">Goal</dt></div>
+            <div><dd className="font-display text-xl font-semibold tabular-nums">{Math.round(totals.calories).toLocaleString("en-US")}</dd><dt className="text-xs text-chalk-muted">Food</dt></div>
+            <div><dd className="font-display text-xl font-semibold tabular-nums">{Math.round(goal.calories - totals.calories).toLocaleString("en-US")}</dd><dt className="text-xs text-chalk-muted">Remaining</dt></div>
+          </dl>
+          <MacroBars eaten={totals} goal={goal} />
+        </section>
       ) : (
         <EmptyState Icon={Target} title="Set your daily targets">
-          Calorness needs a calorie and macro goal before it can track your day.{" "}
-          <Link href="/profile#goals" className="font-medium text-chalk underline underline-offset-4">
-            Set goals in Profile
-          </Link>
+          Add a calorie and macro goal to see what&apos;s left each day. You can still log food without one.{" "}
+          <Link href="/profile#goals" className="font-medium text-chalk underline underline-offset-4">Set goals</Link>
         </EmptyState>
       )}
+
+      {/* Where training and nutrition meet */}
+      {workouts.length > 0 && (
+        <Link href={`/train/history/${workouts[0].id}`} className="mx-5 mt-4 flex items-center gap-3 rounded-2xl border border-plate-blue/40 bg-plate-blue/10 px-5 py-3.5">
+          <Dumbbell className="shrink-0 text-plate-blue" size={22} aria-hidden />
+          <span className="text-sm">
+            <span className="block font-medium">Training day: {workouts.map((w) => w.name).join(", ")}</span>
+            <span className="text-chalk-muted">
+              {compactNumber(displayWeight(workouts.reduce((s, w) => s + w.volumeKg, 0), unitSystem))} {weightUnit(unitSystem)} lifted.
+              {goal ? ` Hitting ${goal.proteinG}g protein today helps you recover.` : ""}
+            </span>
+          </span>
+        </Link>
+      )}
+
+      {meals.map((m) => (
+        <MealSection
+          key={m.meal}
+          meal={m.meal}
+          label={m.label}
+          day={day}
+          yesterday={shiftDay(day, -1)}
+          calories={m.totals.calories}
+          items={m.items.map((i) => ({ id: i.id, servings: i.servings, food: toCandidate(i.food), calories: i.nutrients.calories }))}
+        />
+      ))}
+
+      <WaterCard day={day} ml={diary.waterMl} goalMl={goal?.waterMl ?? 2500} imperial={unitSystem === "IMPERIAL"} />
+      <div className="h-4" />
     </>
   );
 }
