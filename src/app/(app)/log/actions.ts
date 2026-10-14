@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { estimateFoods } from "@/lib/ai/foodVision";
+import { estimateFoods, readLabel } from "@/lib/ai/foodVision";
 import { aiFoodItemSchema } from "@/lib/ai/parse";
 import { dayToDate, MEALS } from "@/lib/nutrition/diary";
 import { saveAiItems } from "@/lib/nutrition/aiLog";
@@ -71,4 +71,14 @@ export async function quickRelog(input: { foodId: string; servings: number; day:
   const entry = await db.diaryEntry.create({ data: { userId: user.id, foodId, servings, meal, date: dayToDate(day) } });
   revalidatePath("/diary");
   return { entryId: entry.id, calories: Math.round(food.calories * servings) };
+}
+
+/** Photo of a Nutrition Facts panel → exact per-serving numbers to confirm and save. */
+export async function scanLabel(input: { imageBase64: string; mediaType: string }) {
+  await requireUser();
+  const parsed = z
+    .object({ imageBase64: z.string().min(10).max(1_400_000), mediaType: z.enum(["image/jpeg", "image/png", "image/webp"]) })
+    .safeParse(input);
+  if (!parsed.success) return { error: "Couldn't read that photo." };
+  return readLabel({ base64: parsed.data.imageBase64, mediaType: parsed.data.mediaType });
 }
