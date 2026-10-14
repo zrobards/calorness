@@ -41,6 +41,8 @@ export function BarChart({
         return (
           <g key={i}>
             <rect
+              className="animate-grow-y"
+              style={{ "--i": i } as React.CSSProperties}
               x={x}
               y={d.value > 0 ? y : H - bottom - 2}
               width={barW}

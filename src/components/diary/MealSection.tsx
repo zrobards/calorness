@@ -16,7 +16,9 @@ export function MealSection({
   yesterday,
   calories,
   items,
+  index = 0,
 }: {
+  index?: number;
   meal: string;
   label: string;
   day: string;
@@ -29,7 +31,7 @@ export function MealSection({
   const [pending, start] = useTransition();
 
   return (
-    <section className="mx-5 mt-4 rounded-2xl bg-rack-raised" aria-label={label}>
+    <section className="animate-rise mx-5 mt-4 rounded-2xl bg-rack-raised" style={{ "--i": index + 1 } as React.CSSProperties} aria-label={label}>
       <div className="flex items-baseline justify-between px-5 pt-4 pb-2">
         <h2 className="font-display text-2xl font-semibold">{label}</h2>
         <span className="font-display text-lg font-semibold tabular-nums text-chalk-muted">{Math.round(calories)}</span>
