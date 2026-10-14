@@ -17,7 +17,7 @@ export function roundTo(value: number, increment: number) {
 
 export type UnitSystem = "IMPERIAL" | "METRIC";
 
-export const weightUnit = (u: UnitSystem) => (u === "IMPERIAL" ? "lb" : "kg");
+export const weightUnit = (u: UnitSystem): "lb" | "kg" => (u === "IMPERIAL" ? "lb" : "kg");
 
 /** Stored kg → number shown to the user, rounded to a sensible precision. */
 export function displayWeight(kg: number, u: UnitSystem): number {

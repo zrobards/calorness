@@ -2,7 +2,7 @@
 // Both APIs report nutrients per 100 g (or 100 ml); we convert to "per
 // serving" using the label's serving size when there is one.
 
-export type FoodSourceName = "USDA" | "OPEN_FOOD_FACTS" | "CUSTOM";
+export type FoodSourceName = "USDA" | "OPEN_FOOD_FACTS" | "CUSTOM" | "AI_ESTIMATE";
 
 export type FoodCandidate = {
   id?: string; // set when the food is already saved in our database
