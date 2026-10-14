@@ -6,9 +6,13 @@ training and eating work from the same numbers.
 
 [Live demo](https://calorness.vercel.app). Try it with the demo account, no sign-up needed
 
-| Train | Live workout | Workout summary | Progress |
+| Quick log | AI meal photo | Live workout | Diary |
 | --- | --- | --- | --- |
-| ![Train tab with weekly plates](docs/screenshots/train.png) | ![Live workout logger with rest timer](docs/screenshots/workout.png) | ![Workout summary with personal records](docs/screenshots/summary.png) | ![Muscle map and weekly volume](docs/screenshots/progress.png) |
+| ![Quick log hub](docs/screenshots/quick-log.png) | ![AI estimate review](docs/screenshots/ai-review.png) | ![Live workout logger with autosave and rest timer](docs/screenshots/workout.png) | ![Diary with calorie ring](docs/screenshots/diary.png) |
+
+| Train | Workout summary | Progress |
+| --- | --- | --- |
+| ![Train tab with weekly plates](docs/screenshots/train.png) | ![Workout summary with personal records](docs/screenshots/summary.png) | ![Muscle map and weekly volume](docs/screenshots/progress.png) |
 
 | Food diary | Adding a food | Barcode scanner | Exercise detail |
 | --- | --- | --- | --- |
@@ -25,10 +29,20 @@ tracking that shares data with training.
 
 ## Features
 
+**Quick log (the center + button)**
+- Snap a photo of a meal and Claude (Anthropic's AI) lists each food with calories and macros to review before saving
+- Describe a meal in words, or say it out loud with speech-to-text
+- Barcode scan and one-tap "log again" for recent foods, with Undo
+- Picks the meal from the time of day, shows calories and protein left, and starts your next routine in one tap
+- Home-screen shortcuts on Android (long-press the icon): Snap, Scan, Describe, Train
+
 **Training (Hevy-style)**
 - Exercise library of 876 exercises with photos, instructions, and muscle groups, searchable and filterable
 - Routine builder: sets, rep ranges, and rest time per exercise
-- Live workout logger: previous-session values on every set, warm-up/drop/failure sets, autosave if the app closes mid-workout
+- Live workout logger: previous-session values on every set, warm-up/drop/failure sets
+- Autosaves every set to the phone instantly and to the server within seconds, so closing the app or switching phones loses nothing; the rest timer survives too
+- Keeps the screen awake during a workout, with haptic feedback on supported phones
+- Edit a finished workout's sets, or reopen one you ended too early
 - Rest timer that starts when you check off a set, with ±15s and vibration
 - Automatic personal records: heaviest weight, best estimated 1RM, best set volume
 - Exercise pages with your history and an estimated-1RM progress chart
@@ -48,6 +62,10 @@ tracking that shares data with training.
 - Training-day callout in the diary when you worked out, linking to that workout
 - Calorie and macro targets calculated from your stats (Mifflin–St Jeor + activity level + goal)
 
+**Feel**
+- Motion throughout: count-up numbers, a calorie ring that draws in, bars and charts that grow, cards that rise in, page crossfades (React View Transitions), and a burst of tiny bumper plates when you finish a workout
+- Everything respects the phone's "reduce motion" setting
+
 **General**
 - Sign in with GitHub, Google, or a shared demo account
 - Pounds/feet or kilograms/centimeters
@@ -62,6 +80,8 @@ tracking that shares data with training.
 - [ ] Custom exercises and supersets in the logger
 - [ ] Training-aware nutrition: targets that adapt to training volume and weight trend
 - [ ] Time zone setting (dates currently display in US Eastern)
+- [x] Quick log hub, AI photo/describe logging, workout autosave and editing
+- [ ] Apple Health / Google Fit sync and a true home-screen widget (needs a native app)
 - [ ] Offline logging in the gym
 
 ## Tech stack
@@ -75,6 +95,7 @@ tracking that shares data with training.
 | Auth | NextAuth (Auth.js) with GitHub/Google OAuth |
 | Validation | Zod |
 | Charts | Hand-built SVG components (no chart library) |
+| AI | Claude API (vision + tool use for structured output) |
 | Testing | Vitest |
 | CI/CD | GitHub Actions, deployed on Vercel |
 
@@ -104,6 +125,7 @@ src/
     db.ts              Prisma client
     training.ts        Training queries: workouts, previous sets, records, progress
     nutrition/         Food APIs (USDA, Open Food Facts), normalizing their data, diary queries
+    ai/                Claude meal estimation and response validation
     fitness/           Pure, tested logic: 1RM, volume, PRs, BMR/TDEE, macros, units, muscles, dates
 ```
 
