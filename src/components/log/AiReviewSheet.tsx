@@ -1,23 +1,53 @@
 "use client";
 
 import { useState } from "react";
-import { Minus, Plus, Sparkles, X } from "lucide-react";
+import { ChevronDown, Loader2, Minus, Plus, RefreshCw, Sparkles, X } from "lucide-react";
 import type { AiFoodItem } from "@/lib/ai/parse";
 import { Sheet } from "@/components/diary/Sheet";
 import { MacroSplit } from "@/components/diary/MacroSplit";
+import { haptic } from "@/lib/haptics";
 
-const CONFIDENCE_COLOR = { high: "bg-plate-green", medium: "bg-plate-yellow", low: "bg-plate-red" } as const;
+const CONFIDENCE = {
+  high: { dot: "bg-plate-green", label: "Confident" },
+  medium: { dot: "bg-plate-yellow", label: "Best guess" },
+  low: { dot: "bg-plate-red", label: "Check this one" },
+} as const;
 
-export type ReviewItem = AiFoodItem & { servings: number; key: string };
+type ReviewItem = AiFoodItem & { servings: number; key: string };
 
-/** Check the AI's guesses before saving: adjust amounts, remove mistakes, log all. */
+const round1 = (n: number) => Math.round(n * 10) / 10;
+let nextKey = 0;
+const toReview = (i: AiFoodItem): ReviewItem => ({ ...i, servings: 1, key: `i${nextKey++}` });
+
+/** The amounts as the user currently sees them (servings applied), for logging or re-checking. */
+function applyServings(i: ReviewItem): AiFoodItem {
+  const s = i.servings;
+  return {
+    name: i.name.trim(),
+    portion: s === 1 ? i.portion : `${s} × ${i.portion}`,
+    grams: Math.round(i.grams * s),
+    calories: Math.round(i.calories * s),
+    protein_g: round1(i.protein_g * s),
+    carbs_g: round1(i.carbs_g * s),
+    fat_g: round1(i.fat_g * s),
+    confidence: i.confidence,
+  };
+}
+
+/**
+ * Check the AI's estimate before saving. Three ways to make it accurate:
+ * quick amount buttons, editing any number directly, or telling the AI what
+ * it got wrong and letting it look at the photo again.
+ */
 export function AiReviewSheet({
   items: initial,
   note,
   photo,
   mealLabel,
   pending,
+  refining,
   onConfirm,
+  onRefine,
   onClose,
 }: {
   items: AiFoodItem[];
@@ -25,57 +55,131 @@ export function AiReviewSheet({
   photo?: string | null;
   mealLabel: string;
   pending: boolean;
-  onConfirm: (items: ReviewItem[]) => void;
+  refining: boolean;
+  onConfirm: (items: AiFoodItem[]) => void;
+  onRefine: (correction: string, current: AiFoodItem[]) => void;
   onClose: () => void;
 }) {
-  const [items, setItems] = useState<ReviewItem[]>(() => initial.map((i, k) => ({ ...i, servings: 1, key: String(k) })));
-  const total = items.reduce(
-    (t, i) => ({
-      calories: t.calories + i.calories * i.servings,
-      proteinG: t.proteinG + i.protein_g * i.servings,
-      carbsG: t.carbsG + i.carbs_g * i.servings,
-      fatG: t.fatG + i.fat_g * i.servings,
-    }),
+  const [items, setItems] = useState<ReviewItem[]>(() => initial.map(toReview));
+  const [open, setOpen] = useState<string | null>(null);
+  const [correction, setCorrection] = useState("");
+
+  const named = items.filter((i) => i.name.trim());
+  const total = named.map(applyServings).reduce(
+    (t, i) => ({ calories: t.calories + i.calories, proteinG: t.proteinG + i.protein_g, carbsG: t.carbsG + i.carbs_g, fatG: t.fatG + i.fat_g }),
     { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 },
   );
-  const setServings = (key: string, d: number) =>
+
+  const update = (key: string, patch: Partial<ReviewItem>) => setItems((xs) => xs.map((x) => (x.key === key ? { ...x, ...patch } : x)));
+  const setServings = (key: string, d: number) => {
+    haptic();
     setItems((xs) => xs.map((x) => (x.key === key ? { ...x, servings: Math.max(0.25, Math.round((x.servings + d) * 4) / 4) } : x)));
+  };
+  /** Changing the weight scales calories and macros along with it. */
+  const setGrams = (item: ReviewItem, grams: number) => {
+    if (!(grams > 0) || !(item.grams > 0)) return update(item.key, { grams: grams || 0 });
+    const f = grams / item.grams;
+    update(item.key, {
+      grams,
+      calories: Math.round(item.calories * f),
+      protein_g: round1(item.protein_g * f),
+      carbs_g: round1(item.carbs_g * f),
+      fat_g: round1(item.fat_g * f),
+    });
+  };
+  const addItem = () => {
+    const blank = toReview({ name: "", portion: "1 serving", grams: 100, calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, confidence: "high" });
+    setItems((xs) => [...xs, blank]);
+    setOpen(blank.key);
+  };
+  const num = (v: string) => Math.max(0, Number(v) || 0);
+
+  const field = "mt-1 w-full rounded-lg border border-rack-line bg-rack-raised px-2.5 py-2 text-base text-chalk tabular-nums focus:border-plate-yellow focus:outline-none";
 
   return (
     <Sheet title="Here's what I see" onClose={onClose}>
       <p className="mt-1 flex items-center gap-1.5 text-sm text-chalk-muted">
-        <Sparkles size={15} className="text-plate-yellow" aria-hidden /> AI estimate. Adjust anything that looks off.
+        <Sparkles size={15} className="text-plate-yellow" aria-hidden /> AI estimate. Tap any item to adjust it.
       </p>
       {photo && (
         // eslint-disable-next-line @next/next/no-img-element -- a local preview of the user's own photo
         <img src={photo} alt="Your meal" className="mt-4 h-36 w-full rounded-2xl object-cover" />
       )}
 
-      <ul className="mt-4 space-y-2">
-        {items.map((i, idx) => (
-          <li key={i.key} className="animate-rise rounded-2xl bg-rack p-3" style={{ "--i": idx } as React.CSSProperties}>
-            <div className="flex items-start gap-2">
-              <span className={`mt-1.5 size-2.5 shrink-0 rounded-full ${CONFIDENCE_COLOR[i.confidence]}`} title={`${i.confidence} confidence`} aria-label={`${i.confidence} confidence`} />
-              <div className="min-w-0 flex-1">
-                <p className="font-medium">{i.name}</p>
-                <p className="text-sm text-chalk-muted">
-                  {i.servings === 1 ? i.portion : `${i.servings} × ${i.portion}`}, P {Math.round(i.protein_g * i.servings)} C {Math.round(i.carbs_g * i.servings)} F {Math.round(i.fat_g * i.servings)}
-                </p>
+      <ul className={`mt-4 space-y-2 transition-opacity ${refining ? "opacity-40" : ""}`}>
+        {items.map((i, idx) => {
+          const shown = applyServings(i);
+          const expanded = open === i.key;
+          return (
+            <li key={i.key} className="animate-rise rounded-2xl bg-rack" style={{ "--i": idx } as React.CSSProperties}>
+              <div className="flex items-start gap-2 p-3">
+                <span className={`mt-1.5 size-2.5 shrink-0 rounded-full ${CONFIDENCE[i.confidence].dot}`} aria-hidden />
+                <button onClick={() => setOpen(expanded ? null : i.key)} className="min-w-0 flex-1 text-left" aria-expanded={expanded}>
+                  <span className="flex items-center gap-1 font-medium">
+                    {i.name || "New item"}
+                    <ChevronDown size={15} className={`shrink-0 text-chalk-muted transition-transform ${expanded ? "rotate-180" : ""}`} aria-hidden />
+                  </span>
+                  <span className="block text-sm text-chalk-muted">
+                    {shown.portion}, {shown.grams} g. P {Math.round(shown.protein_g)} C {Math.round(shown.carbs_g)} F {Math.round(shown.fat_g)}
+                  </span>
+                  <span className="sr-only">{CONFIDENCE[i.confidence].label}</span>
+                </button>
+                <span className="font-display text-xl font-bold tabular-nums">{shown.calories}</span>
+                <button onClick={() => setItems((xs) => xs.filter((x) => x.key !== i.key))} className="-mr-1 p-1 text-chalk-muted" aria-label={`Remove ${i.name || "item"}`}>
+                  <X size={18} />
+                </button>
               </div>
-              <span className="font-display text-xl font-bold tabular-nums">{Math.round(i.calories * i.servings)}</span>
-              <button onClick={() => setItems((xs) => xs.filter((x) => x.key !== i.key))} className="-mr-1 p-1 text-chalk-muted" aria-label={`Remove ${i.name}`}>
-                <X size={18} />
-              </button>
-            </div>
-            <div className="mt-2 flex items-center gap-2 pl-4">
-              <button onClick={() => setServings(i.key, -0.25)} className="rounded-lg bg-rack-raised p-1.5" aria-label="Less"><Minus size={16} /></button>
-              <span className="w-14 text-center text-sm tabular-nums">{i.servings}×</span>
-              <button onClick={() => setServings(i.key, 0.25)} className="rounded-lg bg-rack-raised p-1.5" aria-label="More"><Plus size={16} /></button>
-            </div>
-          </li>
-        ))}
+
+              <div className="flex items-center gap-2 px-3 pb-3 pl-7">
+                <button onClick={() => setServings(i.key, -0.25)} className="rounded-lg bg-rack-raised p-1.5" aria-label="Less"><Minus size={16} /></button>
+                <span className="w-12 text-center text-sm tabular-nums">{i.servings}×</span>
+                <button onClick={() => setServings(i.key, 0.25)} className="rounded-lg bg-rack-raised p-1.5" aria-label="More"><Plus size={16} /></button>
+                {i.confidence === "low" && <span className="ml-auto text-xs text-plate-red">Check this one</span>}
+              </div>
+
+              {expanded && (
+                <div className="animate-fade grid grid-cols-2 gap-2 border-t border-rack-line p-3 text-xs text-chalk-muted">
+                  <label className="col-span-2">Name<input value={i.name} onChange={(e) => update(i.key, { name: e.target.value })} className={field} placeholder="Food name" /></label>
+                  <label>Portion<input value={i.portion} onChange={(e) => update(i.key, { portion: e.target.value })} className={field} /></label>
+                  <label>Weight (g, scales the rest)
+                    <input type="number" inputMode="decimal" value={i.grams || ""} onChange={(e) => setGrams(i, num(e.target.value))} className={field} />
+                  </label>
+                  <label>Calories<input type="number" inputMode="decimal" value={i.calories || ""} onChange={(e) => update(i.key, { calories: num(e.target.value), confidence: "high" })} className={field} /></label>
+                  <label>Protein (g)<input type="number" inputMode="decimal" value={i.protein_g || ""} onChange={(e) => update(i.key, { protein_g: num(e.target.value), confidence: "high" })} className={field} /></label>
+                  <label>Carbs (g)<input type="number" inputMode="decimal" value={i.carbs_g || ""} onChange={(e) => update(i.key, { carbs_g: num(e.target.value), confidence: "high" })} className={field} /></label>
+                  <label>Fat (g)<input type="number" inputMode="decimal" value={i.fat_g || ""} onChange={(e) => update(i.key, { fat_g: num(e.target.value), confidence: "high" })} className={field} /></label>
+                </div>
+              )}
+            </li>
+          );
+        })}
       </ul>
+      <button onClick={addItem} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-rack-line py-2.5 text-sm font-medium text-chalk-muted">
+        <Plus size={16} aria-hidden /> Add something it missed
+      </button>
       {note && <p className="mt-3 text-sm text-chalk-muted">{note}</p>}
+
+      {/* Tell the AI what it got wrong and let it look again */}
+      <div className="mt-4 rounded-2xl border border-rack-line p-3">
+        <label className="text-sm font-medium" htmlFor="ai-correction">Not quite right? Tell the AI</label>
+        <textarea
+          id="ai-correction"
+          value={correction}
+          onChange={(e) => setCorrection(e.target.value)}
+          rows={2}
+          maxLength={500}
+          placeholder="It was 2 cups of rice, the chicken was fried, and no sauce"
+          className="mt-2 w-full resize-none rounded-xl border border-rack-line bg-rack px-3 py-2 text-base focus:border-plate-yellow focus:outline-none"
+        />
+        <button
+          onClick={() => { haptic(); onRefine(correction, named.map(applyServings)); }}
+          disabled={refining || correction.trim().length < 3}
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-rack-raised py-2.5 font-medium disabled:opacity-40"
+        >
+          {refining ? <Loader2 size={17} className="animate-spin" aria-hidden /> : <RefreshCw size={17} aria-hidden />}
+          {refining ? "Re-checking…" : "Re-check with this"}
+        </button>
+      </div>
 
       <div className="mt-5 flex items-baseline justify-between border-t border-rack-line pt-4">
         <span className="text-chalk-muted">Total</span>
@@ -84,11 +188,11 @@ export function AiReviewSheet({
       <div className="mt-3"><MacroSplit {...total} /></div>
 
       <button
-        onClick={() => onConfirm(items)}
-        disabled={pending || items.length === 0}
+        onClick={() => onConfirm(named.map(applyServings))}
+        disabled={pending || refining || named.length === 0}
         className="mt-6 w-full rounded-xl bg-plate-red py-3.5 font-display text-xl font-semibold text-white disabled:opacity-50"
       >
-        {pending ? "Logging…" : `Log ${items.length} ${items.length === 1 ? "item" : "items"} to ${mealLabel}`}
+        {pending ? "Logging…" : `Log ${named.length} ${named.length === 1 ? "item" : "items"} to ${mealLabel}`}
       </button>
     </Sheet>
   );

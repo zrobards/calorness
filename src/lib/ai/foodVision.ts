@@ -1,5 +1,5 @@
 import "server-only";
-import { LOG_FOODS_TOOL, parseLogFoodsResponse, type AiFoodResult } from "./parse";
+import { LOG_FOODS_TOOL, parseLogFoodsResponse, type AiFoodItem, type AiFoodResult } from "./parse";
 
 // Claude reads a meal photo or a typed description and estimates nutrition.
 // Needs ANTHROPIC_API_KEY (console.anthropic.com). Each photo costs a fraction
@@ -18,6 +18,9 @@ export function aiConfigured() {
 export async function estimateFoods(input: {
   image?: { base64: string; mediaType: "image/jpeg" | "image/png" | "image/webp" };
   text?: string;
+  /** A previous estimate plus the user's correction, to re-check more accurately */
+  previous?: AiFoodItem[];
+  correction?: string;
 }): Promise<AiFoodResult | { error: string }> {
   if (!aiConfigured()) return { error: "AI logging isn't set up yet. Add ANTHROPIC_API_KEY in Vercel." };
 
@@ -25,12 +28,7 @@ export async function estimateFoods(input: {
   if (input.image) {
     content.push({ type: "image", source: { type: "base64", media_type: input.image.mediaType, data: input.image.base64 } });
   }
-  content.push({
-    type: "text",
-    text: input.text?.trim()
-      ? `Log this meal: ${input.text.trim()}`
-      : "Log the food in this photo.",
-  });
+  content.push({ type: "text", text: buildPrompt(input) });
 
   try {
     const base = process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com";
@@ -62,4 +60,22 @@ export async function estimateFoods(input: {
   } catch {
     return { error: "The AI took too long to answer. Check your connection and try again." };
   }
+}
+
+/** The user-facing words we send along with the photo. Exported for tests. */
+export function buildPrompt(input: { image?: unknown; text?: string; previous?: AiFoodItem[]; correction?: string }) {
+  const parts: string[] = [];
+  if (input.text?.trim()) parts.push(`${input.image ? "Details from the user about this photo" : "Log this meal"}: ${input.text.trim()}`);
+  else parts.push("Log the food in this photo.");
+  if (input.previous?.length && input.correction?.trim()) {
+    const summary = input.previous
+      .map((i) => `- ${i.name}, ${i.portion} (${i.grams} g): ${i.calories} cal, P ${i.protein_g} C ${i.carbs_g} F ${i.fat_g}`)
+      .join("\n");
+    parts.push(
+      `Your previous estimate was:\n${summary}\n\nThe user says this needs fixing: "${input.correction.trim()}"\n` +
+        "Trust the user's information about portions, ingredients, and cooking methods over what the photo suggests. " +
+        "Return the complete corrected list, including items that didn't change.",
+    );
+  }
+  return parts.join("\n\n");
 }
