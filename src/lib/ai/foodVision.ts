@@ -1,5 +1,5 @@
 import "server-only";
-import { LOG_FOODS_TOOL, parseLogFoodsResponse, type AiFoodItem, type AiFoodResult } from "./parse";
+import { LOG_FOODS_TOOL, READ_LABEL_TOOL, parseLabelResponse, parseLogFoodsResponse, type AiFoodItem, type AiFoodResult, type LabelResult } from "./parse";
 
 // Claude reads a meal photo or a typed description and estimates nutrition.
 // Needs ANTHROPIC_API_KEY (console.anthropic.com). Each photo costs a fraction
@@ -78,4 +78,34 @@ export function buildPrompt(input: { image?: unknown; text?: string; previous?: 
     );
   }
   return parts.join("\n\n");
+}
+
+/** Read a Nutrition Facts label exactly (not an estimate). */
+export async function readLabel(image: { base64: string; mediaType: "image/jpeg" | "image/png" | "image/webp" }): Promise<LabelResult | { error: string }> {
+  if (!aiConfigured()) return { error: "AI isn't set up yet. Add ANTHROPIC_API_KEY in Vercel." };
+  try {
+    const base = process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com";
+    const res = await fetch(`${base}/v1/messages`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY!, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({
+        model: MODEL(),
+        max_tokens: 800,
+        system: "You read Nutrition Facts labels for a food-logging app. Copy the per-serving numbers exactly as printed. Never estimate or round differently than the label. If there's no readable label, set readable to false.",
+        tools: [READ_LABEL_TOOL],
+        tool_choice: { type: "tool", name: READ_LABEL_TOOL.name },
+        messages: [{ role: "user", content: [
+          { type: "image", source: { type: "base64", media_type: image.mediaType, data: image.base64 } },
+          { type: "text", text: "Read this nutrition label." },
+        ] }],
+      }),
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!res.ok) return { error: "Couldn't read that label. Try again with the label filling the frame." };
+    const label = parseLabelResponse(await res.json());
+    if (!label || !label.readable) return { error: "No nutrition label found. Get closer so the Nutrition Facts panel fills the photo." };
+    return label;
+  } catch {
+    return { error: "The AI took too long. Check your connection and try again." };
+  }
 }

@@ -2,6 +2,8 @@ import "server-only";
 import { db } from "@/lib/db";
 import { scaleNutrients } from "@/lib/fitness/nutrition";
 import { addDays } from "@/lib/fitness/dates";
+import { zonedDayStart } from "@/lib/time";
+import { verifiedShare } from "./quality";
 import { totalVolumeKg } from "@/lib/fitness/strength";
 import type { FoodCandidate } from "./normalize";
 
@@ -21,16 +23,16 @@ const add = (a: Totals, b: Totals) => ({
   fatG: a.fatG + b.fatG,
 });
 
-export async function getDiaryDay(userId: string, day: string) {
+export async function getDiaryDay(userId: string, day: string, timeZone = "America/New_York") {
+  const dayStart = zonedDayStart(day, timeZone);
   const date = dayToDate(day);
   const [entries, water, goal, workouts] = await Promise.all([
     db.diaryEntry.findMany({ where: { userId, date }, orderBy: { createdAt: "asc" }, include: { food: true } }),
     db.waterEntry.findMany({ where: { userId, date }, orderBy: { createdAt: "asc" } }),
     db.goal.findUnique({ where: { userId } }),
-    // Workouts that started on this calendar day (US Eastern is UTC-4/5, so
-    // widen the window a little; good enough until per-user time zones)
+    // Workouts that started during this calendar day where the user is
     db.workout.findMany({
-      where: { userId, endedAt: { not: null }, startedAt: { gte: new Date(date.getTime() + 4 * 3600_000), lt: new Date(addDays(date, 1).getTime() + 4 * 3600_000) } },
+      where: { userId, endedAt: { not: null }, startedAt: { gte: dayStart, lt: new Date(dayStart.getTime() + 86_400_000) } },
       include: { exercises: { include: { sets: true } } },
     }),
   ]);
@@ -45,6 +47,8 @@ export async function getDiaryDay(userId: string, day: string) {
   return {
     meals,
     totals: meals.reduce((t, m) => add(t, m.totals), zero()),
+    // How much of today came from verified sources rather than AI estimates
+    verified: verifiedShare(meals.flatMap((m) => m.items.map((i) => ({ calories: i.nutrients.calories, source: i.food.source })))),
     waterMl: water.reduce((s, w) => s + w.ml, 0),
     waterEntries: water.length,
     goal,
@@ -117,4 +121,20 @@ export async function getCalorieWeek(userId: string, today: string) {
       .reduce((s, e) => s + e.food.calories * e.servings, 0);
     return { date, calories };
   });
+}
+
+export async function getSavedMeals(userId: string) {
+  const meals = await db.savedMeal.findMany({
+    where: { userId },
+    orderBy: [{ lastUsed: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
+    include: { items: { include: { food: true } } },
+    take: 12,
+  });
+  return meals.map((m) => ({
+    id: m.id,
+    name: m.name,
+    itemCount: m.items.length,
+    calories: Math.round(m.items.reduce((s, i) => s + i.food.calories * i.servings, 0)),
+    proteinG: Math.round(m.items.reduce((s, i) => s + i.food.proteinG * i.servings, 0)),
+  }));
 }

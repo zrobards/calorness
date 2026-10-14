@@ -22,6 +22,8 @@ model User {
   image         String?
   passwordHash  String? // only for email + password accounts (bcrypt)
   unitSystem    UnitSystem @default(IMPERIAL)
+  timeZone      String     @default("America/New_York") // the phone's zone, so "today" matches your day
+  restAlarmAt   DateTime? // when a "rest's over" notification is due; cleared to cancel it
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
@@ -36,6 +38,8 @@ model User {
   waterEntries    WaterEntry[]
   bodyweights     BodyweightEntry[]
   apiKeys         ApiKey[]
+  savedMeals      SavedMeal[]
+  pushSubscriptions PushSubscription[]
 }
 
 model Account {
@@ -234,6 +238,7 @@ model Food {
   createdAt   DateTime   @default(now())
 
   diaryEntries DiaryEntry[]
+  savedMealItems SavedMealItem[]
 
   @@unique([source, externalId])
   @@index([barcode])
@@ -348,4 +353,50 @@ model ApiKey {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// ─── Saved meals ──────────────────────────────────────────────────────────
+model SavedMeal {
+  id        String          @id @default(cuid())
+  userId    String
+  name      String
+  createdAt DateTime        @default(now())
+  lastUsed  DateTime?
+  items     SavedMealItem[]
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model SavedMealItem {
+  id          String @id @default(cuid())
+  savedMealId String
+  foodId      String
+  servings    Float
+
+  savedMeal SavedMeal @relation(fields: [savedMealId], references: [id], onDelete: Cascade)
+  food      Food      @relation(fields: [foodId], references: [id], onDelete: Cascade)
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────
+// One row per phone/browser that allowed notifications.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// App-wide secrets the app creates for itself (the notification signing keys),
+// so there's nothing extra to set up in Vercel.
+model AppSecret {
+  key   String @id
+  value String
 }
