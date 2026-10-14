@@ -6,9 +6,13 @@ training and eating work from the same numbers.
 
 [Live demo](https://calorness.vercel.app). Try it with the demo account, no sign-up needed
 
-| Landing | Train | Profile | Diary |
+| Train | Live workout | Workout summary | Progress |
 | --- | --- | --- | --- |
-| ![Landing page](docs/screenshots/landing.png) | ![Train tab](docs/screenshots/train.png) | ![Goal setup](docs/screenshots/profile.png) | ![Diary with macro targets](docs/screenshots/diary.png) |
+| ![Train tab with weekly plates](docs/screenshots/train.png) | ![Live workout logger with rest timer](docs/screenshots/workout.png) | ![Workout summary with personal records](docs/screenshots/summary.png) | ![Muscle map and weekly volume](docs/screenshots/progress.png) |
+
+| Food diary | Adding a food | Barcode scanner | Exercise detail |
+| --- | --- | --- | --- |
+| ![Diary with calorie ring, macros, and meals](docs/screenshots/diary.png) | ![Food search with amount and macro split](docs/screenshots/add-food.png) | ![Barcode scanner](docs/screenshots/scan.png) | ![Exercise page with 1RM chart](docs/screenshots/exercise.png) |
 
 ## Why I built it
 
@@ -21,21 +25,43 @@ tracking that shares data with training.
 
 ## Features
 
-**Working now**
-- Sign in with GitHub, Google, or a shared demo account
+**Training (Hevy-style)**
+- Exercise library of 876 exercises with photos, instructions, and muscle groups, searchable and filterable
+- Routine builder: sets, rep ranges, and rest time per exercise
+- Live workout logger: previous-session values on every set, warm-up/drop/failure sets, autosave if the app closes mid-workout
+- Rest timer that starts when you check off a set, with ±15s and vibration
+- Automatic personal records: heaviest weight, best estimated 1RM, best set volume
+- Exercise pages with your history and an estimated-1RM progress chart
+
+**Progress**
+- Muscle map: sets per muscle over the last 7 days, front and back
+- Weekly volume for the last 8 weeks, best lifts, bodyweight trend
+- Calories eaten over the last 7 days against your goal
+
+**Nutrition (MyFitnessPal-style)**
+- Food search across USDA FoodData Central (generic and branded foods) and Open Food Facts, plus your own foods
+- Barcode scanning with the phone camera (native BarcodeDetector, with a WebAssembly fallback for iPhone)
+- Log by servings or by grams/ml, with a live calorie count and macro split
+- Daily diary by meal with a calorie ring and macro bars; tap any entry to edit or delete it
+- Recent foods, custom foods (with barcodes that scan next time), and copy a meal from yesterday
+- Water tracking by the glass
+- Training-day callout in the diary when you worked out, linking to that workout
 - Calorie and macro targets calculated from your stats (Mifflin–St Jeor + activity level + goal)
-- Daily diary showing remaining calories, protein, carbs, and fat
+
+**General**
+- Sign in with GitHub, Google, or a shared demo account
 - Pounds/feet or kilograms/centimeters
 - Installable to your phone's home screen (PWA)
 
 **Roadmap**
-- [ ] Exercise library (800+ exercises) and custom exercises
-- [ ] Routines, live workout logging, rest timer, supersets, previous-set values
-- [ ] Automatic personal records (heaviest weight, estimated 1RM, best set volume)
-- [ ] Food search (USDA FoodData Central) and barcode scanning (Open Food Facts)
-- [ ] Recent/frequent foods, custom foods, recipes, water tracking
-- [ ] Progress charts: strength, bodyweight, weekly muscle volume
+- [x] Exercise library, routines, live workout logging, rest timer, PRs
+- [x] Progress charts: muscle map, weekly volume, best lifts, bodyweight
+- [x] Food search (USDA + Open Food Facts), barcode scanning, custom foods, recent foods, water
+- [x] Calories vs. goal chart on the Progress tab
+- [ ] Recipes and saved meals
+- [ ] Custom exercises and supersets in the logger
 - [ ] Training-aware nutrition: targets that adapt to training volume and weight trend
+- [ ] Time zone setting (dates currently display in US Eastern)
 - [ ] Offline logging in the gym
 
 ## Tech stack
@@ -48,6 +74,7 @@ tracking that shares data with training.
 | Database | PostgreSQL (Neon) with Prisma ORM |
 | Auth | NextAuth (Auth.js) with GitHub/Google OAuth |
 | Validation | Zod |
+| Charts | Hand-built SVG components (no chart library) |
 | Testing | Vitest |
 | CI/CD | GitHub Actions, deployed on Vercel |
 
@@ -63,6 +90,8 @@ has its plate color everywhere it appears: red (25 kg) for calories, blue
 prisma/
   schema.prisma        Database tables: auth, training, nutrition, goals
   migrations/          SQL history, applied automatically on deploy
+  seed.mjs             Loads the exercise library (runs on every deploy, skips existing)
+  data/exercises.json  876 exercises from free-exercise-db (public domain)
 src/
   app/
     (app)/             Signed-in pages: train, diary, progress, profile
@@ -73,7 +102,9 @@ src/
   lib/
     auth.ts            Sign-in config + requireUser() access check
     db.ts              Prisma client
-    fitness/           Pure, tested logic: 1RM, volume, PRs, BMR/TDEE, macros, units
+    training.ts        Training queries: workouts, previous sets, records, progress
+    nutrition/         Food APIs (USDA, Open Food Facts), normalizing their data, diary queries
+    fitness/           Pure, tested logic: 1RM, volume, PRs, BMR/TDEE, macros, units, muscles, dates
 ```
 
 All data is stored in metric; the UI converts to the user's units.
@@ -89,6 +120,7 @@ cd calorness
 npm install
 cp .env.example .env      # then fill in the values
 npm run db:migrate        # create the tables
+npm run db:seed           # load the exercise library
 npm run dev               # http://localhost:3000
 ```
 
@@ -100,3 +132,9 @@ npm run dev               # http://localhost:3000
 | `npm run lint` | Lint the code |
 | `npm run db:migrate` | Create a migration after editing `schema.prisma` |
 | `npm run db:studio` | Browse the database in a GUI |
+
+## Credits
+
+Food data: [USDA FoodData Central](https://fdc.nal.usda.gov/) (public domain) and [Open Food Facts](https://world.openfoodfacts.org/) (Open Database License).
+
+Exercise data and photos: [free-exercise-db](https://github.com/yuhonas/free-exercise-db) by yuhonas, released into the public domain under the Unlicense.
