@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { enabledProviders } from "@/lib/auth";
 import { SignInButtons } from "./SignInButtons";
+import { EmailForm } from "./EmailForm";
 
 export const metadata: Metadata = { title: "Sign in" };
 
@@ -20,18 +21,21 @@ export default function SignInPage() {
       <h1 className="mt-10 font-display text-5xl font-bold tracking-tight">Sign in</h1>
       <p className="mt-3 text-chalk-muted">Your workouts and diary sync to every device you sign in on.</p>
 
-      <div className="mt-10">
-        {providers.length > 0 ? (
+      <div className="mt-8">
+        <EmailForm />
+      </div>
+
+      {providers.length > 0 && (
+        <>
+          <div className="my-6 flex items-center gap-3 text-sm text-chalk-muted" aria-hidden>
+            <span className="h-px flex-1 bg-rack-line" /> or <span className="h-px flex-1 bg-rack-line" />
+          </div>
           <Suspense fallback={null}>
             <SignInButtons providers={providers} />
           </Suspense>
-        ) : (
-          <p role="alert" className="rounded-xl border border-plate-yellow/50 p-4 text-sm">
-            No sign-in options are configured. Add GitHub or Google keys, or set
-            DEMO_LOGIN_ENABLED=true, in your environment variables.
-          </p>
-        )}
-      </div>
+        </>
+      )}
+      <div className="h-10" />
     </main>
   );
 }

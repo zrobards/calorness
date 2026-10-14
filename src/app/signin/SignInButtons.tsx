@@ -11,6 +11,8 @@ const ERRORS: Record<string, string> = {
   OAuthSignin: "Couldn't start GitHub sign-in. Try again.",
   AccessDenied: "Sign-in was cancelled.",
   CredentialsSignin: "That sign-in link expired. Try again.",
+  OAuthAccountNotLinked: "That email already has an account. Sign in with email and password.",
+  Callback: "GitHub sign-in didn't finish. Try again.",
 };
 
 /** True when running as an app added to the home screen (not a browser tab). */
@@ -80,7 +82,7 @@ export function SignInButtons({ providers }: { providers: { id: string; name: st
 
   return (
     <div className="space-y-3">
-      {error && <p role="alert" className="rounded-xl border border-plate-red/50 bg-plate-red/10 p-3 text-sm">{ERRORS[error] ?? "Sign-in didn't work. Try again."}</p>}
+      {error && <p role="alert" className="rounded-xl border border-plate-red/50 bg-plate-red/10 p-3 text-sm">{ERRORS[error] ?? "Sign-in didn't work. Try again."} <span className="text-chalk-muted">(code: {error})</span></p>}
       {status && <p className="text-sm text-chalk-muted">{status}</p>}
       {providers.map((p) => (
         <button
