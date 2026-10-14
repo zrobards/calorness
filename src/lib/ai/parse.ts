@@ -73,3 +73,44 @@ export function parseLogFoodsResponse(body: { content?: ContentBlock[] }): AiFoo
       })),
   };
 }
+
+// ─── Nutrition label reading ──────────────────────────────────────────────
+
+export const labelSchema = z.object({
+  readable: z.boolean(),
+  name: z.string().max(120).default(""),
+  brand: z.string().max(120).nullable().optional(),
+  serving_label: z.string().max(80).default("1 serving"),
+  serving_grams: z.number().min(0).max(5000).nullable().optional(),
+  calories: z.number().min(0).max(5000).default(0),
+  protein_g: z.number().min(0).max(500).default(0),
+  carbs_g: z.number().min(0).max(500).default(0),
+  fat_g: z.number().min(0).max(500).default(0),
+});
+export type LabelResult = z.infer<typeof labelSchema>;
+
+export const READ_LABEL_TOOL = {
+  name: "read_label",
+  description: "Copy the per-serving values exactly as printed on a Nutrition Facts label.",
+  input_schema: {
+    type: "object",
+    properties: {
+      readable: { type: "boolean", description: "False if no nutrition label is visible or it can't be read" },
+      name: { type: "string", description: "Product name if visible on the package, else a short description" },
+      brand: { type: "string" },
+      serving_label: { type: "string", description: "Serving size as printed, like '2/3 cup (55g)'" },
+      serving_grams: { type: "number", description: "Grams (or ml) per serving if printed, else omit" },
+      calories: { type: "number" },
+      protein_g: { type: "number" },
+      carbs_g: { type: "number", description: "Total carbohydrate" },
+      fat_g: { type: "number", description: "Total fat" },
+    },
+    required: ["readable"],
+  },
+} as const;
+
+export function parseLabelResponse(body: { content?: ContentBlock[] }): LabelResult | null {
+  const call = body.content?.find((b) => b.type === "tool_use" && b.name === READ_LABEL_TOOL.name);
+  const parsed = labelSchema.safeParse(call?.input);
+  return parsed.success ? parsed.data : null;
+}

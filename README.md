@@ -29,11 +29,20 @@ tracking that shares data with training.
 
 ## Features
 
+**Accuracy**
+- Nutrition label scanner: photograph the Nutrition Facts panel and the AI copies the printed numbers exactly, then saves the food for one-tap reuse
+- Bad-data check: flags any food whose calories don't match 4×protein + 4×carbs + 9×fat, and ranks those entries lower in search
+- Each day shows what share of calories came from verified sources vs. AI estimates, and AI entries are tagged
+- Remembers whether you weigh each food in grams or count servings
+- Days follow your phone's time zone, so late-night logs and travel never land on the wrong day
+
 **Quick log (the center + button)**
 - Snap a photo of a meal, or upload one you already took, and Claude (Anthropic's AI) lists each food with calories and macros
 - Make the estimate accurate before saving: adjust amounts, edit any item's weight (calories and macros scale with it) or numbers, add foods it missed, or tell the AI what it got wrong ("the chicken was fried, 2 cups of rice") and it re-checks the photo
 - Describe a meal in words, or say it out loud with speech-to-text
 - Barcode scan and one-tap "log again" for recent foods, with Undo
+- Saved meals (save any meal from the Diary, log it again in one tap) and "repeat yesterday's whole day"
+- "What fits": foods you actually eat that fit the calories and protein you have left
 - Picks the meal from the time of day, shows calories and protein left, and starts your next routine in one tap
 - Home-screen shortcuts on Android (long-press the icon): Snap, Scan, Describe, Train
 - iPhone Shortcut / widget: tap, take a photo (or dictate), and a notification shows what was logged, without opening the app. Powered by a small API (`POST /api/quick-log`) with per-user keys made in Profile, stored as SHA-256 hashes, revocable, and rate limited
@@ -42,8 +51,11 @@ tracking that shares data with training.
 - Exercise library of 876 exercises with photos, instructions, and muscle groups, searchable and filterable
 - Routine builder: sets, rep ranges, and rest time per exercise
 - Live workout logger: previous-session values on every set, warm-up/drop/failure sets
+- Next-set targets using double progression: add reps within your range, then add weight once every set hits the top; tap the check to log the target
 - Autosaves every set to the phone instantly and to the server within seconds, so closing the app or switching phones loses nothing; the rest timer survives too
 - Keeps the screen awake during a workout, with haptic feedback on supported phones
+- Lock-screen notifications: "Rest's over" when you leave the app mid-rest, plus a lunchtime nudge if nothing's logged (Web Push with app-generated VAPID keys and a daily Vercel Cron)
+- Automatic weigh-ins: an iPhone Automation sends your latest Apple Health weight to `POST /api/bodyweight`
 - Edit a finished workout's sets, or reopen one you ended too early
 - Rest timer that starts when you check off a set, with ±15s and vibration
 - Automatic personal records: heaviest weight, best estimated 1RM, best set volume
@@ -85,7 +97,10 @@ tracking that shares data with training.
 - [ ] Training-aware nutrition: targets that adapt to training volume and weight trend
 - [ ] Time zone setting (dates currently display in US Eastern)
 - [x] Quick log hub, AI photo/describe logging, workout autosave and editing
-- [ ] Apple Health / Google Fit sync and a true home-screen widget (needs a native app)
+- [x] Label scanner, data-quality checks, verified share, time-zone-correct days
+- [x] Progression targets, saved meals, "what fits", Apple Health weigh-ins, notifications
+- [ ] Adaptive calorie targets from your weight trend
+- [ ] A true home-screen widget and full Apple Health sync (needs a native app)
 - [ ] Offline logging in the gym
 
 ## Tech stack

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { AlertTriangle } from "lucide-react";
+import { macroCheck } from "@/lib/nutrition/quality";
 import type { FoodCandidate } from "@/lib/nutrition/normalize";
 import { MacroSplit } from "./MacroSplit";
 import { Sheet } from "./Sheet";
@@ -29,8 +31,15 @@ export function FoodSheet({
   onDelete?: () => void;
 }) {
   const weighable = food.servingUnit === "g" || food.servingUnit === "ml";
-  const [mode, setMode] = useState<"servings" | "weight">("servings");
-  const [amount, setAmount] = useState(String(initialServings));
+  // Remember whether you weigh this food or count servings, per food
+  const prefKey = `calorness:unit:${food.id ?? `${food.source}:${food.externalId}`}`;
+  const [mode, setMode] = useState<"servings" | "weight">(() =>
+    weighable && typeof window !== "undefined" && localStorage.getItem(prefKey) === "weight" ? "weight" : "servings",
+  );
+  const [amount, setAmount] = useState(() =>
+    String(mode === "weight" ? Math.round(initialServings * food.servingSize * 100) / 100 : initialServings),
+  );
+  const check = macroCheck(food);
 
   const value = Number(amount);
   const servings = !Number.isFinite(value) || value <= 0 ? 0 : mode === "servings" ? value : value / food.servingSize;
@@ -77,6 +86,16 @@ export function FoodSheet({
       </div>
       <p className="mt-2 text-sm text-chalk-muted">1 serving = {food.servingLabel ?? `${food.servingSize} ${food.servingUnit}`}</p>
 
+      {check.flagged && (
+        <p role="note" className="mt-4 flex gap-2 rounded-xl border border-plate-yellow/50 bg-plate-yellow/10 p-3 text-sm">
+          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-plate-yellow" aria-hidden />
+          <span>
+            These numbers don&apos;t add up: the macros come to {check.expected} cal per serving, but it lists {Math.round(food.calories)}.
+            This entry may be wrong. Scan the label instead for an exact match.
+          </span>
+        </p>
+      )}
+
       <div className="mt-5 flex items-baseline justify-between border-t border-rack-line pt-4">
         <span className="text-chalk-muted">Calories</span>
         <span className="font-display text-4xl font-bold text-plate-red tabular-nums">{Math.round(scaled.calories)}</span>
@@ -92,7 +111,11 @@ export function FoodSheet({
           </button>
         )}
         <button
-          onClick={() => servings > 0 && onConfirm(Math.round(servings * 1000) / 1000)}
+          onClick={() => {
+            if (servings <= 0) return;
+            try { localStorage.setItem(prefKey, mode); } catch {}
+            onConfirm(Math.round(servings * 1000) / 1000);
+          }}
           disabled={pending || servings <= 0}
           className="flex-1 rounded-xl bg-plate-red py-3.5 font-display text-xl font-semibold text-white disabled:opacity-50"
         >

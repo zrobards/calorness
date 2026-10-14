@@ -7,6 +7,7 @@ import { GoalForm } from "./GoalForm";
 import { TargetsEditor } from "./TargetsEditor";
 import { SetPasswordForm } from "./SetPasswordForm";
 import { ShortcutKeys } from "./ShortcutKeys";
+import { NotificationsCard } from "./NotificationsCard";
 import { setUnitSystem } from "./actions";
 
 export const metadata: Metadata = { title: "Profile" };
@@ -84,6 +85,11 @@ export default async function ProfilePage() {
           </>
         )}
       </section>
+      <section id="notifications" className="animate-rise mx-5 mt-4 rounded-2xl bg-rack-raised p-5">
+        <h2 className="font-display text-2xl font-semibold">Notifications</h2>
+        <NotificationsCard />
+      </section>
+
       <section id="shortcut" className="animate-rise mx-5 mt-4 mb-6 rounded-2xl bg-rack-raised p-5">
         <h2 className="font-display text-2xl font-semibold">Phone shortcut</h2>
         <ShortcutKeys

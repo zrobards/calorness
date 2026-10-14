@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Barcode, Loader2, PenLine, Search } from "lucide-react";
 import type { FoodCandidate } from "@/lib/nutrition/normalize";
+import { macroCheck } from "@/lib/nutrition/quality";
 import { addDiaryEntry, lookupBarcode, searchFoods } from "@/app/(app)/diary/actions";
 import { FoodSheet } from "./FoodSheet";
 import { BarcodeScanner } from "./BarcodeScanner";
@@ -131,7 +132,10 @@ export function FoodAdder({
               className="flex w-full items-center gap-3 border-b border-rack-line py-3 text-left"
             >
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium">{f.name}</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="truncate font-medium">{f.name}</span>
+                  {macroCheck(f).flagged && <span className="shrink-0 text-xs text-plate-yellow" title="Numbers don't add up">⚠ check</span>}
+                </span>
                 <span className="block truncate text-sm text-chalk-muted">
                   {[f.brand, f.servingLabel].filter(Boolean).join(", ")}
                 </span>

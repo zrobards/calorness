@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { lookupBarcodeOnline, searchOpenFoodFacts, searchUsda } from "@/lib/nutrition/sources";
 import { findFoodByBarcode, searchSavedFoods, dayToDate, MEALS, toCandidate } from "@/lib/nutrition/diary";
 import { normalizeBarcode, type FoodCandidate } from "@/lib/nutrition/normalize";
+import { macroCheck } from "@/lib/nutrition/quality";
 
 const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const mealSchema = z.enum(MEALS);
@@ -45,7 +46,9 @@ export async function searchFoods(query: string) {
       }
     }
   }
-  return { foods: merged.slice(0, 40) };
+  // Entries whose calories and macros disagree sink to the bottom
+  const ranked = [...merged].sort((a, b) => Number(macroCheck(a).flagged) - Number(macroCheck(b).flagged));
+  return { foods: ranked.slice(0, 40) };
 }
 
 export async function lookupBarcode(code: string) {
@@ -192,4 +195,64 @@ export async function addWater(day: string, ml: number) {
     await db.waterEntry.create({ data: { userId: user.id, date, ml: amount } });
   }
   revalidatePath("/diary");
+}
+
+// ─── Saved meals ──────────────────────────────────────────────────────────
+
+/** Save everything logged in one meal (e.g. your usual breakfast) for one-tap logging later. */
+export async function saveMealFromDay(day: string, meal: string, name: string) {
+  const user = await requireUser();
+  const label = z.string().trim().min(1).max(60).safeParse(name);
+  if (!label.success) return { error: "Give the meal a name." };
+  const entries = await db.diaryEntry.findMany({ where: { userId: user.id, date: dayToDate(daySchema.parse(day)), meal: mealSchema.parse(meal) } });
+  if (entries.length === 0) return { error: "Nothing logged in that meal yet." };
+  await db.savedMeal.create({
+    data: { userId: user.id, name: label.data, items: { create: entries.map((e) => ({ foodId: e.foodId, servings: e.servings })) } },
+  });
+  revalidatePath("/log");
+  return { ok: true };
+}
+
+/** One tap: log every food in a saved meal. Returns the new entry ids for Undo. */
+export async function logSavedMeal(savedMealId: string, day: string, meal: string) {
+  const user = await requireUser();
+  const saved = await db.savedMeal.findFirst({ where: { id: savedMealId, userId: user.id }, include: { items: { include: { food: true } } } });
+  if (!saved) return { error: "That saved meal is gone." };
+  const date = dayToDate(daySchema.parse(day));
+  const m = mealSchema.parse(meal);
+  const created = await db.$transaction(
+    saved.items.map((i) => db.diaryEntry.create({ data: { userId: user.id, foodId: i.foodId, servings: i.servings, meal: m, date } })),
+  );
+  await db.savedMeal.update({ where: { id: saved.id }, data: { lastUsed: new Date() } });
+  revalidatePath("/diary");
+  revalidatePath("/log");
+  return {
+    entryIds: created.map((e) => e.id),
+    calories: Math.round(saved.items.reduce((s, i) => s + i.food.calories * i.servings, 0)),
+  };
+}
+
+export async function deleteDiaryEntries(ids: string[]) {
+  const user = await requireUser();
+  await db.diaryEntry.deleteMany({ where: { id: { in: z.array(z.string()).max(50).parse(ids) }, userId: user.id } });
+  revalidatePath("/diary");
+  revalidatePath("/log");
+}
+
+export async function deleteSavedMeal(id: string) {
+  const user = await requireUser();
+  await db.savedMeal.deleteMany({ where: { id, userId: user.id } });
+  revalidatePath("/log");
+}
+
+/** Repeat a whole day (handy for meal prep weeks). */
+export async function copyWholeDay(fromDay: string, toDay: string) {
+  const user = await requireUser();
+  const entries = await db.diaryEntry.findMany({ where: { userId: user.id, date: dayToDate(daySchema.parse(fromDay)) } });
+  if (entries.length === 0) return { error: "Nothing was logged that day." };
+  await db.diaryEntry.createMany({
+    data: entries.map((e) => ({ userId: user.id, foodId: e.foodId, meal: e.meal, servings: e.servings, date: dayToDate(daySchema.parse(toDay)) })),
+  });
+  revalidatePath("/diary");
+  return { ok: true, count: entries.length };
 }

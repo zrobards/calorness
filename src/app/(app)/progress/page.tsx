@@ -11,7 +11,8 @@ import { getProgress, getUnitSystem } from "@/lib/training";
 import { getCalorieWeek } from "@/lib/nutrition/diary";
 import { db } from "@/lib/db";
 import { compactNumber, displayWeight, weightUnit } from "@/lib/fitness/units";
-import { APP_TIME_ZONE, formatDay } from "@/lib/fitness/dates";
+import { formatDay } from "@/lib/fitness/dates";
+import { userToday } from "@/lib/userPrefs";
 import { BodyweightForm } from "./BodyweightForm";
 
 export const metadata: Metadata = { title: "Progress" };
@@ -19,7 +20,7 @@ export const metadata: Metadata = { title: "Progress" };
 export default async function ProgressPage() {
   const user = await requireUser();
   const now = new Date();
-  const today = now.toLocaleDateString("en-CA", { timeZone: APP_TIME_ZONE });
+  const { today } = await userToday(user.id, now);
   const [progress, unitSystem, calorieWeek, goal] = await Promise.all([
     getProgress(user.id, now),
     getUnitSystem(user.id),

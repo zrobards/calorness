@@ -4,7 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import { FoodAdder } from "@/components/diary/FoodAdder";
 import { requireUser } from "@/lib/auth";
 import { getMyFoods, getRecentFoods, MEAL_LABELS, MEALS, type MealName } from "@/lib/nutrition/diary";
-import { APP_TIME_ZONE } from "@/lib/fitness/dates";
+import { userToday } from "@/lib/userPrefs";
 import { dayLabel } from "@/components/diary/DayNav";
 
 export const metadata: Metadata = { title: "Add food" };
@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Add food" };
 export default async function AddFoodPage({ searchParams }: { searchParams: Promise<{ meal?: string; day?: string }> }) {
   const user = await requireUser();
   const params = await searchParams;
-  const today = new Date().toLocaleDateString("en-CA", { timeZone: APP_TIME_ZONE });
+  const { today } = await userToday(user.id);
   const meal: MealName = MEALS.includes(params.meal as MealName) ? (params.meal as MealName) : "SNACKS";
   const day = params.day && /^\d{4}-\d{2}-\d{2}$/.test(params.day) ? params.day : today;
   const [recent, mine] = await Promise.all([getRecentFoods(user.id), getMyFoods(user.id)]);

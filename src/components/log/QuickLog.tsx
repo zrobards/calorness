@@ -10,6 +10,7 @@ import { localDay, mealForTime, type MealName } from "@/lib/nutrition/meals";
 import { haptic } from "@/lib/haptics";
 import { addDiaryEntry, deleteDiaryEntry, lookupBarcode } from "@/app/(app)/diary/actions";
 import { aiEstimate, logAiItems, quickRelog } from "@/app/(app)/log/actions";
+import { deleteDiaryEntries, deleteSavedMeal, logSavedMeal } from "@/app/(app)/diary/actions";
 import { startWorkout } from "@/app/(app)/train/actions";
 import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
 import { Toast, type ToastData } from "@/components/motion/Toast";
@@ -18,6 +19,7 @@ import { BarcodeScanner } from "@/components/diary/BarcodeScanner";
 import { FoodSheet } from "@/components/diary/FoodSheet";
 import { Sheet } from "@/components/diary/Sheet";
 import { AiReviewSheet } from "./AiReviewSheet";
+import { LabelScan } from "./LabelScan";
 import { resizeImage } from "./resizeImage";
 
 const MEAL_ORDER: MealName[] = ["BREAKFAST", "LUNCH", "DINNER", "SNACKS"];
@@ -33,7 +35,13 @@ export function QuickLog({
   active,
   nextRoutine,
   aiReady,
+  savedMeals,
+  fits,
+  left,
 }: {
+  savedMeals: { id: string; name: string; itemCount: number; calories: number; proteinG: number }[];
+  fits: { id: string; name: string; servings: number; calories: number; proteinG: number }[];
+  left: { calories: number; proteinG: number; carbsG: number; fatG: number } | null;
   mode?: string;
   recent: Recent[];
   today: { calories: number; goal: number | null; proteinG: number; proteinGoal: number | null };
@@ -152,6 +160,30 @@ export function QuickLog({
       router.refresh();
     });
 
+  const relogById = (food: { id: string; name: string; servings: number }) =>
+    start(async () => {
+      haptic("success");
+      const result = await quickRelog({ foodId: food.id, servings: food.servings, day, meal });
+      if ("error" in result) return setToast({ message: result.error ?? "Couldn't log that." });
+      setToast({
+        message: `${food.name}, ${result.calories} cal → ${MEAL_LABELS[meal]}`,
+        action: { label: "Undo", onClick: () => start(async () => { await deleteDiaryEntry(result.entryId); router.refresh(); }) },
+      });
+      router.refresh();
+    });
+
+  const logMeal = (m: { id: string; name: string }) =>
+    start(async () => {
+      haptic("success");
+      const r = await logSavedMeal(m.id, day, meal);
+      if ("error" in r) return setToast({ message: r.error ?? "Couldn't log that." });
+      setToast({
+        message: `${m.name}, ${r.calories} cal → ${MEAL_LABELS[meal]}`,
+        action: { label: "Undo", onClick: () => start(async () => { await deleteDiaryEntries(r.entryIds); router.refresh(); }) },
+      });
+      router.refresh();
+    });
+
   const onBarcode = useCallback((code: string) => {
     setScanning(false);
     start(async () => {
@@ -213,10 +245,16 @@ export function QuickLog({
         </label>
       </div>
 
-      <div className="animate-rise mt-3 grid grid-cols-3 gap-3" style={{ "--i": 3 } as React.CSSProperties}>
+      <div className="animate-rise mt-3 grid grid-cols-4 gap-2" style={{ "--i": 3 } as React.CSSProperties}>
         <button onClick={() => { haptic(); setScanning(true); }} className="flex flex-col items-center gap-1.5 rounded-2xl bg-plate-blue py-4 font-semibold text-white">
           <Barcode size={24} aria-hidden /> Scan
         </button>
+        <LabelScan
+          disabled={!aiReady}
+          className="flex flex-col items-center gap-1.5 rounded-2xl bg-rack-raised py-4 font-semibold disabled:opacity-50"
+          onFood={(food) => setBarcodeFood(food)}
+          onError={(message) => setToast({ message })}
+        />
         <button onClick={() => { haptic(); setDescribing(true); }} disabled={!aiReady} className="flex flex-col items-center gap-1.5 rounded-2xl bg-rack-raised py-4 font-semibold disabled:opacity-50">
           <MessageSquareText size={24} aria-hidden /> Describe
         </button>
@@ -224,6 +262,48 @@ export function QuickLog({
           <Search size={24} aria-hidden /> Search
         </Link>
       </div>
+
+      {/* Saved meals: your usual breakfast in one tap */}
+      {savedMeals.length > 0 && (
+        <section className="animate-rise mt-7" style={{ "--i": 4 } as React.CSSProperties} aria-labelledby="meals-heading">
+          <h2 id="meals-heading" className="font-display text-2xl font-semibold">Saved meals</h2>
+          <ul className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1">
+            {savedMeals.map((m) => (
+              <li key={m.id} className="relative shrink-0">
+                <button onClick={() => logMeal(m)} disabled={pending} className="flex h-24 w-40 flex-col items-start rounded-2xl bg-plate-blue/15 p-3 text-left ring-1 ring-plate-blue/40">
+                  <span className="line-clamp-2 pr-4 text-sm font-semibold">{m.name}</span>
+                  <span className="mt-auto font-display text-lg font-bold text-plate-blue tabular-nums">
+                    {m.calories}<span className="ml-1 text-xs font-medium text-chalk-muted">cal, {m.proteinG}g P</span>
+                  </span>
+                </button>
+                <button onClick={() => confirm(`Delete saved meal “${m.name}”?`) && start(async () => { await deleteSavedMeal(m.id); router.refresh(); })}
+                  className="absolute top-1.5 right-1.5 px-1.5 text-chalk-muted" aria-label={`Delete ${m.name}`}>×</button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* What fits what's left today */}
+      {left && fits.length > 0 && (
+        <section className="animate-rise mt-7" style={{ "--i": 4 } as React.CSSProperties} aria-labelledby="fits-heading">
+          <h2 id="fits-heading" className="font-display text-2xl font-semibold">What fits</h2>
+          <p className="text-sm text-chalk-muted">
+            {Math.max(0, Math.round(left.proteinG))}g protein and {Math.max(0, Math.round(left.calories)).toLocaleString("en-US")} cal left. Foods you eat that fit:
+          </p>
+          <ul className="mt-3 space-y-2">
+            {fits.map((f) => (
+              <li key={f.id}>
+                <button onClick={() => relogById(f)} disabled={pending} className="flex w-full items-center gap-3 rounded-2xl bg-rack-raised px-4 py-3 text-left">
+                  <span className="min-w-0 flex-1 truncate font-medium">{f.name}</span>
+                  <span className="text-sm text-plate-blue tabular-nums">{Math.round(f.proteinG)}g P</span>
+                  <span className="font-display text-lg font-bold tabular-nums">{Math.round(f.calories)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* One-tap repeats */}
       {recent.length > 0 && (

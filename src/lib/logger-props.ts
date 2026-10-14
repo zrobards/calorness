@@ -12,8 +12,8 @@ export async function loadLoggerProps(userId: string, workoutId: string) {
   ]);
   if (!data) return null;
   const { workout, previous } = data;
-  const restFor = (exerciseId: string) =>
-    workout.routine?.exercises.find((r) => r.exerciseId === exerciseId)?.restSeconds ?? 90;
+  const plan = (exerciseId: string) => workout.routine?.exercises.find((r) => r.exerciseId === exerciseId);
+  const restFor = (exerciseId: string) => plan(exerciseId)?.restSeconds ?? 90;
 
   return {
     ended: workout.endedAt !== null,
@@ -34,6 +34,9 @@ export async function loadLoggerProps(userId: string, workoutId: string) {
         muscles: e.exercise.primaryMuscles,
         image: exerciseImageUrl(e.exercise.images[0]),
         restSeconds: restFor(e.exerciseId),
+        equipment: e.exercise.equipment,
+        repMin: plan(e.exerciseId)?.targetRepsMin ?? null,
+        repMax: plan(e.exerciseId)?.targetRepsMax ?? null,
         sets: e.sets.map((s) => ({
           id: s.id,
           type: s.type,
