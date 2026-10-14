@@ -6,6 +6,7 @@ import type { ExerciseOption } from "@/lib/training";
 import { compactNumber } from "@/lib/fitness/units";
 import { discardWorkout, finishWorkout, previousSetsFor, saveWorkoutEdits, syncWorkoutDraft } from "@/app/(app)/train/actions";
 import { haptic } from "@/lib/haptics";
+import { suggestNext } from "@/lib/fitness/progression";
 import { ExercisePicker } from "./ExercisePicker";
 import { ExerciseThumb } from "./ExerciseThumb";
 import { titleCase } from "./muscleFilters";
@@ -21,6 +22,9 @@ export type LoggerExercise = {
   image: string | null;
   restSeconds: number;
   sets: LoggerSet[];
+  equipment?: string | null;
+  repMin?: number | null;
+  repMax?: number | null;
 };
 type LoggerState = {
   name: string;
@@ -118,6 +122,28 @@ export function WorkoutLogger({
     return () => clearTimeout(t);
   }, [state, workout.id, mode, pushToServer]);
 
+  // Rest timer on the lock screen: if you leave the app mid-rest, ask the
+  // server to notify you when it's over; coming back cancels that.
+  const nextLabelRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (mode !== "live") return;
+    const onChange = () => {
+      if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+      const r = latest.current.rest; // kept current by the autosave effect
+      if (document.visibilityState === "hidden" && r) {
+        const seconds = Math.round((r.endsAt - Date.now()) / 1000);
+        if (seconds > 3) {
+          fetch("/api/push/rest", { method: "POST", keepalive: true, headers: { "content-type": "application/json" },
+            body: JSON.stringify({ seconds: Math.min(seconds, 290), label: nextLabelRef.current ?? undefined }) }).catch(() => {});
+        }
+      } else if (document.visibilityState === "visible") {
+        fetch("/api/push/rest", { method: "DELETE", keepalive: true }).catch(() => {});
+      }
+    };
+    document.addEventListener("visibilitychange", onChange);
+    return () => document.removeEventListener("visibilitychange", onChange);
+  }, [mode]);
+
   // Save right away when the app is swiped away or the screen locks
   useEffect(() => {
     const onHide = () => document.visibilityState === "hidden" && pushToServer();
@@ -177,18 +203,32 @@ export function WorkoutLogger({
   const updateSet = (exKey: string, setId: string, patch: Partial<LoggerSet>) =>
     updateExercise(exKey, (e) => ({ ...e, sets: e.sets.map((s) => (s.id === setId ? { ...s, ...patch } : s)) }));
 
+  // What to aim for this time, based on last session (double progression)
+  const suggestionsFor = (ex: LoggerExercise) =>
+    suggestNext({
+      previous: state.previous[ex.exerciseId] ?? [],
+      repMin: ex.repMin,
+      repMax: ex.repMax,
+      unit,
+      equipment: ex.equipment ?? null,
+    });
+
   const toggleComplete = (ex: LoggerExercise, set: LoggerSet, index: number) => {
     if (set.completed) return updateSet(ex.key, set.id, { completed: false });
-    // Fill blanks from last time, so tapping the check repeats last session
+    // Fill blanks with today's target, so tapping the check logs the suggested set
     const prev = state.previous[ex.exerciseId]?.[index];
-    const weight = set.weight ?? prev?.weight ?? null;
-    const reps = set.reps ?? prev?.reps ?? null;
+    const target = suggestionsFor(ex)[index];
+    const weight = set.weight ?? target?.weight ?? prev?.weight ?? null;
+    const reps = set.reps ?? target?.reps ?? prev?.reps ?? null;
     if (reps === null) return setError("Enter reps before checking off the set.");
     setError(null);
     updateSet(ex.key, set.id, { completed: true, weight, reps });
     haptic("success");
     setJustDone(set.id);
-    if (mode === "live" && ex.restSeconds > 0) setRest({ endsAt: now + ex.restSeconds * 1000, total: ex.restSeconds });
+    if (mode === "live" && ex.restSeconds > 0) {
+      nextLabelRef.current = ex.name;
+      setRest({ endsAt: now + ex.restSeconds * 1000, total: ex.restSeconds });
+    }
   };
 
   const addSet = (ex: LoggerExercise) => {
@@ -208,6 +248,7 @@ export function WorkoutLogger({
       muscles: p.primaryMuscles,
       image: p.image,
       restSeconds: 90,
+      equipment: p.equipment,
       sets: Array.from({ length: 3 }, () => ({ id: uid(), type: "NORMAL" as const, weight: null, reps: null, completed: false })),
     }));
     setState((s) => ({ ...s, exercises: [...s.exercises, ...rows] }));
@@ -285,6 +326,7 @@ export function WorkoutLogger({
       <div className="mt-4 space-y-4 px-3">
         {state.exercises.map((ex) => {
           let workingIndex = 0;
+          const targets = suggestionsFor(ex);
           return (
             <section key={ex.key} className="rounded-2xl bg-rack-raised py-4" aria-label={ex.name}>
               <div className="flex items-center gap-3 px-4">
@@ -327,6 +369,8 @@ export function WorkoutLogger({
                   {ex.sets.map((set, i) => {
                     if (set.type !== "WARMUP") workingIndex += 1;
                     const prev = state.previous[ex.exerciseId]?.[i];
+                    const target = targets[i];
+                    const progressing = target && target.reason !== "repeat";
                     const badge = TYPE_BADGE[set.type];
                     return (
                       <tr key={set.id} className={`${set.completed ? "bg-plate-green/15" : ""} ${justDone === set.id ? "animate-flash" : ""}`}>
@@ -346,6 +390,11 @@ export function WorkoutLogger({
                             disabled={!prev}
                           >
                             {prev ? `${prev.weight ?? 0} × ${prev.reps ?? 0}` : "—"}
+                            {progressing && !set.completed && (
+                              <span className="block text-xs font-semibold text-plate-green" aria-label={`Target ${target.weight} by ${target.reps}`}>
+                                → {target.weight} × {target.reps}
+                              </span>
+                            )}
                           </button>
                         </td>
                         <td className="px-1 py-1">
@@ -354,7 +403,7 @@ export function WorkoutLogger({
                             inputMode="decimal"
                             step="any"
                             value={set.weight ?? ""}
-                            placeholder={prev?.weight != null ? String(prev.weight) : "0"}
+                            placeholder={target ? String(target.weight) : prev?.weight != null ? String(prev.weight) : "0"}
                             onChange={(e) => updateSet(ex.key, set.id, { weight: e.target.value === "" ? null : Number(e.target.value) })}
                             aria-label={`Set ${i + 1} weight`}
                             className={numberInput}
@@ -365,7 +414,7 @@ export function WorkoutLogger({
                             type="number"
                             inputMode="numeric"
                             value={set.reps ?? ""}
-                            placeholder={prev?.reps != null ? String(prev.reps) : "0"}
+                            placeholder={target ? String(target.reps) : prev?.reps != null ? String(prev.reps) : "0"}
                             onChange={(e) => updateSet(ex.key, set.id, { reps: e.target.value === "" ? null : Math.round(Number(e.target.value)) })}
                             aria-label={`Set ${i + 1} reps`}
                             className={numberInput}
