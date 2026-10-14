@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Barcode, Camera, ChevronRight, Dumbbell, ImageUp, Loader2, Mic, MessageSquareText, Play, Search } from "lucide-react";
 import type { FoodCandidate } from "@/lib/nutrition/normalize";
 import type { AiFoodItem } from "@/lib/ai/parse";
+import type { GroundedItem } from "@/lib/ai/ground";
 import { localDay, mealForTime, type MealName } from "@/lib/nutrition/meals";
 import { haptic } from "@/lib/haptics";
 import { addDiaryEntry, deleteDiaryEntry, lookupBarcode } from "@/app/(app)/diary/actions";
@@ -18,9 +19,10 @@ import { PlateBurst } from "@/components/motion/PlateBurst";
 import { BarcodeScanner } from "@/components/diary/BarcodeScanner";
 import { FoodSheet } from "@/components/diary/FoodSheet";
 import { Sheet } from "@/components/diary/Sheet";
-import { AiReviewSheet } from "./AiReviewSheet";
+import { AiReviewSheet, type ReviewedItem } from "./AiReviewSheet";
 import { LabelScan } from "./LabelScan";
 import { resizeImage } from "./resizeImage";
+import { findBarcode } from "./findBarcode";
 
 const MEAL_ORDER: MealName[] = ["BREAKFAST", "LUNCH", "DINNER", "SNACKS"];
 const MEAL_LABELS: Record<MealName, string> = { BREAKFAST: "Breakfast", LUNCH: "Lunch", DINNER: "Dinner", SNACKS: "Snacks" };
@@ -60,7 +62,7 @@ export function QuickLog({
   const [listening, setListening] = useState(false);
   const [thinking, setThinking] = useState<string | null>(null);
   const [review, setReview] = useState<{
-    items: AiFoodItem[];
+    items: GroundedItem[];
     note?: string;
     photo?: string | null;
     // kept so the AI can look again when you correct it
@@ -89,7 +91,7 @@ export function QuickLog({
       setThinking(null);
       if ("error" in result) {
         haptic("warning");
-        setToast({ message: result.error });
+        setToast({ message: result.error ?? "Something went wrong. Try again." });
         return;
       }
       haptic("success");
@@ -100,6 +102,18 @@ export function QuickLog({
     if (!file) return;
     haptic();
     setThinking("Getting your photo ready…");
+    // A barcode in the shot means exact label values, so check for one first
+    const code = await findBarcode(file);
+    if (code) {
+      const { food } = await lookupBarcode(code);
+      if (food) {
+        setThinking(null);
+        haptic("success");
+        setToast({ message: "Found the barcode, using the exact label values." });
+        setBarcodeFood(food);
+        return;
+      }
+    }
     try {
       const { base64, mediaType } = await resizeImage(file);
       runAi({ imageBase64: base64, mediaType }, `data:${mediaType};base64,${base64}`);
@@ -132,13 +146,13 @@ export function QuickLog({
     setRefining(false);
     if ("error" in result) {
       haptic("warning");
-      return setToast({ message: result.error });
+      return setToast({ message: result.error ?? "Something went wrong. Try again." });
     }
     haptic("success");
     setReview((r) => r && { ...r, items: result.items, note: result.note, version: r.version + 1 });
   };
 
-  const logReviewed = (items: AiFoodItem[]) =>
+  const logReviewed = (items: ReviewedItem[]) =>
     start(async () => {
       const result = await logAiItems({ day, meal, items });
       if ("error" in result && result.error) return setToast({ message: result.error });

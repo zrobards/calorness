@@ -6,7 +6,7 @@ import { dayInZone, hourInZone } from "@/lib/time";
 import { mealForTime } from "@/lib/nutrition/meals";
 
 /** Save AI-estimated foods and log each one. Shared by the app and the phone shortcut. */
-export async function saveAiItems(userId: string, day: string, meal: MealName, items: AiFoodItem[]) {
+export async function saveAiItems(userId: string, day: string, meal: MealName, items: (AiFoodItem & { edited?: boolean })[]) {
   await db.$transaction(
     items.map((i) =>
       db.diaryEntry.create({
@@ -17,7 +17,8 @@ export async function saveAiItems(userId: string, day: string, meal: MealName, i
           servings: 1,
           food: {
             create: {
-              source: "AI_ESTIMATE",
+              // Numbers you typed yourself count as your own (verified) food
+              source: i.edited ? "CUSTOM" : "AI_ESTIMATE",
               name: i.name,
               servingSize: i.grams || 1,
               servingUnit: i.grams ? "g" : "serving",
