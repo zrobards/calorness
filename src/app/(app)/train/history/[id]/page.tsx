@@ -5,9 +5,13 @@ import { ChevronLeft, Trophy } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { getFinishedWorkout, getUnitSystem } from "@/lib/training";
 import { bestSet, findNewRecords, type PersonalRecords } from "@/lib/fitness/strength";
-import { compactNumber, displayWeight, weightUnit } from "@/lib/fitness/units";
+import { displayWeight, weightUnit } from "@/lib/fitness/units";
 import { formatDay, formatDuration } from "@/lib/fitness/dates";
 import { DeleteWorkoutButton } from "./DeleteWorkoutButton";
+import { PlateBurst } from "@/components/motion/PlateBurst";
+import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
+import { reopenWorkout } from "../../actions";
+import { Pencil, RotateCcw } from "lucide-react";
 
 export const metadata: Metadata = { title: "Workout" };
 
@@ -58,10 +62,10 @@ export default async function WorkoutDetailPage({
       <dl className="mt-6 grid grid-cols-3 gap-2">
         {[
           { label: "Duration", value: formatDuration(workout.durationMs) },
-          { label: `Volume (${unit})`, value: compactNumber(w(workout.volumeKg)) },
-          { label: "Sets", value: String(workout.setCount) },
-        ].map((s) => (
-          <div key={s.label} className="rounded-2xl bg-rack-raised px-3 py-4 text-center">
+          { label: `Volume (${unit})`, value: <AnimatedNumber value={Math.round(w(workout.volumeKg))} /> },
+          { label: "Sets", value: <AnimatedNumber value={workout.setCount} duration={600} /> },
+        ].map((s, i) => (
+          <div key={s.label} className="animate-rise rounded-2xl bg-rack-raised px-3 py-4 text-center" style={{ "--i": i } as React.CSSProperties}>
             <dd className="font-display text-3xl font-bold tabular-nums">{s.value}</dd>
             <dt className="mt-1 text-xs text-chalk-muted">{s.label}</dt>
           </div>
@@ -69,7 +73,7 @@ export default async function WorkoutDetailPage({
       </dl>
 
       {prs.length > 0 && (
-        <section className="mt-6 overflow-hidden rounded-2xl border border-plate-yellow/40 bg-plate-yellow/10 p-5" aria-label="Personal records">
+        <section className="animate-rise mt-6 overflow-hidden rounded-2xl border border-plate-yellow/40 bg-plate-yellow/10 p-5" style={{ "--i": 3 } as React.CSSProperties} aria-label="Personal records">
           <h2 className="flex items-center gap-2 font-display text-2xl font-semibold">
             <Trophy className="text-plate-yellow" size={24} aria-hidden />
             {prs.length} new {prs.length === 1 ? "record" : "records"}
@@ -121,9 +125,22 @@ export default async function WorkoutDetailPage({
         })}
       </ul>
 
+      <div className="mt-6 grid grid-cols-2 gap-3">
+        <Link href={`/train/history/${workout.id}/edit`} className="flex items-center justify-center gap-2 rounded-xl bg-rack-raised py-3 font-medium">
+          <Pencil size={17} aria-hidden /> Edit sets
+        </Link>
+        <form action={reopenWorkout.bind(null, workout.id)}>
+          <button className="flex w-full items-center justify-center gap-2 rounded-xl bg-rack-raised py-3 font-medium">
+            <RotateCcw size={17} aria-hidden /> Keep going
+          </button>
+        </form>
+      </div>
+      <p className="mt-2 text-center text-xs text-chalk-muted">Ended early? &ldquo;Keep going&rdquo; reopens it so you can log more sets.</p>
+
       <div className="mt-8 mb-6 flex justify-center">
         <DeleteWorkoutButton id={workout.id} />
       </div>
+      {justFinished && <PlateBurst />}
     </div>
   );
 }

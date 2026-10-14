@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
-import { Check, Minus, Plus, Timer, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { Check, CloudCheck, CloudUpload, Minus, Plus, Timer, Trash2, X } from "lucide-react";
 import type { ExerciseOption } from "@/lib/training";
 import { compactNumber } from "@/lib/fitness/units";
-import { discardWorkout, finishWorkout, previousSetsFor } from "@/app/(app)/train/actions";
+import { discardWorkout, finishWorkout, previousSetsFor, saveWorkoutEdits, syncWorkoutDraft } from "@/app/(app)/train/actions";
+import { haptic } from "@/lib/haptics";
 import { ExercisePicker } from "./ExercisePicker";
 import { ExerciseThumb } from "./ExerciseThumb";
 import { titleCase } from "./muscleFilters";
@@ -21,7 +22,13 @@ export type LoggerExercise = {
   restSeconds: number;
   sets: LoggerSet[];
 };
-type LoggerState = { name: string; exercises: LoggerExercise[]; previous: Record<string, PreviousSet[]> };
+type LoggerState = {
+  name: string;
+  exercises: LoggerExercise[];
+  previous: Record<string, PreviousSet[]>;
+  rest?: { endsAt: number; total: number } | null; // saved so the timer survives closing the app
+  savedAt?: number;
+};
 
 const SET_TYPES: SetType[] = ["NORMAL", "WARMUP", "DROP", "FAILURE"];
 const TYPE_BADGE: Record<SetType, { short: string; className: string }> = {
@@ -32,7 +39,7 @@ const TYPE_BADGE: Record<SetType, { short: string; className: string }> = {
 };
 
 const uid = () => Math.random().toString(36).slice(2, 10);
-const storageKey = (id: string) => `calorness:workout:${id}`;
+const storageKey = (id: string, mode: string) => `calorness:${mode}:${id}`;
 
 export function WorkoutLogger({
   workout,
@@ -40,8 +47,10 @@ export function WorkoutLogger({
   initialExercises,
   initialPrevious,
   library,
+  mode = "live",
 }: {
-  workout: { id: string; name: string; startedAt: string };
+  mode?: "live" | "edit";
+  workout: { id: string; name: string; startedAt: string; updatedAt: string };
   unit: "lb" | "kg";
   initialExercises: LoggerExercise[];
   initialPrevious: Record<string, PreviousSet[]>;
@@ -50,24 +59,89 @@ export function WorkoutLogger({
   // This component only renders in the browser (see WorkoutLoggerClient), so
   // it can safely restore an in-progress session from localStorage. That
   // means a refresh, a dead battery, or closing the app mid-set loses nothing.
+  // Two copies can exist: this phone's (localStorage) and the server's
+  // autosave. Use whichever is newer, so a second device picks up where
+  // the first left off.
   const [state, setState] = useState<LoggerState>(() => {
+    const server: LoggerState = { name: workout.name, exercises: initialExercises, previous: initialPrevious };
     try {
-      const saved = localStorage.getItem(storageKey(workout.id));
-      if (saved) return JSON.parse(saved) as LoggerState;
+      const saved = localStorage.getItem(storageKey(workout.id, mode));
+      if (saved) {
+        const local = JSON.parse(saved) as LoggerState;
+        if ((local.savedAt ?? 0) >= new Date(workout.updatedAt).getTime() - 2000) return local;
+      }
     } catch {}
-    return { name: workout.name, exercises: initialExercises, previous: initialPrevious };
+    return server;
   });
+  const [sync, setSync] = useState<"saved" | "saving" | "offline">("saved");
+  const [justDone, setJustDone] = useState<string | null>(null);
+  const latest = useRef(state);
   const [picking, setPicking] = useState(false);
-  const [rest, setRest] = useState<{ endsAt: number; total: number } | null>(null);
+  const rest = state.rest ?? null;
+  const setRest = (r: LoggerState["rest"] | ((r: LoggerState["rest"]) => LoggerState["rest"])) =>
+    setState((s) => ({ ...s, rest: typeof r === "function" ? r(s.rest) : r }));
   const [now, setNow] = useState(() => Date.now());
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  useEffect(() => {
+  const payload = useCallback(
+    (st: LoggerState) => ({
+      name: st.name.trim() || "Workout",
+      exercises: st.exercises.map((e) => ({
+        exerciseId: e.exerciseId,
+        restSeconds: e.restSeconds,
+        sets: e.sets.map(({ type, weight, reps, completed }) => ({ type, weight, reps, completed })),
+      })),
+    }),
+    [],
+  );
+
+  const pushToServer = useCallback(async () => {
+    if (mode !== "live") return;
+    setSync("saving");
     try {
-      localStorage.setItem(storageKey(workout.id), JSON.stringify(state));
+      const r = await syncWorkoutDraft(workout.id, payload(latest.current));
+      setSync("error" in r ? "offline" : "saved");
+    } catch {
+      setSync("offline"); // no signal: it's still safe on the phone, and retries on the next change
+    }
+  }, [mode, payload, workout.id]);
+
+  // Save to the phone instantly, and to the server a moment after you stop tapping
+  useEffect(() => {
+    latest.current = state;
+    try {
+      localStorage.setItem(storageKey(workout.id, mode), JSON.stringify({ ...state, savedAt: Date.now() }));
     } catch {}
-  }, [state, workout.id]);
+    if (mode !== "live") return;
+    const t = setTimeout(pushToServer, 1500);
+    return () => clearTimeout(t);
+  }, [state, workout.id, mode, pushToServer]);
+
+  // Save right away when the app is swiped away or the screen locks
+  useEffect(() => {
+    const onHide = () => document.visibilityState === "hidden" && pushToServer();
+    document.addEventListener("visibilitychange", onHide);
+    return () => document.removeEventListener("visibilitychange", onHide);
+  }, [pushToServer]);
+
+  // Keep the screen awake during a live workout so you don't have to unlock between sets
+  useEffect(() => {
+    if (mode !== "live" || !("wakeLock" in navigator)) return;
+    let lock: WakeLockSentinel | null = null;
+    const acquire = async () => {
+      try {
+        lock = await navigator.wakeLock.request("screen");
+      } catch {}
+    };
+    acquire();
+    const onVisible = () => document.visibilityState === "visible" && acquire();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      lock?.release().catch(() => {});
+    };
+  }, [mode]);
 
   // One clock drives the elapsed time and the rest timer
   useEffect(() => {
@@ -78,8 +152,8 @@ export function WorkoutLogger({
   const restLeft = rest ? Math.max(0, Math.ceil((rest.endsAt - now) / 1000)) : 0;
   useEffect(() => {
     if (rest && restLeft === 0) {
-      navigator.vibrate?.([200, 100, 200]);
-      const t = setTimeout(() => setRest(null), 2500);
+      haptic("warning");
+      const t = setTimeout(() => setState((st) => ({ ...st, rest: null })), 2500);
       return () => clearTimeout(t);
     }
   }, [rest, restLeft]);
@@ -112,7 +186,9 @@ export function WorkoutLogger({
     if (reps === null) return setError("Enter reps before checking off the set.");
     setError(null);
     updateSet(ex.key, set.id, { completed: true, weight, reps });
-    if (ex.restSeconds > 0) setRest({ endsAt: now + ex.restSeconds * 1000, total: ex.restSeconds });
+    haptic("success");
+    setJustDone(set.id);
+    if (mode === "live" && ex.restSeconds > 0) setRest({ endsAt: now + ex.restSeconds * 1000, total: ex.restSeconds });
   };
 
   const addSet = (ex: LoggerExercise) => {
@@ -141,25 +217,22 @@ export function WorkoutLogger({
 
   const finish = () => {
     const incomplete = state.exercises.some((e) => e.sets.some((s) => !s.completed));
-    if (incomplete && !confirm("Unchecked sets will be left out. Finish the workout?")) return;
+    if (incomplete && !confirm("Unchecked sets will be left out. Save the workout?")) return;
+    localStorage.removeItem(storageKey(workout.id, mode));
     startTransition(async () => {
-      const result = await finishWorkout(workout.id, {
-        name: state.name.trim() || "Workout",
-        exercises: state.exercises.map((e) => ({
-          exerciseId: e.exerciseId,
-          restSeconds: e.restSeconds,
-          sets: e.sets.map(({ type, weight, reps, completed }) => ({ type, weight, reps, completed })),
-        })),
-      });
-      // finishWorkout redirects on success, so getting a result back means it failed
-      if (result?.error) setError(result.error);
-      else localStorage.removeItem(storageKey(workout.id));
+      const save = mode === "edit" ? saveWorkoutEdits : finishWorkout;
+      const result = await save(workout.id, payload(state));
+      // these redirect on success, so getting a result back means it failed
+      if (result?.error) {
+        setError(result.error);
+        localStorage.setItem(storageKey(workout.id, mode), JSON.stringify({ ...state, savedAt: Date.now() }));
+      }
     });
   };
 
   const discard = () => {
     if (!confirm("Discard this workout? Nothing from it will be saved.")) return;
-    localStorage.removeItem(storageKey(workout.id));
+    localStorage.removeItem(storageKey(workout.id, mode));
     startTransition(() => discardWorkout(workout.id));
   };
 
@@ -185,11 +258,19 @@ export function WorkoutLogger({
             disabled={pending}
             className="rounded-xl bg-plate-red px-5 py-2 font-display text-lg font-semibold text-white disabled:opacity-60"
           >
-            {pending ? "Saving…" : "Finish"}
+            {pending ? "Saving…" : mode === "edit" ? "Save" : "Finish"}
           </button>
         </div>
+        {mode === "live" ? (
+          <p className="mt-1 flex items-center gap-1 text-xs text-chalk-muted" aria-live="polite">
+            {sync === "saving" ? <CloudUpload size={13} aria-hidden /> : <CloudCheck size={13} aria-hidden />}
+            {sync === "saving" ? "Saving…" : sync === "offline" ? "Saved on this phone, will sync when online" : "All sets saved"}
+          </p>
+        ) : (
+          <p className="mt-1 text-xs text-plate-yellow">Editing a finished workout. Only checked sets are kept.</p>
+        )}
         <dl className="mt-2 grid grid-cols-3 text-sm">
-          <Stat label="Duration" value={formatClock(elapsed)} />
+          <Stat label="Duration" value={mode === "edit" ? "—" : formatClock(elapsed)} />
           <Stat label={`Volume (${unit})`} value={compactNumber(stats.volume)} />
           <Stat label="Sets" value={String(stats.sets)} />
         </dl>
@@ -248,7 +329,7 @@ export function WorkoutLogger({
                     const prev = state.previous[ex.exerciseId]?.[i];
                     const badge = TYPE_BADGE[set.type];
                     return (
-                      <tr key={set.id} className={set.completed ? "bg-plate-green/15" : ""}>
+                      <tr key={set.id} className={`${set.completed ? "bg-plate-green/15" : ""} ${justDone === set.id ? "animate-flash" : ""}`}>
                         <td className="py-1 text-center">
                           <button
                             onClick={() => updateSet(ex.key, set.id, { type: SET_TYPES[(SET_TYPES.indexOf(set.type) + 1) % 4] })}
@@ -297,7 +378,7 @@ export function WorkoutLogger({
                             aria-label={`Mark set ${i + 1} ${set.completed ? "not done" : "done"}`}
                             className={`inline-flex h-9 w-9 items-center justify-center rounded-lg ${
                               set.completed ? "bg-plate-green text-white" : "bg-rack text-chalk-muted"
-                            }`}
+                            } ${justDone === set.id ? "animate-pop" : ""}`}
                           >
                             <Check size={20} strokeWidth={3} />
                           </button>
@@ -334,12 +415,14 @@ export function WorkoutLogger({
         >
           <Plus size={20} aria-hidden /> Add exercise
         </button>
-        <button onClick={discard} className="w-full rounded-2xl py-3 font-medium text-plate-red">
-          Discard workout
-        </button>
+        {mode === "live" && (
+          <button onClick={discard} className="w-full rounded-2xl py-3 font-medium text-plate-red">
+            Discard workout
+          </button>
+        )}
       </div>
 
-      {rest && <RestTimer left={restLeft} total={rest.total} onAdjust={(d) => setRest((r) => r && { endsAt: r.endsAt + d * 1000, total: Math.max(1, r.total + d) })} onSkip={() => setRest(null)} />}
+      {rest && <RestTimer left={restLeft} total={rest.total} onAdjust={(d) => { haptic(); setRest((r) => r && { endsAt: r.endsAt + d * 1000, total: Math.max(1, r.total + d) }); }} onSkip={() => setRest(null)} />}
 
       {picking && <ExercisePicker exercises={library} onClose={() => setPicking(false)} onAdd={addExercises} />}
     </div>
