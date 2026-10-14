@@ -10,6 +10,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { db } from "@/lib/db";
+import { handoffStatus } from "@/lib/handoff";
 
 export const DEMO_EMAIL = "demo@calorness.app";
 
@@ -60,6 +61,27 @@ if (process.env.DEMO_LOGIN_ENABLED === "true") {
   providerList.push({ id: "demo", name: "Demo account" });
 }
 
+// Home-screen app handoff (see LoginRequest in schema.prisma). Always on; it
+// only accepts a request that a signed-in browser has approved.
+providers.push(
+  CredentialsProvider({
+    id: "handoff",
+    name: "Home-screen app",
+    credentials: { requestId: { type: "text" } },
+    async authorize(credentials) {
+      const id = credentials?.requestId;
+      if (!id || id.length < 30) return null;
+      const req = await db.loginRequest.findUnique({ where: { id } });
+      if (handoffStatus(req, new Date()) !== "approved") return null;
+      // updateMany with consumedAt: null makes this single-use even if two calls race
+      const { count } = await db.loginRequest.updateMany({ where: { id, consumedAt: null }, data: { consumedAt: new Date() } });
+      if (count !== 1) return null;
+      const user = await db.user.findUnique({ where: { id: req!.userId! } });
+      return user ? { id: user.id, name: user.name, email: user.email, image: user.image } : null;
+    },
+  }),
+);
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db) as Adapter,
   providers,
@@ -67,7 +89,8 @@ export const authOptions: NextAuthOptions = {
   // JWT sessions: the session lives in a signed cookie instead of a database
   // row. Required for the credentials (demo) provider, and it saves a DB
   // query on every request.
-  session: { strategy: "jwt" },
+  // Stay signed in for 90 days on each device
+  session: { strategy: "jwt", maxAge: 90 * 24 * 60 * 60 },
   pages: { signIn: "/signin" },
   callbacks: {
     session({ session, token }) {
