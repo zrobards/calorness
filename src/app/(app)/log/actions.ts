@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { estimateFoods } from "@/lib/ai/foodVision";
 import { aiFoodItemSchema } from "@/lib/ai/parse";
 import { dayToDate, MEALS } from "@/lib/nutrition/diary";
+import { saveAiItems } from "@/lib/nutrition/aiLog";
 
 const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
@@ -53,32 +54,7 @@ export async function logAiItems(input: { day: string; meal: string; items: unkn
   if (!parsed.success) return { error: "Something in that list doesn't look right." };
   const { day, meal, items } = parsed.data;
 
-  await db.$transaction(
-    items.map((i) =>
-      db.diaryEntry.create({
-        data: {
-          user: { connect: { id: user.id } },
-          date: dayToDate(day),
-          meal,
-          servings: 1,
-          food: {
-            create: {
-              source: "AI_ESTIMATE",
-              name: i.name,
-              servingSize: i.grams || 1,
-              servingUnit: i.grams ? "g" : "serving",
-              servingLabel: i.portion,
-              calories: i.calories,
-              proteinG: i.protein_g,
-              carbsG: i.carbs_g,
-              fatG: i.fat_g,
-              createdBy: { connect: { id: user.id } },
-            },
-          },
-        },
-      }),
-    ),
-  );
+  await saveAiItems(user.id, day, meal, items);
   revalidatePath("/diary");
   revalidatePath("/log");
   return { ok: true, count: items.length };

@@ -35,6 +35,7 @@ model User {
   diaryEntries    DiaryEntry[]
   waterEntries    WaterEntry[]
   bodyweights     BodyweightEntry[]
+  apiKeys         ApiKey[]
 }
 
 model Account {
@@ -329,4 +330,22 @@ model LoginRequest {
   createdAt  DateTime  @default(now())
 
   @@index([expiresAt])
+}
+
+// ─── Phone shortcut keys ──────────────────────────────────────────────────
+// Lets an iPhone Shortcut (or Android automation) log meals without opening
+// the app. Only a SHA-256 hash of the key is stored; the key itself is shown
+// once when it's created.
+model ApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  name       String
+  prefix     String // first characters, so you can tell keys apart
+  hash       String    @unique
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

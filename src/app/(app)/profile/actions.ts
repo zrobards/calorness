@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { bmrMifflinStJeor, macroTargets, tdee } from "@/lib/fitness/nutrition";
 import { inToCm, lbToKg } from "@/lib/fitness/units";
+import { newApiKey } from "@/lib/apiKeys";
 
 // Server actions run on the server but are called from forms like normal
 // functions. Never trust form input: validate it, and look up the user
@@ -103,4 +104,24 @@ export async function updateTargets(_prev: TargetsState, formData: FormData): Pr
   revalidatePath("/diary");
   revalidatePath("/log");
   return { saved: true };
+}
+
+// ─── Phone shortcut keys ──────────────────────────────────────────────────
+
+/** Make a key for an iPhone Shortcut. The full key is returned once and never stored. */
+export async function createApiKey(name: string) {
+  const user = await requireUser();
+  const label = z.string().trim().min(1).max(40).catch("iPhone shortcut").parse(name);
+  const count = await db.apiKey.count({ where: { userId: user.id } });
+  if (count >= 10) return { error: "You have 10 keys. Delete one first." };
+  const { key, prefix, hash } = newApiKey();
+  await db.apiKey.create({ data: { userId: user.id, name: label, prefix, hash } });
+  revalidatePath("/profile");
+  return { key };
+}
+
+export async function deleteApiKey(id: string) {
+  const user = await requireUser();
+  await db.apiKey.deleteMany({ where: { id, userId: user.id } });
+  revalidatePath("/profile");
 }
