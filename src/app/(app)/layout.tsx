@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { BottomNav } from "@/components/BottomNav";
+import { BottomNav, NavBar } from "@/components/BottomNav";
 import { requireUser } from "@/lib/auth";
 
 // Everything inside the (app) folder is behind sign-in. The parentheses mean
@@ -12,7 +12,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <Suspense fallback={<PageLoading />}>
         <AuthGate>{children}</AuthGate>
       </Suspense>
-      <BottomNav />
+      <Suspense fallback={<NavBar pathname={null} />}>
+        <BottomNav />
+      </Suspense>
     </div>
   );
 }

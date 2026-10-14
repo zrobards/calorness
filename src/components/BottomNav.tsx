@@ -12,8 +12,12 @@ const TABS = [
 ] as const;
 
 export function BottomNav() {
-  const pathname = usePathname();
+  return <NavBar pathname={usePathname()} />;
+}
 
+// Rendered without a pathname while the URL isn't known yet (during
+// prerendering of dynamic routes like /train/history/[id]).
+export function NavBar({ pathname }: { pathname: string | null }) {
   return (
     <nav
       aria-label="Main"
@@ -23,7 +27,7 @@ export function BottomNav() {
     >
       <ul className="mx-auto grid max-w-md grid-cols-4">
         {TABS.map(({ href, label, Icon }) => {
-          const active = pathname.startsWith(href);
+          const active = pathname?.startsWith(href) ?? false;
           return (
             <li key={href}>
               <Link
