@@ -13,9 +13,9 @@ export function Sheet({ title, onClose, children }: { title: string; onClose: ()
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label={title}>
-      <button className="absolute inset-0 bg-black/60" onClick={onClose} aria-label="Close" tabIndex={-1} />
+      <button className="animate-fade absolute inset-0 bg-black/60" onClick={onClose} aria-label="Close" tabIndex={-1} />
       <div
-        className="relative max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-rack-raised px-5 pt-3"
+        className="animate-sheet relative max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-rack-raised px-5 pt-3"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1.25rem)" }}
       >
         <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-rack-line" aria-hidden />

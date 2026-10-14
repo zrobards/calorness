@@ -23,7 +23,7 @@ export default function LandingPage() {
 
       <p className="font-display text-xl font-semibold text-chalk-muted">Calorness</p>
 
-      <h1 className="mt-10 font-display text-6xl leading-[0.95] font-bold tracking-tight">
+      <h1 className="animate-rise mt-10 font-display text-6xl leading-[0.95] font-bold tracking-tight">
         Log the lift.
         <br />
         Log the plate.
@@ -36,8 +36,8 @@ export default function LandingPage() {
       {/* Plates loaded on a bar, heaviest closest to the center */}
       <div className="mt-12 flex items-center" aria-hidden>
         <div className="h-3 w-10 rounded-l-full bg-chalk-muted" />
-        {PLATES.map((p) => (
-          <div key={p.label} className={`${p.size} ${p.color} -mx-0.5 rounded-full border-4 border-rack`} />
+        {PLATES.map((p, i) => (
+          <div key={p.label} className={`animate-plate-on ${p.size} ${p.color} -mx-0.5 rounded-full border-4 border-rack`} style={{ "--i": i } as React.CSSProperties} />
         ))}
         <div className="h-3 flex-1 rounded-r-full bg-chalk-muted" />
       </div>

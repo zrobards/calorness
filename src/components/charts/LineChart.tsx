@@ -50,7 +50,7 @@ export function LineChart({
         </g>
       ))}
       <path d={area} fill={`url(#fill-${id})`} />
-      <path d={path} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={path} pathLength={1} className="animate-draw" fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
       {points.length < 30 &&
         points.map((p, i) => <circle key={i} cx={sx(p.x)} cy={sy(p.y)} r="2.5" fill={color} />)}
       <circle cx={sx(last.x)} cy={sy(last.y)} r="5" fill={color} stroke="var(--color-rack-raised)" strokeWidth="2" />

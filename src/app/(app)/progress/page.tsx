@@ -124,7 +124,7 @@ export default async function ProgressPage() {
 
 function Card({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <section className="mx-5 mb-4 rounded-2xl bg-rack-raised p-5">
+    <section className="animate-rise mx-5 mb-4 rounded-2xl bg-rack-raised p-5">
       <h2 className="font-display text-2xl font-semibold">{title}</h2>
       <p className="mb-4 text-sm text-chalk-muted">{subtitle}</p>
       {children}

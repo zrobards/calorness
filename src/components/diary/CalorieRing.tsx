@@ -1,3 +1,5 @@
+import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
+
 // The day at a glance: a ring that fills in plate red as you eat, with the
 // calories you have left in the middle.
 export function CalorieRing({ eaten, goal }: { eaten: number; goal: number }) {
@@ -30,11 +32,12 @@ export function CalorieRing({ eaten, goal }: { eaten: number; goal: number }) {
           stroke={over ? "var(--color-plate-yellow)" : "var(--color-plate-red)"}
           strokeWidth={stroke} strokeLinecap="round"
           strokeDasharray={c} strokeDashoffset={c * (1 - Math.min(1, pct))}
-          className="transition-[stroke-dashoffset] duration-700 ease-out"
+          className="animate-ring transition-[stroke-dashoffset] duration-700 ease-out"
+          style={{ "--ring-full": c } as React.CSSProperties}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <span className="font-display text-5xl leading-none font-bold tabular-nums">{Math.abs(remaining).toLocaleString("en-US")}</span>
+        <span className="font-display text-5xl leading-none font-bold"><AnimatedNumber value={Math.abs(remaining)} /></span>
         <span className={`mt-1 text-sm ${over ? "text-plate-yellow" : "text-chalk-muted"}`}>{over ? "calories over" : "calories left"}</span>
       </div>
       <p className="sr-only">

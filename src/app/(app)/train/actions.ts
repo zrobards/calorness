@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { toKg } from "@/lib/fitness/units";
+import { toKg, type UnitSystem } from "@/lib/fitness/units";
+import type { Prisma } from "@prisma/client";
 import { getPreviousSets, getUnitSystem } from "@/lib/training";
 import { toDisplayPrevious } from "@/lib/training-display";
 
@@ -129,31 +130,16 @@ const finishSchema = z.object({
 
 export type FinishWorkoutInput = z.infer<typeof finishSchema>;
 
-export async function finishWorkout(workoutId: string, input: FinishWorkoutInput) {
-  const user = await requireUser();
-  const parsed = finishSchema.safeParse(input);
-  if (!parsed.success) return { error: "Some sets have values that don't look right." };
+type ExerciseInput = FinishWorkoutInput["exercises"];
 
-  const workout = await db.workout.findFirst({ where: { id: workoutId, userId: user.id, endedAt: null } });
-  if (!workout) return { error: "This workout was already finished or discarded." };
-
-  const { unitSystem } = await db.user.findUniqueOrThrow({ where: { id: user.id }, select: { unitSystem: true } });
-
-  // Keep only completed sets, and drop exercises that end up with none (like Hevy)
-  const exercises = parsed.data.exercises
-    .map((e) => ({ ...e, sets: e.sets.filter((s) => s.completed) }))
-    .filter((e) => e.sets.length > 0);
-
-  if (exercises.length === 0) return { error: "Complete at least one set, or discard the workout." };
-
-  await db.$transaction([
+/** Replace a workout's exercises and sets in one transaction (the replace-all pattern keeps saves simple). */
+function writeExercises(workoutId: string, exercises: ExerciseInput, unitSystem: UnitSystem, data: Prisma.WorkoutUpdateInput) {
+  return db.$transaction([
     db.workoutExercise.deleteMany({ where: { workoutId } }),
     db.workout.update({
       where: { id: workoutId },
       data: {
-        name: parsed.data.name,
-        notes: parsed.data.notes,
-        endedAt: new Date(),
+        ...data,
         exercises: {
           create: exercises.map((e, order) => ({
             exerciseId: e.exerciseId,
@@ -164,7 +150,7 @@ export async function finishWorkout(workoutId: string, input: FinishWorkoutInput
                 type: s.type,
                 weightKg: s.weight === null ? null : toKg(s.weight, unitSystem),
                 reps: s.reps,
-                completed: true,
+                completed: s.completed,
               })),
             },
           })),
@@ -172,10 +158,78 @@ export async function finishWorkout(workoutId: string, input: FinishWorkoutInput
       },
     }),
   ]);
+}
+
+const completedOnly = (exercises: ExerciseInput) =>
+  exercises.map((e) => ({ ...e, sets: e.sets.filter((s) => s.completed) })).filter((e) => e.sets.length > 0);
+
+async function unitsFor(userId: string) {
+  const { unitSystem } = await db.user.findUniqueOrThrow({ where: { id: userId }, select: { unitSystem: true } });
+  return unitSystem;
+}
+
+/**
+ * Autosave while you lift. Runs a couple of seconds after every change, and
+ * when the app goes to the background, so closing the app, a dead battery, or
+ * switching phones never loses a set.
+ */
+export async function syncWorkoutDraft(workoutId: string, input: FinishWorkoutInput) {
+  const user = await requireUser();
+  const parsed = finishSchema.safeParse(input);
+  if (!parsed.success) return { error: "invalid" };
+  const workout = await db.workout.findFirst({ where: { id: workoutId, userId: user.id, endedAt: null } });
+  if (!workout) return { error: "closed" };
+  await writeExercises(workoutId, parsed.data.exercises, await unitsFor(user.id), { name: parsed.data.name });
+  return { savedAt: Date.now() };
+}
+
+export async function finishWorkout(workoutId: string, input: FinishWorkoutInput) {
+  const user = await requireUser();
+  const parsed = finishSchema.safeParse(input);
+  if (!parsed.success) return { error: "Some sets have values that don't look right." };
+
+  const workout = await db.workout.findFirst({ where: { id: workoutId, userId: user.id, endedAt: null } });
+  if (!workout) return { error: "This workout was already finished or discarded." };
+
+  // Keep only completed sets, and drop exercises that end up with none (like Hevy)
+  const exercises = completedOnly(parsed.data.exercises);
+  if (exercises.length === 0) return { error: "Complete at least one set, or discard the workout." };
+
+  await writeExercises(workoutId, exercises, await unitsFor(user.id), {
+    name: parsed.data.name,
+    notes: parsed.data.notes,
+    endedAt: new Date(),
+  });
 
   revalidatePath("/train");
   revalidatePath("/progress");
   redirect(`/train/history/${workoutId}?finished=1`);
+}
+
+/** Fix a finished workout's sets without changing when it happened. */
+export async function saveWorkoutEdits(workoutId: string, input: FinishWorkoutInput) {
+  const user = await requireUser();
+  const parsed = finishSchema.safeParse(input);
+  if (!parsed.success) return { error: "Some sets have values that don't look right." };
+  const workout = await db.workout.findFirst({ where: { id: workoutId, userId: user.id, endedAt: { not: null } } });
+  if (!workout) return { error: "That workout no longer exists." };
+  const exercises = completedOnly(parsed.data.exercises);
+  if (exercises.length === 0) return { error: "Keep at least one completed set, or delete the workout." };
+
+  await writeExercises(workoutId, exercises, await unitsFor(user.id), { name: parsed.data.name });
+  revalidatePath("/train");
+  revalidatePath("/progress");
+  redirect(`/train/history/${workoutId}`);
+}
+
+/** Ended a workout too early? Reopen it and keep logging. */
+export async function reopenWorkout(workoutId: string) {
+  const user = await requireUser();
+  const active = await db.workout.findFirst({ where: { userId: user.id, endedAt: null } });
+  if (active && active.id !== workoutId) redirect(`/train/workout/${active.id}`);
+  await db.workout.updateMany({ where: { id: workoutId, userId: user.id }, data: { endedAt: null } });
+  revalidatePath("/train");
+  redirect(`/train/workout/${workoutId}`);
 }
 
 export async function discardWorkout(workoutId: string) {

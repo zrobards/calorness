@@ -42,7 +42,7 @@ export function MacroBars({
               aria-valuemin={0}
               aria-valuemax={m.goal}
             >
-              <div className={`h-full rounded-full ${m.color}`} style={{ width: `${pct}%` }} />
+              <div className={`animate-grow-x h-full rounded-full ${m.color}`} style={{ width: `${pct}%` }} />
             </div>
           </div>
         );

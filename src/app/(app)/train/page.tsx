@@ -7,6 +7,7 @@ import { getActiveWorkout, getRecentWorkouts, getRoutines, getThisWeek, getUnitS
 import { compactNumber, displayWeight, weightUnit } from "@/lib/fitness/units";
 import { APP_TIME_ZONE, formatDay, formatDuration, isoDay } from "@/lib/fitness/dates";
 import { startWorkout } from "./actions";
+import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
 
 export const metadata: Metadata = { title: "Train" };
 
@@ -51,7 +52,7 @@ export default async function TrainPage() {
       )}
 
       {/* This week: each day is a bar sleeve; training days get a plate sized by volume */}
-      <section className="mx-5 rounded-2xl bg-rack-raised p-5" aria-label="This week">
+      <section className="animate-rise mx-5 rounded-2xl bg-rack-raised p-5" aria-label="This week">
         <div className="flex items-end justify-between">
           <h2 className="font-display text-2xl font-semibold">This week</h2>
           <p className="text-sm text-chalk-muted">{week.workouts} {week.workouts === 1 ? "workout" : "workouts"}</p>
@@ -63,7 +64,7 @@ export default async function TrainPage() {
               <li key={i} className="flex flex-col items-center gap-2">
                 <div className="flex h-11 items-center justify-center">
                   {d.workouts > 0 ? (
-                    <span className="rounded-full border-4 border-[#a8302c] bg-plate-red" style={{ width: size, height: size }} aria-label={`${formatDay(d.date, { weekday: "long", timeZone: "UTC" })}: trained`} />
+                    <span className="animate-plate-on rounded-full border-4 border-[#a8302c] bg-plate-red" style={{ width: size, height: size, "--i": i } as React.CSSProperties} aria-label={`${formatDay(d.date, { weekday: "long", timeZone: "UTC" })}: trained`} />
                   ) : (
                     <span className="h-1.5 w-5 rounded-full bg-rack-line" />
                   )}
@@ -79,12 +80,12 @@ export default async function TrainPage() {
           <div>
             <dt className="text-xs text-chalk-muted">Volume</dt>
             <dd className="font-display text-3xl font-bold tabular-nums">
-              {compactNumber(displayWeight(week.volumeKg, unitSystem))} <span className="text-base font-semibold text-chalk-muted">{unit}</span>
+              <AnimatedNumber value={Math.round(displayWeight(week.volumeKg, unitSystem))} /> <span className="text-base font-semibold text-chalk-muted">{unit}</span>
             </dd>
           </div>
           <div>
             <dt className="text-xs text-chalk-muted">Working sets</dt>
-            <dd className="font-display text-3xl font-bold tabular-nums">{week.sets}</dd>
+            <dd className="font-display text-3xl font-bold tabular-nums"><AnimatedNumber value={week.sets} duration={600} /></dd>
           </div>
         </dl>
       </section>

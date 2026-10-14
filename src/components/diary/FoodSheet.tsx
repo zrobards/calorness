@@ -5,7 +5,7 @@ import type { FoodCandidate } from "@/lib/nutrition/normalize";
 import { MacroSplit } from "./MacroSplit";
 import { Sheet } from "./Sheet";
 
-const SOURCE_LABEL = { USDA: "USDA", OPEN_FOOD_FACTS: "Open Food Facts", CUSTOM: "Your food" } as const;
+const SOURCE_LABEL = { USDA: "USDA", OPEN_FOOD_FACTS: "Open Food Facts", CUSTOM: "Your food", AI_ESTIMATE: "AI estimate" } as const;
 
 /**
  * Choose how much you ate. Amount can be in servings, or in grams/ml when
