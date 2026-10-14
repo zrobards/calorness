@@ -30,7 +30,8 @@ tracking that shares data with training.
 ## Features
 
 **Quick log (the center + button)**
-- Snap a photo of a meal and Claude (Anthropic's AI) lists each food with calories and macros to review before saving
+- Snap a photo of a meal, or upload one you already took, and Claude (Anthropic's AI) lists each food with calories and macros
+- Make the estimate accurate before saving: adjust amounts, edit any item's weight (calories and macros scale with it) or numbers, add foods it missed, or tell the AI what it got wrong ("the chicken was fried, 2 cups of rice") and it re-checks the photo
 - Describe a meal in words, or say it out loud with speech-to-text
 - Barcode scan and one-tap "log again" for recent foods, with Undo
 - Picks the meal from the time of day, shows calories and protein left, and starts your next routine in one tap
@@ -60,14 +61,15 @@ tracking that shares data with training.
 - Recent foods, custom foods (with barcodes that scan next time), and copy a meal from yesterday
 - Water tracking by the glass
 - Training-day callout in the diary when you worked out, linking to that workout
-- Calorie and macro targets calculated from your stats (Mifflin–St Jeor + activity level + goal)
+- Calorie and macro targets calculated from your stats (Mifflin–St Jeor + activity level + goal), then editable by hand, with a check that your macros add up to your calories
 
 **Feel**
 - Motion throughout: count-up numbers, a calorie ring that draws in, bars and charts that grow, cards that rise in, page crossfades (React View Transitions), and a burst of tiny bumper plates when you finish a workout
 - Everything respects the phone's "reduce motion" setting
 
 **General**
-- Sign in with GitHub, Google, or a shared demo account
+- Sign in with GitHub, Google, or a shared demo account; stay signed in for 90 days
+- Sign-in works inside the iPhone home-screen app too: it hands off to a browser window and matches a 4-digit code, since home-screen apps keep separate cookies
 - Pounds/feet or kilograms/centimeters
 - Installable to your phone's home screen (PWA)
 

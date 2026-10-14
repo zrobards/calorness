@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Barcode, Camera, ChevronRight, Dumbbell, Loader2, Mic, MessageSquareText, Play, Search } from "lucide-react";
+import { Barcode, Camera, ChevronRight, Dumbbell, ImageUp, Loader2, Mic, MessageSquareText, Play, Search } from "lucide-react";
 import type { FoodCandidate } from "@/lib/nutrition/normalize";
 import type { AiFoodItem } from "@/lib/ai/parse";
 import { localDay, mealForTime, type MealName } from "@/lib/nutrition/meals";
@@ -17,7 +17,7 @@ import { PlateBurst } from "@/components/motion/PlateBurst";
 import { BarcodeScanner } from "@/components/diary/BarcodeScanner";
 import { FoodSheet } from "@/components/diary/FoodSheet";
 import { Sheet } from "@/components/diary/Sheet";
-import { AiReviewSheet, type ReviewItem } from "./AiReviewSheet";
+import { AiReviewSheet } from "./AiReviewSheet";
 import { resizeImage } from "./resizeImage";
 
 const MEAL_ORDER: MealName[] = ["BREAKFAST", "LUNCH", "DINNER", "SNACKS"];
@@ -43,6 +43,7 @@ export function QuickLog({
 }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
+  const libraryRef = useRef<HTMLInputElement>(null);
   const [meal, setMeal] = useState<MealName>(() => mealForTime(new Date()));
   const [day] = useState(() => localDay(new Date()));
   const [scanning, setScanning] = useState(mode === "scan");
@@ -50,7 +51,15 @@ export function QuickLog({
   const [text, setText] = useState("");
   const [listening, setListening] = useState(false);
   const [thinking, setThinking] = useState<string | null>(null);
-  const [review, setReview] = useState<{ items: AiFoodItem[]; note?: string; photo?: string | null } | null>(null);
+  const [review, setReview] = useState<{
+    items: AiFoodItem[];
+    note?: string;
+    photo?: string | null;
+    // kept so the AI can look again when you correct it
+    source: { imageBase64?: string; mediaType?: string; text?: string };
+    version: number;
+  } | null>(null);
+  const [refining, setRefining] = useState(false);
   const [barcodeFood, setBarcodeFood] = useState<FoodCandidate | null>(null);
   const [toast, setToast] = useState<ToastData | null>(null);
   const [celebrate, setCelebrate] = useState(0);
@@ -76,7 +85,7 @@ export function QuickLog({
         return;
       }
       haptic("success");
-      setReview({ items: result.items, note: result.note, photo });
+      setReview({ items: result.items, note: result.note, photo, source: input, version: 0 });
     });
 
   const onPhoto = async (file: File | undefined) => {
@@ -108,7 +117,20 @@ export function QuickLog({
     rec.start();
   };
 
-  const logReviewed = (items: ReviewItem[]) =>
+  const refine = async (correction: string, current: AiFoodItem[]) => {
+    if (!review) return;
+    setRefining(true);
+    const result = await aiEstimate({ ...review.source, previous: current, correction });
+    setRefining(false);
+    if ("error" in result) {
+      haptic("warning");
+      return setToast({ message: result.error });
+    }
+    haptic("success");
+    setReview((r) => r && { ...r, items: result.items, note: result.note, version: r.version + 1 });
+  };
+
+  const logReviewed = (items: AiFoodItem[]) =>
     start(async () => {
       const result = await logAiItems({ day, meal, items });
       if ("error" in result && result.error) return setToast({ message: result.error });
@@ -174,19 +196,22 @@ export function QuickLog({
         ))}
       </div>
 
-      {/* The big one: photo → AI */}
-      <label
-        className={`animate-rise relative mt-4 flex h-44 cursor-pointer flex-col justify-end overflow-hidden rounded-3xl bg-plate-red p-5 text-white ${mode === "snap" ? "ring-4 ring-plate-yellow" : ""}`}
-        style={{ "--i": 2 } as React.CSSProperties}
-      >
-        <input ref={fileRef} type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => { onPhoto(e.target.files?.[0]); e.target.value = ""; }} disabled={!aiReady} />
-        {/* bumper-plate rings in the corner */}
-        <span className="absolute -top-16 -right-16 size-56 rounded-full border-[18px] border-white/10" aria-hidden />
-        <span className="absolute -top-4 -right-4 size-28 rounded-full border-[10px] border-white/10" aria-hidden />
-        <Camera size={36} strokeWidth={2.2} aria-hidden />
-        <span className="mt-2 font-display text-3xl leading-none font-bold">Snap your meal</span>
-        <span className="mt-1 text-sm text-white/85">{aiReady ? "AI counts the calories for you" : "Add an AI key to turn this on"}</span>
-      </label>
+      {/* The big one: photo → AI. Tap the card to take a photo, or upload one you already took. */}
+      <div className={`animate-rise relative mt-4 h-44 overflow-hidden rounded-3xl bg-plate-red text-white ${mode === "snap" ? "ring-4 ring-plate-yellow" : ""}`} style={{ "--i": 2 } as React.CSSProperties}>
+        <input ref={fileRef} id="snap-camera" type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => { onPhoto(e.target.files?.[0]); e.target.value = ""; }} disabled={!aiReady} />
+        <input ref={libraryRef} id="snap-library" type="file" accept="image/*" className="sr-only" onChange={(e) => { onPhoto(e.target.files?.[0]); e.target.value = ""; }} disabled={!aiReady} />
+        <label htmlFor="snap-camera" className="absolute inset-0 flex cursor-pointer flex-col justify-end p-5">
+          {/* bumper-plate rings in the corner */}
+          <span className="absolute -top-16 -right-16 size-56 rounded-full border-[18px] border-white/10" aria-hidden />
+          <span className="absolute -top-4 -right-4 size-28 rounded-full border-[10px] border-white/10" aria-hidden />
+          <Camera size={36} strokeWidth={2.2} aria-hidden />
+          <span className="mt-2 font-display text-3xl leading-none font-bold">Snap your meal</span>
+          <span className="mt-1 text-sm text-white/85">{aiReady ? "AI counts the calories for you" : "Add an AI key to turn this on"}</span>
+        </label>
+        <label htmlFor="snap-library" className="absolute top-4 right-4 flex cursor-pointer items-center gap-1.5 rounded-full bg-black/25 px-3.5 py-2 text-sm font-semibold backdrop-blur">
+          <ImageUp size={17} aria-hidden /> Upload
+        </label>
+      </div>
 
       <div className="animate-rise mt-3 grid grid-cols-3 gap-3" style={{ "--i": 3 } as React.CSSProperties}>
         <button onClick={() => { haptic(); setScanning(true); }} className="flex flex-col items-center gap-1.5 rounded-2xl bg-plate-blue py-4 font-semibold text-white">
@@ -268,7 +293,18 @@ export function QuickLog({
       )}
 
       {review && (
-        <AiReviewSheet {...review} mealLabel={MEAL_LABELS[meal]} pending={pending} onConfirm={logReviewed} onClose={() => setReview(null)} />
+        <AiReviewSheet
+          key={review.version}
+          items={review.items}
+          note={review.note}
+          photo={review.photo}
+          mealLabel={MEAL_LABELS[meal]}
+          pending={pending}
+          refining={refining}
+          onConfirm={logReviewed}
+          onRefine={refine}
+          onClose={() => setReview(null)}
+        />
       )}
       {scanning && <BarcodeScanner onDetected={onBarcode} onClose={() => setScanning(false)} />}
       {barcodeFood && (
