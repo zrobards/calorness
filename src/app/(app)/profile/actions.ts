@@ -64,7 +64,8 @@ export async function saveGoals(
   });
 
   revalidatePath("/diary");
-  redirect("/diary");
+  revalidatePath("/profile");
+  redirect("/profile#goals");
 }
 
 export async function setUnitSystem(formData: FormData) {
@@ -72,4 +73,34 @@ export async function setUnitSystem(formData: FormData) {
   const unitSystem = z.enum(["IMPERIAL", "METRIC"]).parse(formData.get("unitSystem"));
   await db.user.update({ where: { id: user.id }, data: { unitSystem } });
   revalidatePath("/profile");
+}
+
+const targetsSchema = z.object({
+  calories: z.coerce.number().int().min(800, "Calories should be at least 800.").max(10000),
+  proteinG: z.coerce.number().int().min(0).max(1000),
+  carbsG: z.coerce.number().int().min(0).max(2000),
+  fatG: z.coerce.number().int().min(0).max(1000),
+  water: z.coerce.number().min(0).max(10000), // in the user's units (fl oz or ml)
+});
+
+export type TargetsState = { error?: string; saved?: boolean };
+
+/** Set calories and each macro by hand, after (or instead of) the calculator. */
+export async function updateTargets(_prev: TargetsState, formData: FormData): Promise<TargetsState> {
+  const user = await requireUser();
+  const parsed = targetsSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the numbers." };
+  const { unitSystem } = await db.user.findUniqueOrThrow({ where: { id: user.id }, select: { unitSystem: true } });
+  const { water, ...targets } = parsed.data;
+  const waterMl = Math.round(unitSystem === "IMPERIAL" ? water * 29.5735 : water);
+
+  await db.goal.upsert({
+    where: { userId: user.id },
+    update: { ...targets, waterMl },
+    create: { ...targets, waterMl, userId: user.id },
+  });
+  // Not revalidating /profile on purpose: the form already shows the new numbers
+  revalidatePath("/diary");
+  revalidatePath("/log");
+  return { saved: true };
 }
