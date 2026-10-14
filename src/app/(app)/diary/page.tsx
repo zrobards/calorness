@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Dumbbell, Target } from "lucide-react";
+import { Dumbbell, ShieldCheck, Target } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { MacroBars } from "@/components/MacroBars";
@@ -8,21 +8,22 @@ import { CalorieRing } from "@/components/diary/CalorieRing";
 import { DayNav, shiftDay } from "@/components/diary/DayNav";
 import { MealSection } from "@/components/diary/MealSection";
 import { WaterCard } from "@/components/diary/WaterCard";
+import { CopyDayButton } from "@/components/diary/CopyDayButton";
 import { requireUser } from "@/lib/auth";
 import { getDiaryDay, toCandidate } from "@/lib/nutrition/diary";
 import { getUnitSystem } from "@/lib/training";
-import { APP_TIME_ZONE } from "@/lib/fitness/dates";
+import { userToday } from "@/lib/userPrefs";
 import { compactNumber, displayWeight, weightUnit } from "@/lib/fitness/units";
 
 export const metadata: Metadata = { title: "Diary" };
 
 export default async function DiaryPage({ searchParams }: { searchParams: Promise<{ day?: string }> }) {
   const user = await requireUser();
-  const today = new Date().toLocaleDateString("en-CA", { timeZone: APP_TIME_ZONE }); // YYYY-MM-DD
+  const { today, timeZone } = await userToday(user.id);
   const { day: dayParam } = await searchParams;
   const day = dayParam && /^\d{4}-\d{2}-\d{2}$/.test(dayParam) ? dayParam : today;
 
-  const [diary, unitSystem] = await Promise.all([getDiaryDay(user.id, day), getUnitSystem(user.id)]);
+  const [diary, unitSystem] = await Promise.all([getDiaryDay(user.id, day, timeZone), getUnitSystem(user.id)]);
   const { goal, totals, meals, workouts } = diary;
 
   return (
@@ -40,6 +41,15 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
             <div><dd className="font-display text-xl font-semibold tabular-nums">{Math.round(goal.calories - totals.calories).toLocaleString("en-US")}</dd><dt className="text-xs text-chalk-muted">Remaining</dt></div>
           </dl>
           <MacroBars eaten={totals} goal={goal} />
+          {diary.verified !== null && (
+            <p className={`mt-4 flex items-center gap-2 text-sm ${diary.verified >= 0.8 ? "text-plate-green" : "text-plate-yellow"}`}>
+              <ShieldCheck size={16} aria-hidden />
+              {Math.round(diary.verified * 100)}% verified
+              <span className="text-chalk-muted">
+                {diary.verified >= 0.999 ? "(all from labels, barcodes, or the food database)" : "(the rest is AI estimates, tagged below)"}
+              </span>
+            </p>
+          )}
         </section>
       ) : (
         <EmptyState Icon={Target} title="Set your daily targets">
@@ -61,6 +71,8 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
           </span>
         </Link>
       )}
+
+      {meals.every((m) => m.items.length === 0) && <CopyDayButton fromDay={shiftDay(day, -1)} toDay={day} />}
 
       {meals.map((m, index) => (
         <MealSection

@@ -1,6 +1,8 @@
 import { Suspense, ViewTransition } from "react";
 import { BottomNav, NavBar } from "@/components/BottomNav";
 import { requireUser } from "@/lib/auth";
+import { getUserPrefs } from "@/lib/userPrefs";
+import { TimeZoneSync } from "@/components/TimeZoneSync";
 
 // Everything inside the (app) folder is behind sign-in. The parentheses mean
 // the folder name doesn't appear in the URL: (app)/train is just /train.
@@ -23,8 +25,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 }
 
 async function AuthGate({ children }: { children: React.ReactNode }) {
-  await requireUser(); // redirects to /signin when signed out
-  return <>{children}</>;
+  const user = await requireUser(); // redirects to /signin when signed out
+  const { timeZone } = await getUserPrefs(user.id);
+  return (
+    <>
+      <TimeZoneSync current={timeZone} />
+      {children}
+    </>
+  );
 }
 
 function PageLoading() {

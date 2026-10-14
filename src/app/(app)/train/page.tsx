@@ -5,7 +5,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { requireUser } from "@/lib/auth";
 import { getActiveWorkout, getRecentWorkouts, getRoutines, getThisWeek, getUnitSystem } from "@/lib/training";
 import { compactNumber, displayWeight, weightUnit } from "@/lib/fitness/units";
-import { APP_TIME_ZONE, formatDay, formatDuration, isoDay } from "@/lib/fitness/dates";
+import { formatDay, formatDuration, isoDay } from "@/lib/fitness/dates";
+import { userToday } from "@/lib/userPrefs";
 import { startWorkout } from "./actions";
 import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
 
@@ -23,7 +24,7 @@ export default async function TrainPage() {
   ]);
   const unit = weightUnit(unitSystem);
   const maxDay = Math.max(1, ...week.days.map((d) => d.volumeKg));
-  const todayIso = now.toLocaleDateString("en-CA", { timeZone: APP_TIME_ZONE }); // YYYY-MM-DD
+  const { today: todayIso } = await userToday(user.id, now);
   const todayIndex = week.days.findIndex((d) => isoDay(d.date) === todayIso);
 
   return (

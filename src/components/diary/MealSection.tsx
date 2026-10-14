@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { Copy, Plus } from "lucide-react";
+import { Bookmark, Copy, Plus } from "lucide-react";
 import type { FoodCandidate } from "@/lib/nutrition/normalize";
-import { copyMealFromDay, deleteDiaryEntry, updateDiaryEntry } from "@/app/(app)/diary/actions";
+import { copyMealFromDay, deleteDiaryEntry, saveMealFromDay, updateDiaryEntry } from "@/app/(app)/diary/actions";
 import { FoodSheet } from "./FoodSheet";
 
 type Item = { id: string; servings: number; food: FoodCandidate; calories: number };
@@ -43,7 +43,12 @@ export function MealSection({
             <li key={item.id}>
               <button onClick={() => setEditing(item)} className="flex w-full items-center gap-3 px-5 py-3 text-left hover:bg-rack-line/40">
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium">{item.food.name}</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="truncate font-medium">{item.food.name}</span>
+                    {item.food.source === "AI_ESTIMATE" && (
+                      <span className="shrink-0 rounded-full bg-plate-yellow/20 px-1.5 py-0.5 text-[10px] font-semibold text-plate-yellow">AI est.</span>
+                    )}
+                  </span>
                   <span className="block truncate text-sm text-chalk-muted">
                     {[item.food.brand, `${formatServings(item.servings)} × ${item.food.servingLabel ?? "serving"}`].filter(Boolean).join(", ")}
                   </span>
@@ -59,6 +64,18 @@ export function MealSection({
         <Link href={`/diary/add?meal=${meal}&day=${day}`} className="flex items-center gap-1.5 rounded-lg px-2 py-2 font-medium text-plate-blue">
           <Plus size={18} aria-hidden /> Add food
         </Link>
+        {items.length > 0 && (
+          <button
+            disabled={pending}
+            onClick={() => {
+              const name = window.prompt("Name this meal so you can log it in one tap", `My ${label.toLowerCase()}`);
+              if (name) start(async () => { const r = await saveMealFromDay(day, meal, name); setMessage(r.error ?? `Saved “${name}”. Find it on Quick log.`); });
+            }}
+            className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm text-chalk-muted hover:text-chalk"
+          >
+            <Bookmark size={15} aria-hidden /> Save as meal
+          </button>
+        )}
         {items.length === 0 && (
           <button
             disabled={pending}

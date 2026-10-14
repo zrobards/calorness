@@ -8,12 +8,27 @@ import { Sheet } from "./Sheet";
 const field = "mt-1 w-full rounded-xl border border-rack-line bg-rack px-3 py-2.5 text-chalk focus:border-plate-yellow focus:outline-none";
 const label = "block text-sm font-medium text-chalk-muted";
 
-export function CustomFoodForm({ barcode, onCreated, onClose }: { barcode?: string; onCreated: (food: FoodCandidate) => void; onClose: () => void }) {
+export type FoodPrefill = { name?: string; brand?: string | null; servingLabel?: string; servingSize?: number | null; calories?: number; proteinG?: number; carbsG?: number; fatG?: number };
+
+export function CustomFoodForm({
+  barcode,
+  prefill,
+  title = "Create a food",
+  onCreated,
+  onClose,
+}: {
+  barcode?: string;
+  prefill?: FoodPrefill;
+  title?: string;
+  onCreated: (food: FoodCandidate) => void;
+  onClose: () => void;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
   return (
-    <Sheet title="Create a food" onClose={onClose}>
+    <Sheet title={title} onClose={onClose}>
+      {prefill && <p className="mt-1 text-sm text-chalk-muted">Read from the label. Check it matches, then save.</p>}
       <form
         className="mt-4 space-y-3"
         onSubmit={(e) => {
@@ -27,20 +42,20 @@ export function CustomFoodForm({ barcode, onCreated, onClose }: { barcode?: stri
         }}
       >
         {barcode && <input type="hidden" name="barcode" value={barcode} />}
-        <label className={label}>Name<input name="name" required className={field} placeholder="Protein bar" /></label>
-        <label className={label}>Brand (optional)<input name="brand" className={field} /></label>
+        <label className={label}>Name<input defaultValue={prefill?.name ?? undefined} name="name" required className={field} placeholder="Protein bar" /></label>
+        <label className={label}>Brand (optional)<input defaultValue={prefill?.brand ?? undefined} name="brand" className={field} /></label>
         <div className="grid grid-cols-[1.4fr_1fr] gap-2">
-          <label className={label}>Serving<input name="servingLabel" required className={field} placeholder="1 bar" /></label>
-          <label className={label}>Weight (g, optional)<input name="servingSize" type="number" inputMode="decimal" step="any" className={field} /></label>
+          <label className={label}>Serving<input defaultValue={prefill?.servingLabel ?? undefined} name="servingLabel" required className={field} placeholder="1 bar" /></label>
+          <label className={label}>Weight (g, optional)<input defaultValue={prefill?.servingSize ?? undefined} name="servingSize" type="number" inputMode="decimal" step="any" className={field} /></label>
         </div>
         <label className={label}>
           Calories per serving
-          <input name="calories" type="number" inputMode="decimal" step="any" required className={`${field} font-display text-xl`} />
+          <input defaultValue={prefill?.calories ?? undefined} name="calories" type="number" inputMode="decimal" step="any" required className={`${field} font-display text-xl`} />
         </label>
         <div className="grid grid-cols-3 gap-2">
-          <label className={label}>Protein (g)<input name="proteinG" type="number" inputMode="decimal" step="any" required className={field} /></label>
-          <label className={label}>Carbs (g)<input name="carbsG" type="number" inputMode="decimal" step="any" required className={field} /></label>
-          <label className={label}>Fat (g)<input name="fatG" type="number" inputMode="decimal" step="any" required className={field} /></label>
+          <label className={label}>Protein (g)<input defaultValue={prefill?.proteinG ?? undefined} name="proteinG" type="number" inputMode="decimal" step="any" required className={field} /></label>
+          <label className={label}>Carbs (g)<input defaultValue={prefill?.carbsG ?? undefined} name="carbsG" type="number" inputMode="decimal" step="any" required className={field} /></label>
+          <label className={label}>Fat (g)<input defaultValue={prefill?.fatG ?? undefined} name="fatG" type="number" inputMode="decimal" step="any" required className={field} /></label>
         </div>
         {error && <p role="alert" className="text-sm text-plate-red">{error}</p>}
         <button disabled={pending} className="w-full rounded-xl bg-plate-red py-3.5 font-display text-xl font-semibold text-white disabled:opacity-60">
