@@ -67,7 +67,8 @@ tracking that shares data with training.
 - Everything respects the phone's "reduce motion" setting
 
 **General**
-- Sign in with GitHub, Google, or a shared demo account
+- Sign in with GitHub, Google, or a shared demo account; stay signed in for 90 days
+- Sign-in works inside the iPhone home-screen app too: it hands off to a browser window and matches a 4-digit code, since home-screen apps keep separate cookies
 - Pounds/feet or kilograms/centimeters
 - Installable to your phone's home screen (PWA)
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { enabledProviders } from "@/lib/auth";
 import { SignInButtons } from "./SignInButtons";
 
@@ -21,7 +22,9 @@ export default function SignInPage() {
 
       <div className="mt-10">
         {providers.length > 0 ? (
-          <SignInButtons providers={providers} />
+          <Suspense fallback={null}>
+            <SignInButtons providers={providers} />
+          </Suspense>
         ) : (
           <p role="alert" className="rounded-xl border border-plate-yellow/50 p-4 text-sm">
             No sign-in options are configured. Add GitHub or Google keys, or set
