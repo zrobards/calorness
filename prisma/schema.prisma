@@ -20,6 +20,7 @@ model User {
   email         String?    @unique
   emailVerified DateTime?
   image         String?
+  passwordHash  String? // only for email + password accounts (bcrypt)
   unitSystem    UnitSystem @default(IMPERIAL)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
@@ -49,6 +50,7 @@ model Account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
+  refresh_token_expires_in Int? // sent by GitHub Apps; storing it keeps sign-in from failing
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

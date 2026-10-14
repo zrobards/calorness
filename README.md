@@ -68,7 +68,8 @@ tracking that shares data with training.
 - Everything respects the phone's "reduce motion" setting
 
 **General**
-- Sign in with GitHub, Google, or a shared demo account; stay signed in for 90 days
+- Sign in with email and password (bcrypt-hashed), GitHub, Google, or a shared demo account; stay signed in for 90 days
+- GitHub users can add a password in Profile to sign in on the phone app
 - Sign-in works inside the iPhone home-screen app too: it hands off to a browser window and matches a 4-digit code, since home-screen apps keep separate cookies
 - Pounds/feet or kilograms/centimeters
 - Installable to your phone's home screen (PWA)

@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { GoalForm } from "./GoalForm";
 import { TargetsEditor } from "./TargetsEditor";
+import { SetPasswordForm } from "./SetPasswordForm";
 import { setUnitSystem } from "./actions";
 
 export const metadata: Metadata = { title: "Profile" };
@@ -43,6 +44,7 @@ export default async function ProfilePage() {
             </button>
           ))}
         </form>
+        <SetPasswordForm hasPassword={!!user.passwordHash} email={user.email} />
       </section>
 
       <section id="goals" className="animate-rise mx-5 mt-4 rounded-2xl bg-rack-raised p-5">
