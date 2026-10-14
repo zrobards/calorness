@@ -1,10 +1,11 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { hashApiKey, readApiKey, summaryText } from "@/lib/apiKeys";
+import { summaryText } from "@/lib/apiKeys";
+import { plainText, userFromApiKey } from "@/lib/apiAuth";
 import { estimateFoods } from "@/lib/ai/foodVision";
 import { getDiaryDay, MEALS, MEAL_LABELS, type MealName } from "@/lib/nutrition/diary";
-import { nowInAppZone, saveAiItems } from "@/lib/nutrition/aiLog";
+import { nowInZone, saveAiItems } from "@/lib/nutrition/aiLog";
 
 /*
   POST /api/quick-log : log a meal from outside the app (an iPhone Shortcut).
@@ -23,17 +24,8 @@ const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // Vercel's request limit is 4.5 MB
 const HOURLY_LIMIT = 30; // protects your AI bill if a key ever leaks
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
-const text = (body: string, status = 200) =>
-  new Response(body, { status, headers: { "content-type": "text/plain; charset=utf-8" } });
-
-async function authenticate(req: Request) {
-  const key = readApiKey(req.headers.get("authorization"));
-  if (!key) return null;
-  const row = await db.apiKey.findUnique({ where: { hash: hashApiKey(key) }, include: { user: { select: { id: true, name: true } } } });
-  if (!row) return null;
-  await db.apiKey.update({ where: { id: row.id }, data: { lastUsedAt: new Date() } });
-  return row.user;
-}
+const text = plainText;
+const authenticate = userFromApiKey;
 
 /** Quick check for the shortcut setup: is the key valid? */
 export async function GET(req: Request) {
@@ -93,7 +85,7 @@ export async function POST(req: Request) {
   words = words?.trim().slice(0, 500) || undefined;
   if (!image && !words) return text("Nothing to log. Send a photo or describe the meal.", 400);
 
-  const now = nowInAppZone();
+  const now = nowInZone(user.timeZone);
   const meal: MealName = MEALS.includes(mealParam?.toUpperCase() as MealName) ? (mealParam!.toUpperCase() as MealName) : now.meal;
   const day = dayParam && /^\d{4}-\d{2}-\d{2}$/.test(dayParam) ? dayParam : now.day;
 
@@ -104,7 +96,7 @@ export async function POST(req: Request) {
   revalidatePath("/diary");
   revalidatePath("/log");
 
-  const diary = await getDiaryDay(user.id, day);
+  const diary = await getDiaryDay(user.id, day, user.timeZone);
   return text(
     summaryText({
       meal: MEAL_LABELS[meal],

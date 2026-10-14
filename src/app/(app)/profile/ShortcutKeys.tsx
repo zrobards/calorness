@@ -104,6 +104,16 @@ export function ShortcutKeys({ keys }: { keys: Key[] }) {
           named <b>text</b> set to the Dictated Text. Logs go to the meal for the time of day; fix anything later in the Diary.
         </p>
       </details>
+
+      <details className="mt-3">
+        <summary className="cursor-pointer font-medium text-plate-blue">Automatic weigh-ins from Apple Health</summary>
+        <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-relaxed">
+          <li>In <b>Shortcuts</b>, open the <b>Automation</b> tab → <b>+</b> → <b>Time of Day</b>, set it to a time after you usually weigh in, and choose <b>Run Immediately</b>.</li>
+          <li>Add <b>Find Health Samples</b>: Type is <b>Weight</b>, sort by <b>Start Date</b>, latest first, limit <b>1</b>.</li>
+          <li>Add <b>Get Contents of URL</b> with the URL above but ending in <b>/api/bodyweight</b> instead of /api/quick-log. Method <b>POST</b>, the same <b>Authorization</b> header, Request Body <b>Form</b> with a <b>Text</b> field named <b>weight</b> set to the <b>Health Samples</b> value.</li>
+        </ol>
+        <p className="mt-3 text-sm text-chalk-muted">Every morning your scale&apos;s reading lands on the Progress tab, no typing. Same key, so nothing else to set up.</p>
+      </details>
     </div>
   );
 }

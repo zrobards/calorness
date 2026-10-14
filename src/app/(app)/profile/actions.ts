@@ -8,6 +8,8 @@ import { db } from "@/lib/db";
 import { bmrMifflinStJeor, macroTargets, tdee } from "@/lib/fitness/nutrition";
 import { inToCm, lbToKg } from "@/lib/fitness/units";
 import { newApiKey } from "@/lib/apiKeys";
+import { isValidTimeZone } from "@/lib/time";
+import { sendPush, vapidKeys } from "@/lib/push";
 
 // Server actions run on the server but are called from forms like normal
 // functions. Never trust form input: validate it, and look up the user
@@ -124,4 +126,43 @@ export async function deleteApiKey(id: string) {
   const user = await requireUser();
   await db.apiKey.deleteMany({ where: { id, userId: user.id } });
   revalidatePath("/profile");
+}
+
+export async function setTimeZone(tz: string) {
+  const user = await requireUser();
+  if (!isValidTimeZone(tz)) return;
+  await db.user.update({ where: { id: user.id }, data: { timeZone: tz } });
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────
+
+export async function getPushPublicKey() {
+  await requireUser();
+  return (await vapidKeys()).publicKey;
+}
+
+const subscriptionSchema = z.object({
+  endpoint: z.string().url().max(1000),
+  keys: z.object({ p256dh: z.string().max(200), auth: z.string().max(100) }),
+});
+
+export async function savePushSubscription(sub: unknown) {
+  const user = await requireUser();
+  const s = subscriptionSchema.parse(sub);
+  await db.pushSubscription.upsert({
+    where: { endpoint: s.endpoint },
+    update: { userId: user.id, p256dh: s.keys.p256dh, auth: s.keys.auth },
+    create: { userId: user.id, endpoint: s.endpoint, p256dh: s.keys.p256dh, auth: s.keys.auth },
+  });
+}
+
+export async function removePushSubscription(endpoint: string) {
+  const user = await requireUser();
+  await db.pushSubscription.deleteMany({ where: { endpoint, userId: user.id } });
+}
+
+export async function sendTestNotification() {
+  const user = await requireUser();
+  const sent = await sendPush(user.id, { title: "Notifications are on", body: "You'll get rest timers and a lunchtime nudge.", url: "/log", tag: "test" });
+  return { sent };
 }
