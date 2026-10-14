@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
@@ -11,6 +10,10 @@ const nextConfig: NextConfig = {
         as: "*.css",
       },
     },
+  },
+  images: {
+    // Exercise photos come from the free-exercise-db GitHub repo
+    remotePatterns: [{ protocol: "https", hostname: "raw.githubusercontent.com", pathname: "/yuhonas/free-exercise-db/**" }],
   },
 };
 

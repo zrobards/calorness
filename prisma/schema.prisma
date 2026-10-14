@@ -88,6 +88,8 @@ model Exercise {
   name             String
   category         ExerciseCategory @default(STRENGTH)
   equipment        String?
+  level            String? // beginner, intermediate, expert
+  mechanic         String? // compound or isolation
   primaryMuscles   String[]
   secondaryMuscles String[]
   instructions     String[]
