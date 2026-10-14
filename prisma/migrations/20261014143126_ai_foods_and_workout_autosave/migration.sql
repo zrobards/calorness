@@ -1,0 +1,5 @@
+-- AlterEnum
+ALTER TYPE "FoodSource" ADD VALUE 'AI_ESTIMATE';
+
+-- AlterTable
+ALTER TABLE "Workout" ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;

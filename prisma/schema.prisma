@@ -156,6 +156,7 @@ model Workout {
   notes     String?
   startedAt DateTime  @default(now())
   endedAt   DateTime? // null while the workout is in progress
+  updatedAt DateTime  @default(now()) @updatedAt // last autosave, to pick the newest copy across devices
 
   user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   routine   Routine?          @relation(fields: [routineId], references: [id], onDelete: SetNull)
@@ -240,6 +241,7 @@ enum FoodSource {
   USDA
   OPEN_FOOD_FACTS
   CUSTOM
+  AI_ESTIMATE // estimated by AI from a photo or description
 }
 
 model DiaryEntry {
