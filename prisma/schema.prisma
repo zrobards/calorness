@@ -98,6 +98,7 @@ model Exercise {
   equipment        String?
   level            String? // beginner, intermediate, expert
   mechanic         String? // compound or isolation
+  aliases          String[] @default([]) // other names people use, like "pec deck" for Butterfly
   primaryMuscles   String[]
   secondaryMuscles String[]
   instructions     String[]
