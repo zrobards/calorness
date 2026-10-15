@@ -287,3 +287,46 @@ export async function previousSetsFor(workoutId: string, exerciseIds: string[]) 
   ]);
   return toDisplayPrevious(previous, unitSystem);
 }
+
+// ─── Your own exercises ───────────────────────────────────────────────────
+
+const MUSCLES = ["chest", "shoulders", "biceps", "triceps", "forearms", "abdominals", "traps", "lats", "middle back", "lower back", "glutes", "quadriceps", "hamstrings", "adductors", "abductors", "calves", "neck"] as const;
+const EQUIPMENT = ["barbell", "dumbbell", "cable", "machine", "body only", "kettlebells", "bands", "e-z curl bar", "other"] as const;
+
+const exerciseSchema = z.object({
+  name: z.string().trim().min(2, "Name the exercise.").max(80),
+  primaryMuscle: z.enum(MUSCLES),
+  secondaryMuscles: z.array(z.enum(MUSCLES)).max(5).default([]),
+  equipment: z.enum(EQUIPMENT),
+  category: z.enum(["STRENGTH", "CARDIO", "STRETCHING", "PLYOMETRICS"]).default("STRENGTH"),
+});
+
+/** Add an exercise that isn't in the library. Only you see it. */
+export async function createExercise(input: z.input<typeof exerciseSchema>) {
+  const user = await requireUser();
+  const parsed = exerciseSchema.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the details." };
+  const { name, primaryMuscle, secondaryMuscles, equipment, category } = parsed.data;
+
+  const duplicate = await db.exercise.findFirst({ where: { createdById: user.id, name: { equals: name, mode: "insensitive" } } });
+  if (duplicate) return { error: "You already have an exercise with that name." };
+
+  const slug = `u-${user.id.slice(-6)}-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${Date.now().toString(36)}`;
+  const e = await db.exercise.create({
+    data: { slug, name, category, equipment, primaryMuscles: [primaryMuscle], secondaryMuscles, createdById: user.id },
+  });
+  revalidatePath("/train");
+  return {
+    exercise: { id: e.id, slug: e.slug, name: e.name, equipment: e.equipment, primaryMuscles: e.primaryMuscles, image: null, aliases: [], custom: true },
+  };
+}
+
+export async function deleteExercise(id: string) {
+  const user = await requireUser();
+  const used = await db.workoutExercise.count({ where: { exerciseId: id } });
+  if (used > 0) return { error: "This exercise is in your workout history, so it can't be deleted." };
+  await db.routineExercise.deleteMany({ where: { exerciseId: id, routine: { userId: user.id } } });
+  await db.exercise.deleteMany({ where: { id, createdById: user.id } });
+  revalidatePath("/train");
+  return { ok: true };
+}

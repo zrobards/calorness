@@ -22,17 +22,23 @@ export function titleCase(s: string) {
  * match comes first: names starting with the query, then names whose words
  * start with the query words, then shorter (simpler) names.
  */
-export function searchByName<T extends { name: string }>(items: T[], query: string): T[] {
+export function searchByName<T extends { name: string; aliases?: string[] }>(items: T[], query: string): T[] {
   const q = query.trim().toLowerCase();
   const words = q.split(/\s+/).filter(Boolean);
   if (words.length === 0) return items;
   const scored: { item: T; score: number }[] = [];
   for (const item of items) {
     const name = item.name.toLowerCase();
-    if (!words.every((w) => name.includes(w))) continue;
+    // Short words must start a word ("rdl" shouldn't match "hurdle"); longer ones can match anywhere
+    const hits = (text: string) =>
+      words.every((w) => (w.length <= 3 ? text.split(/[\s\-/(),]+/).some((t) => t.startsWith(w)) : text.includes(w)));
+    // Also match other names people use ("pec deck" finds Butterfly)
+    const alias = (item.aliases ?? []).map((a) => a.toLowerCase()).find(hits);
+    if (!hits(name) && !alias) continue;
     const nameWords = name.split(/[\s\-/(),]+/);
     let score = name.length;
-    if (name.startsWith(q)) score -= 1000;
+    if (name.startsWith(q) || alias === q) score -= 1000;
+    else if (alias?.startsWith(q)) score -= 600;
     score -= 100 * words.filter((w) => nameWords.some((nw) => nw.startsWith(w))).length;
     scored.push({ item, score });
   }

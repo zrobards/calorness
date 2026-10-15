@@ -4,14 +4,14 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
 import { RoutineEditor } from "@/components/train/RoutineEditor";
 import { requireUser } from "@/lib/auth";
-import { exerciseImageUrl, getExerciseLibrary, getRoutine } from "@/lib/training";
+import { exerciseImageUrl, getExerciseOptions, getRoutine } from "@/lib/training";
 
 export const metadata: Metadata = { title: "Edit routine" };
 
 export default async function EditRoutinePage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const { id } = await params;
-  const [routine, library] = await Promise.all([getRoutine(user.id, id), getExerciseLibrary()]);
+  const [routine, library] = await Promise.all([getRoutine(user.id, id), getExerciseOptions(user.id)]);
   if (!routine) notFound();
 
   return (

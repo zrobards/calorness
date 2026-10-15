@@ -40,6 +40,7 @@ model User {
   apiKeys         ApiKey[]
   savedMeals      SavedMeal[]
   pushSubscriptions PushSubscription[]
+  aiCalls         AiCall[]
 }
 
 model Account {
@@ -97,6 +98,7 @@ model Exercise {
   equipment        String?
   level            String? // beginner, intermediate, expert
   mechanic         String? // compound or isolation
+  aliases          String[] @default([]) // other names people use, like "pec deck" for Butterfly
   primaryMuscles   String[]
   secondaryMuscles String[]
   instructions     String[]
@@ -399,4 +401,17 @@ model PushSubscription {
 model AppSecret {
   key   String @id
   value String
+}
+
+// One row per AI request, so each person can have a fair daily limit and the
+// AI bill stays predictable when friends use the app.
+model AiCall {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String // "photo", "describe", "label", "shortcut"
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }

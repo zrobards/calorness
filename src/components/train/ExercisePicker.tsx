@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, Search, X } from "lucide-react";
+import { Check, Plus, Search, X } from "lucide-react";
+import { CreateExerciseSheet } from "./CreateExerciseSheet";
 import type { ExerciseOption } from "@/lib/training";
 import { ExerciseThumb } from "./ExerciseThumb";
 import { MUSCLE_FILTERS, matchesFilter, searchByName, titleCase } from "./muscleFilters";
@@ -18,10 +19,17 @@ export function ExercisePicker({
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
+  const [mine, setMine] = useState<ExerciseOption[]>([]); // made in this session
+  const [creating, setCreating] = useState(false);
+  // New exercises can also arrive in `exercises` once the page refreshes, so de-duplicate by id
+  const all = useMemo(() => {
+    const seen = new Set<string>();
+    return [...mine, ...exercises].filter((e) => !seen.has(e.id) && seen.add(e.id));
+  }, [mine, exercises]);
 
   const results = useMemo(() => {
-    return searchByName(exercises.filter((e) => matchesFilter(e.primaryMuscles, filter)), query).slice(0, 120);
-  }, [exercises, query, filter]);
+    return searchByName(all.filter((e) => matchesFilter(e.primaryMuscles, filter)), query).slice(0, 150);
+  }, [all, query, filter]);
 
   const toggle = (id: string) =>
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
@@ -67,6 +75,18 @@ export function ExercisePicker({
       </div>
 
       <ul className="mx-auto mt-2 w-full max-w-md flex-1 overflow-y-auto px-4 pb-32">
+        {/* Can't find it? Make it. Always one tap away while searching. */}
+        {query.trim().length >= 2 && (
+          <li>
+            <button onClick={() => setCreating(true)} className="flex w-full items-center gap-3 border-b border-rack-line py-3 text-left">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-plate-red/20 text-plate-red"><Plus size={22} aria-hidden /></span>
+              <span className="min-w-0">
+                <span className="block truncate font-medium">Create &ldquo;{query.trim()}&rdquo;</span>
+                <span className="block text-sm text-chalk-muted">{results.length ? "Not the one you want? Add your own." : "Not in the library yet. Add it in a few taps."}</span>
+              </span>
+            </button>
+          </li>
+        )}
         {results.map((e) => {
           const on = selected.includes(e.id);
           return (
@@ -80,6 +100,7 @@ export function ExercisePicker({
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{e.name}</span>
                   <span className="block truncate text-sm text-chalk-muted">
+                    {e.custom ? "Your exercise, " : ""}
                     {titleCase(e.primaryMuscles.join(", "))}
                     {e.equipment ? `, ${e.equipment}` : ""}
                   </span>
@@ -95,7 +116,7 @@ export function ExercisePicker({
             </li>
           );
         })}
-        {results.length === 0 && <li className="py-10 text-center text-chalk-muted">No exercises match “{query}”.</li>}
+
       </ul>
 
       {selected.length > 0 && (
@@ -104,12 +125,24 @@ export function ExercisePicker({
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}
         >
           <button
-            onClick={() => onAdd(exercises.filter((e) => selected.includes(e.id)))}
+            onClick={() => onAdd(all.filter((e) => selected.includes(e.id)))}
             className="mx-auto block w-full max-w-md rounded-xl bg-plate-blue py-3.5 font-display text-xl font-semibold text-white"
           >
             Add {selected.length} {selected.length === 1 ? "exercise" : "exercises"}
           </button>
         </div>
+      )}
+      {creating && (
+        <CreateExerciseSheet
+          initialName={titleCase(query.trim())}
+          onClose={() => setCreating(false)}
+          onCreated={(e) => {
+            setMine((m) => [e, ...m]);
+            setSelected((s) => [...s, e.id]);
+            setQuery(e.name);
+            setCreating(false);
+          }}
+        />
       )}
     </div>
   );

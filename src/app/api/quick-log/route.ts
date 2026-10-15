@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { db } from "@/lib/db";
 import { summaryText } from "@/lib/apiKeys";
+import { consumeAiQuota } from "@/lib/aiLimit";
 import { plainText, userFromApiKey } from "@/lib/apiAuth";
 import { estimateFoods } from "@/lib/ai/foodVision";
 import { getDiaryDay, MEALS, MEAL_LABELS, type MealName } from "@/lib/nutrition/diary";
@@ -21,7 +21,6 @@ import { nowInZone, saveAiItems } from "@/lib/nutrition/aiLog";
 */
 
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // Vercel's request limit is 4.5 MB
-const HOURLY_LIMIT = 30; // protects your AI bill if a key ever leaks
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
 const text = plainText;
@@ -37,10 +36,6 @@ export async function POST(req: Request) {
   const user = await authenticate(req);
   if (!user) return text("That Calorness key isn't valid. Make a new one in Profile → Phone shortcut.", 401);
 
-  const recent = await db.food.count({
-    where: { createdById: user.id, source: "AI_ESTIMATE", createdAt: { gte: new Date(Date.now() - 3600_000) } },
-  });
-  if (recent >= HOURLY_LIMIT) return text("That's a lot of meals for one hour. Try again later.", 429);
 
   // Read whichever body format the shortcut sent
   let image: { base64: string; mediaType: (typeof IMAGE_TYPES)[number] } | undefined;
@@ -89,6 +84,8 @@ export async function POST(req: Request) {
   const meal: MealName = MEALS.includes(mealParam?.toUpperCase() as MealName) ? (mealParam!.toUpperCase() as MealName) : now.meal;
   const day = dayParam && /^\d{4}-\d{2}-\d{2}$/.test(dayParam) ? dayParam : now.day;
 
+  const allowed = await consumeAiQuota(user.id, "shortcut");
+  if ("error" in allowed) return text(allowed.error ?? "AI limit reached.", 429);
   const result = await estimateFoods({ image, text: words });
   if ("error" in result) return text(result.error, 422);
 

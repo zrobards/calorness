@@ -1,0 +1,2347 @@
+[
+{
+"slug": "x-pec-deck",
+"name": "Pec Deck",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"chest"
+],
+"secondaryMuscles": [
+"shoulders"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"pec fly machine",
+"machine chest fly",
+"butterfly machine"
+]
+},
+{
+"slug": "x-machine-chest-fly",
+"name": "Machine Chest Fly",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"chest"
+],
+"secondaryMuscles": [
+"shoulders"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"pec deck",
+"seated fly"
+]
+},
+{
+"slug": "x-machine-chest-press",
+"name": "Machine Chest Press",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"chest"
+],
+"secondaryMuscles": [
+"triceps",
+"shoulders"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"seated chest press",
+"hammer strength chest press"
+]
+},
+{
+"slug": "x-incline-machine-chest-press",
+"name": "Incline Machine Chest Press",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"chest"
+],
+"secondaryMuscles": [
+"triceps",
+"shoulders"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"incline chest press machine"
+]
+},
+{
+"slug": "x-decline-machine-chest-press",
+"name": "Decline Machine Chest Press",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"chest"
+],
+"secondaryMuscles": [
+"triceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-incline-dumbbell-press",
+"name": "Incline Dumbbell Press",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"chest"
+],
+"secondaryMuscles": [
+"shoulders",
+"triceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"incline db press",
+"incline dumbbell bench"
+]
+},
+{
+"slug": "x-decline-dumbbell-press",
+"name": "Decline Dumbbell Press",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"chest"
+],
+"secondaryMuscles": [
+"triceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"decline db press"
+]
+},
+{
+"slug": "x-incline-dumbbell-fly",
+"name": "Incline Dumbbell Fly",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"chest"
+],
+"secondaryMuscles": [
+"shoulders"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"incline db fly"
+]
+},
+{
+"slug": "x-cable-fly-high-to-low",
+"name": "Cable Fly (High to Low)",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"chest"
+],
+"secondaryMuscles": [
+"shoulders"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"high cable fly",
+"cable crossover high"
+]
+},
+{
+"slug": "x-cable-fly-low-to-high",
+"name": "Cable Fly (Low to High)",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"chest"
+],
+"secondaryMuscles": [
+"shoulders"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"low cable fly",
+"upper chest cable fly"
+]
+},
+{
+"slug": "x-cable-fly-mid",
+"name": "Cable Fly (Mid)",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"chest"
+],
+"secondaryMuscles": [
+"shoulders"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"cable chest fly",
+"standing cable fly"
+]
+},
+{
+"slug": "x-smith-machine-incline-press",
+"name": "Smith Machine Incline Press",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"chest"
+],
+"secondaryMuscles": [
+"shoulders",
+"triceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"smith incline bench"
+]
+},
+{
+"slug": "x-push-up",
+"name": "Push-Up",
+"category": "STRENGTH",
+"equipment": "body only",
+"primaryMuscles": [
+"chest"
+],
+"secondaryMuscles": [
+"triceps",
+"shoulders"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"pushup",
+"press up"
+]
+},
+{
+"slug": "x-incline-push-up",
+"name": "Incline Push-Up",
+"category": "STRENGTH",
+"equipment": "body only",
+"primaryMuscles": [
+"chest"
+],
+"secondaryMuscles": [
+"triceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-deficit-push-up",
+"name": "Deficit Push-Up",
+"category": "STRENGTH",
+"equipment": "body only",
+"primaryMuscles": [
+"chest"
+],
+"secondaryMuscles": [
+"triceps",
+"shoulders"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-weighted-dip",
+"name": "Weighted Dip",
+"category": "STRENGTH",
+"equipment": "other",
+"primaryMuscles": [
+"chest"
+],
+"secondaryMuscles": [
+"triceps",
+"shoulders"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"dips weighted"
+]
+},
+{
+"slug": "x-assisted-dip",
+"name": "Assisted Dip",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"triceps"
+],
+"secondaryMuscles": [
+"chest"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"dip assist machine"
+]
+},
+{
+"slug": "x-landmine-press",
+"name": "Landmine Press",
+"category": "STRENGTH",
+"equipment": "barbell",
+"primaryMuscles": [
+"chest"
+],
+"secondaryMuscles": [
+"shoulders",
+"triceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-seated-cable-row",
+"name": "Seated Cable Row",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"middle back"
+],
+"secondaryMuscles": [
+"lats",
+"biceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"cable row",
+"low row",
+"seated row"
+]
+},
+{
+"slug": "x-machine-seated-row",
+"name": "Machine Seated Row",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"middle back"
+],
+"secondaryMuscles": [
+"lats",
+"biceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"seated row machine",
+"hammer strength row"
+]
+},
+{
+"slug": "x-chest-supported-dumbbell-row",
+"name": "Chest-Supported Dumbbell Row",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"middle back"
+],
+"secondaryMuscles": [
+"lats",
+"biceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"incline db row",
+"seal row dumbbell"
+]
+},
+{
+"slug": "x-chest-supported-t-bar-row",
+"name": "Chest-Supported T-Bar Row",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"middle back"
+],
+"secondaryMuscles": [
+"lats",
+"biceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"t bar row machine"
+]
+},
+{
+"slug": "x-seal-row",
+"name": "Seal Row",
+"category": "STRENGTH",
+"equipment": "barbell",
+"primaryMuscles": [
+"middle back"
+],
+"secondaryMuscles": [
+"lats",
+"biceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-pendlay-row",
+"name": "Pendlay Row",
+"category": "STRENGTH",
+"equipment": "barbell",
+"primaryMuscles": [
+"middle back"
+],
+"secondaryMuscles": [
+"lats",
+"lower back"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-single-arm-dumbbell-row",
+"name": "Single-Arm Dumbbell Row",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"lats"
+],
+"secondaryMuscles": [
+"middle back",
+"biceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"one arm db row",
+"dumbbell row"
+]
+},
+{
+"slug": "x-meadows-row",
+"name": "Meadows Row",
+"category": "STRENGTH",
+"equipment": "barbell",
+"primaryMuscles": [
+"lats"
+],
+"secondaryMuscles": [
+"middle back",
+"biceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"landmine row"
+]
+},
+{
+"slug": "x-lat-pulldown",
+"name": "Lat Pulldown",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"lats"
+],
+"secondaryMuscles": [
+"biceps",
+"middle back"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"pulldown",
+"wide grip pulldown"
+]
+},
+{
+"slug": "x-close-grip-lat-pulldown",
+"name": "Close-Grip Lat Pulldown",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"lats"
+],
+"secondaryMuscles": [
+"biceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"v bar pulldown"
+]
+},
+{
+"slug": "x-underhand-lat-pulldown",
+"name": "Underhand Lat Pulldown",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"lats"
+],
+"secondaryMuscles": [
+"biceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"reverse grip pulldown"
+]
+},
+{
+"slug": "x-single-arm-cable-pulldown",
+"name": "Single-Arm Cable Pulldown",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"lats"
+],
+"secondaryMuscles": [
+"biceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-machine-lat-pulldown",
+"name": "Machine Lat Pulldown",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"lats"
+],
+"secondaryMuscles": [
+"biceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"hammer strength pulldown"
+]
+},
+{
+"slug": "x-cable-pullover",
+"name": "Cable Pullover",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"lats"
+],
+"secondaryMuscles": [
+"chest"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"straight arm pulldown rope",
+"lat prayer"
+]
+},
+{
+"slug": "x-pull-up",
+"name": "Pull-Up",
+"category": "STRENGTH",
+"equipment": "body only",
+"primaryMuscles": [
+"lats"
+],
+"secondaryMuscles": [
+"biceps",
+"middle back"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"pullup",
+"pull up"
+]
+},
+{
+"slug": "x-chin-up",
+"name": "Chin-Up",
+"category": "STRENGTH",
+"equipment": "body only",
+"primaryMuscles": [
+"lats"
+],
+"secondaryMuscles": [
+"biceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"chinup",
+"chin up"
+]
+},
+{
+"slug": "x-weighted-pull-up",
+"name": "Weighted Pull-Up",
+"category": "STRENGTH",
+"equipment": "other",
+"primaryMuscles": [
+"lats"
+],
+"secondaryMuscles": [
+"biceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-assisted-pull-up",
+"name": "Assisted Pull-Up",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"lats"
+],
+"secondaryMuscles": [
+"biceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"pull up assist machine",
+"gravitron"
+]
+},
+{
+"slug": "x-inverted-row",
+"name": "Inverted Row",
+"category": "STRENGTH",
+"equipment": "body only",
+"primaryMuscles": [
+"middle back"
+],
+"secondaryMuscles": [
+"lats",
+"biceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"bodyweight row",
+"australian pull up"
+]
+},
+{
+"slug": "x-rack-pull",
+"name": "Rack Pull",
+"category": "STRENGTH",
+"equipment": "barbell",
+"primaryMuscles": [
+"lower back"
+],
+"secondaryMuscles": [
+"glutes",
+"hamstrings",
+"traps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-back-extension",
+"name": "Back Extension",
+"category": "STRENGTH",
+"equipment": "other",
+"primaryMuscles": [
+"lower back"
+],
+"secondaryMuscles": [
+"glutes",
+"hamstrings"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"hyperextension",
+"45 degree back extension"
+]
+},
+{
+"slug": "x-reverse-pec-deck",
+"name": "Reverse Pec Deck",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"shoulders"
+],
+"secondaryMuscles": [
+"middle back",
+"traps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"rear delt fly machine",
+"reverse fly machine"
+]
+},
+{
+"slug": "x-dumbbell-shrug-seated",
+"name": "Dumbbell Shrug (Seated)",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"traps"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-dumbbell-shoulder-press-seated",
+"name": "Dumbbell Shoulder Press (Seated)",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"shoulders"
+],
+"secondaryMuscles": [
+"triceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"seated db press",
+"db overhead press"
+]
+},
+{
+"slug": "x-machine-shoulder-press",
+"name": "Machine Shoulder Press",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"shoulders"
+],
+"secondaryMuscles": [
+"triceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"shoulder press machine"
+]
+},
+{
+"slug": "x-overhead-press",
+"name": "Overhead Press",
+"category": "STRENGTH",
+"equipment": "barbell",
+"primaryMuscles": [
+"shoulders"
+],
+"secondaryMuscles": [
+"triceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"ohp",
+"military press",
+"standing barbell press"
+]
+},
+{
+"slug": "x-seated-barbell-overhead-press",
+"name": "Seated Barbell Overhead Press",
+"category": "STRENGTH",
+"equipment": "barbell",
+"primaryMuscles": [
+"shoulders"
+],
+"secondaryMuscles": [
+"triceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-arnold-press",
+"name": "Arnold Press",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"shoulders"
+],
+"secondaryMuscles": [
+"triceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-dumbbell-lateral-raise",
+"name": "Dumbbell Lateral Raise",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"shoulders"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"side raise",
+"lateral raise",
+"side lateral"
+]
+},
+{
+"slug": "x-cable-lateral-raise",
+"name": "Cable Lateral Raise",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"shoulders"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"single arm cable lateral"
+]
+},
+{
+"slug": "x-machine-lateral-raise",
+"name": "Machine Lateral Raise",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"shoulders"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"lateral raise machine"
+]
+},
+{
+"slug": "x-lean-away-lateral-raise",
+"name": "Lean-Away Lateral Raise",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"shoulders"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-dumbbell-rear-delt-fly",
+"name": "Dumbbell Rear Delt Fly",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"shoulders"
+],
+"secondaryMuscles": [
+"middle back"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"bent over rear delt raise"
+]
+},
+{
+"slug": "x-cable-rear-delt-fly-crossover",
+"name": "Cable Rear Delt Fly (Crossover)",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"shoulders"
+],
+"secondaryMuscles": [
+"middle back"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"reverse cable fly"
+]
+},
+{
+"slug": "x-dumbbell-front-raise",
+"name": "Dumbbell Front Raise",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"shoulders"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"front raise"
+]
+},
+{
+"slug": "x-cable-upright-row",
+"name": "Cable Upright Row",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"shoulders"
+],
+"secondaryMuscles": [
+"traps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-landmine-shoulder-press",
+"name": "Landmine Shoulder Press",
+"category": "STRENGTH",
+"equipment": "barbell",
+"primaryMuscles": [
+"shoulders"
+],
+"secondaryMuscles": [
+"chest",
+"triceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-dumbbell-curl",
+"name": "Dumbbell Curl",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"biceps"
+],
+"secondaryMuscles": [
+"forearms"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"db curl",
+"bicep curl"
+]
+},
+{
+"slug": "x-incline-dumbbell-curl",
+"name": "Incline Dumbbell Curl",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"biceps"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"incline curl"
+]
+},
+{
+"slug": "x-cable-curl",
+"name": "Cable Curl",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"biceps"
+],
+"secondaryMuscles": [
+"forearms"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"cable bicep curl"
+]
+},
+{
+"slug": "x-bayesian-cable-curl",
+"name": "Bayesian Cable Curl",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"biceps"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"behind the body cable curl"
+]
+},
+{
+"slug": "x-machine-bicep-curl",
+"name": "Machine Bicep Curl",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"biceps"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"bicep curl machine"
+]
+},
+{
+"slug": "x-ez-bar-curl",
+"name": "EZ-Bar Curl",
+"category": "STRENGTH",
+"equipment": "e-z curl bar",
+"primaryMuscles": [
+"biceps"
+],
+"secondaryMuscles": [
+"forearms"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"ez curl"
+]
+},
+{
+"slug": "x-spider-curl",
+"name": "Spider Curl",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"biceps"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-cable-hammer-curl",
+"name": "Cable Hammer Curl",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"biceps"
+],
+"secondaryMuscles": [
+"forearms"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"rope hammer curl"
+]
+},
+{
+"slug": "x-triceps-rope-pushdown",
+"name": "Triceps Rope Pushdown",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"triceps"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"rope pushdown",
+"tricep rope"
+]
+},
+{
+"slug": "x-straight-bar-triceps-pushdown",
+"name": "Straight-Bar Triceps Pushdown",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"triceps"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"bar pushdown"
+]
+},
+{
+"slug": "x-overhead-cable-triceps-extension",
+"name": "Overhead Cable Triceps Extension",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"triceps"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"overhead rope extension"
+]
+},
+{
+"slug": "x-single-arm-cable-triceps-extension",
+"name": "Single-Arm Cable Triceps Extension",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"triceps"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-dumbbell-overhead-triceps-extension",
+"name": "Dumbbell Overhead Triceps Extension",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"triceps"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"french press",
+"db overhead extension"
+]
+},
+{
+"slug": "x-machine-triceps-extension",
+"name": "Machine Triceps Extension",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"triceps"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"tricep extension machine"
+]
+},
+{
+"slug": "x-skull-crusher",
+"name": "Skull Crusher",
+"category": "STRENGTH",
+"equipment": "e-z curl bar",
+"primaryMuscles": [
+"triceps"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"lying triceps extension",
+"skullcrusher"
+]
+},
+{
+"slug": "x-jm-press",
+"name": "JM Press",
+"category": "STRENGTH",
+"equipment": "barbell",
+"primaryMuscles": [
+"triceps"
+],
+"secondaryMuscles": [
+"chest"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-close-grip-bench-press",
+"name": "Close-Grip Bench Press",
+"category": "STRENGTH",
+"equipment": "barbell",
+"primaryMuscles": [
+"triceps"
+],
+"secondaryMuscles": [
+"chest",
+"shoulders"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"cgbp"
+]
+},
+{
+"slug": "x-wrist-curl",
+"name": "Wrist Curl",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"forearms"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-reverse-curl",
+"name": "Reverse Curl",
+"category": "STRENGTH",
+"equipment": "e-z curl bar",
+"primaryMuscles": [
+"forearms"
+],
+"secondaryMuscles": [
+"biceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-back-squat",
+"name": "Back Squat",
+"category": "STRENGTH",
+"equipment": "barbell",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"glutes",
+"hamstrings",
+"lower back"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"squat",
+"barbell squat",
+"high bar squat"
+]
+},
+{
+"slug": "x-front-squat",
+"name": "Front Squat",
+"category": "STRENGTH",
+"equipment": "barbell",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"glutes"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-smith-machine-squat",
+"name": "Smith Machine Squat",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"glutes"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"smith squat"
+]
+},
+{
+"slug": "x-hack-squat-machine",
+"name": "Hack Squat Machine",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"glutes"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"hack squat",
+"machine hack squat"
+]
+},
+{
+"slug": "x-pendulum-squat",
+"name": "Pendulum Squat",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"glutes"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-belt-squat",
+"name": "Belt Squat",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"glutes"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-leg-press-45",
+"name": "Leg Press (45\u00b0)",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"glutes",
+"hamstrings"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"45 degree leg press",
+"sled leg press"
+]
+},
+{
+"slug": "x-bulgarian-split-squat",
+"name": "Bulgarian Split Squat",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"glutes",
+"hamstrings"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"rear foot elevated split squat",
+"bss"
+]
+},
+{
+"slug": "x-walking-lunge",
+"name": "Walking Lunge",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"glutes",
+"hamstrings"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"dumbbell walking lunge"
+]
+},
+{
+"slug": "x-reverse-lunge",
+"name": "Reverse Lunge",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"glutes"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-step-up",
+"name": "Step-Up",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"glutes"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"box step up"
+]
+},
+{
+"slug": "x-sissy-squat",
+"name": "Sissy Squat",
+"category": "STRENGTH",
+"equipment": "body only",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-leg-extension",
+"name": "Leg Extension",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"quad extension"
+]
+},
+{
+"slug": "x-seated-leg-curl-machine",
+"name": "Seated Leg Curl Machine",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"hamstrings"
+],
+"secondaryMuscles": [
+"calves"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"seated hamstring curl"
+]
+},
+{
+"slug": "x-lying-leg-curl-machine",
+"name": "Lying Leg Curl Machine",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"hamstrings"
+],
+"secondaryMuscles": [
+"calves"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"prone leg curl"
+]
+},
+{
+"slug": "x-nordic-hamstring-curl",
+"name": "Nordic Hamstring Curl",
+"category": "STRENGTH",
+"equipment": "body only",
+"primaryMuscles": [
+"hamstrings"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"nordic curl"
+]
+},
+{
+"slug": "x-dumbbell-romanian-deadlift",
+"name": "Dumbbell Romanian Deadlift",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"hamstrings"
+],
+"secondaryMuscles": [
+"glutes",
+"lower back"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"db rdl"
+]
+},
+{
+"slug": "x-stiff-leg-deadlift",
+"name": "Stiff-Leg Deadlift",
+"category": "STRENGTH",
+"equipment": "barbell",
+"primaryMuscles": [
+"hamstrings"
+],
+"secondaryMuscles": [
+"glutes",
+"lower back"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"sldl"
+]
+},
+{
+"slug": "x-conventional-deadlift",
+"name": "Conventional Deadlift",
+"category": "STRENGTH",
+"equipment": "barbell",
+"primaryMuscles": [
+"lower back"
+],
+"secondaryMuscles": [
+"glutes",
+"hamstrings",
+"quadriceps",
+"traps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"deadlift"
+]
+},
+{
+"slug": "x-sumo-deadlift",
+"name": "Sumo Deadlift",
+"category": "STRENGTH",
+"equipment": "barbell",
+"primaryMuscles": [
+"glutes"
+],
+"secondaryMuscles": [
+"hamstrings",
+"quadriceps",
+"adductors",
+"lower back"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-trap-bar-deadlift",
+"name": "Trap Bar Deadlift",
+"category": "STRENGTH",
+"equipment": "other",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"glutes",
+"hamstrings",
+"lower back"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"hex bar deadlift"
+]
+},
+{
+"slug": "x-hip-thrust-machine",
+"name": "Hip Thrust Machine",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"glutes"
+],
+"secondaryMuscles": [
+"hamstrings"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"glute drive"
+]
+},
+{
+"slug": "x-glute-bridge",
+"name": "Glute Bridge",
+"category": "STRENGTH",
+"equipment": "body only",
+"primaryMuscles": [
+"glutes"
+],
+"secondaryMuscles": [
+"hamstrings"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-cable-kickback",
+"name": "Cable Kickback",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"glutes"
+],
+"secondaryMuscles": [
+"hamstrings"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"glute kickback"
+]
+},
+{
+"slug": "x-hip-abduction-machine",
+"name": "Hip Abduction Machine",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"abductors"
+],
+"secondaryMuscles": [
+"glutes"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"outer thigh machine"
+]
+},
+{
+"slug": "x-hip-adduction-machine",
+"name": "Hip Adduction Machine",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"adductors"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"inner thigh machine"
+]
+},
+{
+"slug": "x-standing-calf-raise-machine",
+"name": "Standing Calf Raise Machine",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"calves"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"standing calf raise"
+]
+},
+{
+"slug": "x-seated-calf-raise-machine",
+"name": "Seated Calf Raise Machine",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"calves"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"seated calf raise"
+]
+},
+{
+"slug": "x-leg-press-calf-raise",
+"name": "Leg Press Calf Raise",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"calves"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"calf press"
+]
+},
+{
+"slug": "x-hanging-leg-raise",
+"name": "Hanging Leg Raise",
+"category": "STRENGTH",
+"equipment": "body only",
+"primaryMuscles": [
+"abdominals"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-hanging-knee-raise",
+"name": "Hanging Knee Raise",
+"category": "STRENGTH",
+"equipment": "body only",
+"primaryMuscles": [
+"abdominals"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-captain-s-chair-leg-raise",
+"name": "Captain's Chair Leg Raise",
+"category": "STRENGTH",
+"equipment": "machine",
+"primaryMuscles": [
+"abdominals"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"vertical knee raise"
+]
+},
+{
+"slug": "x-ab-wheel-rollout",
+"name": "Ab Wheel Rollout",
+"category": "STRENGTH",
+"equipment": "other",
+"primaryMuscles": [
+"abdominals"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"ab roller"
+]
+},
+{
+"slug": "x-cable-crunch-kneeling",
+"name": "Cable Crunch (Kneeling)",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"abdominals"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"rope crunch"
+]
+},
+{
+"slug": "x-decline-sit-up",
+"name": "Decline Sit-Up",
+"category": "STRENGTH",
+"equipment": "body only",
+"primaryMuscles": [
+"abdominals"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-russian-twist",
+"name": "Russian Twist",
+"category": "STRENGTH",
+"equipment": "body only",
+"primaryMuscles": [
+"abdominals"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-pallof-press",
+"name": "Pallof Press",
+"category": "STRENGTH",
+"equipment": "cable",
+"primaryMuscles": [
+"abdominals"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-side-plank",
+"name": "Side Plank",
+"category": "STRENGTH",
+"equipment": "body only",
+"primaryMuscles": [
+"abdominals"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-dead-bug",
+"name": "Dead Bug",
+"category": "STRENGTH",
+"equipment": "body only",
+"primaryMuscles": [
+"abdominals"
+],
+"secondaryMuscles": [],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-incline-treadmill-walk",
+"name": "Incline Treadmill Walk",
+"category": "CARDIO",
+"equipment": "machine",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"calves",
+"glutes"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"12 3 30",
+"incline walk"
+]
+},
+{
+"slug": "x-stair-climber",
+"name": "Stair Climber",
+"category": "CARDIO",
+"equipment": "machine",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"glutes",
+"calves"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"stairmaster",
+"stepmill"
+]
+},
+{
+"slug": "x-rowing-machine",
+"name": "Rowing Machine",
+"category": "CARDIO",
+"equipment": "machine",
+"primaryMuscles": [
+"middle back"
+],
+"secondaryMuscles": [
+"quadriceps",
+"biceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"rower",
+"erg",
+"concept2"
+]
+},
+{
+"slug": "x-stationary-bike",
+"name": "Stationary Bike",
+"category": "CARDIO",
+"equipment": "machine",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"hamstrings"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"exercise bike",
+"spin bike",
+"peloton"
+]
+},
+{
+"slug": "x-assault-bike",
+"name": "Assault Bike",
+"category": "CARDIO",
+"equipment": "machine",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"shoulders"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"airdyne",
+"air bike"
+]
+},
+{
+"slug": "x-running-outdoor",
+"name": "Running (Outdoor)",
+"category": "CARDIO",
+"equipment": "body only",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"hamstrings",
+"calves"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"run",
+"jog"
+]
+},
+{
+"slug": "x-walking-outdoor",
+"name": "Walking (Outdoor)",
+"category": "CARDIO",
+"equipment": "body only",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"calves"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"walk"
+]
+},
+{
+"slug": "x-jump-rope",
+"name": "Jump Rope",
+"category": "CARDIO",
+"equipment": "other",
+"primaryMuscles": [
+"calves"
+],
+"secondaryMuscles": [
+"quadriceps"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"skipping rope"
+]
+},
+{
+"slug": "x-swimming",
+"name": "Swimming",
+"category": "CARDIO",
+"equipment": "body only",
+"primaryMuscles": [
+"lats"
+],
+"secondaryMuscles": [
+"shoulders"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"swim",
+"laps"
+]
+},
+{
+"slug": "x-battle-ropes",
+"name": "Battle Ropes",
+"category": "CARDIO",
+"equipment": "other",
+"primaryMuscles": [
+"shoulders"
+],
+"secondaryMuscles": [
+"abdominals"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-burpee",
+"name": "Burpee",
+"category": "PLYOMETRICS",
+"equipment": "body only",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"chest",
+"shoulders"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"burpees"
+]
+},
+{
+"slug": "x-box-jump",
+"name": "Box Jump",
+"category": "PLYOMETRICS",
+"equipment": "other",
+"primaryMuscles": [
+"quadriceps"
+],
+"secondaryMuscles": [
+"glutes",
+"calves"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": []
+},
+{
+"slug": "x-kettlebell-swing",
+"name": "Kettlebell Swing",
+"category": "STRENGTH",
+"equipment": "kettlebells",
+"primaryMuscles": [
+"glutes"
+],
+"secondaryMuscles": [
+"hamstrings",
+"lower back"
+],
+"instructions": [],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"kb swing",
+"russian swing"
+]
+}
+]

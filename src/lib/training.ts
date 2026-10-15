@@ -22,6 +22,8 @@ export type ExerciseOption = {
   equipment: string | null;
   primaryMuscles: string[];
   image: string | null;
+  aliases: string[];
+  custom?: boolean; // made by this user
 };
 
 const IMAGE_BASE = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
@@ -39,9 +41,22 @@ export async function getExerciseLibrary(): Promise<ExerciseOption[]> {
   const rows = await db.exercise.findMany({
     where: { createdById: null },
     orderBy: { name: "asc" },
-    select: { id: true, slug: true, name: true, equipment: true, primaryMuscles: true, images: true },
+    select: { id: true, slug: true, name: true, equipment: true, primaryMuscles: true, images: true, aliases: true },
   });
   return rows.map(({ images, ...r }) => ({ ...r, image: exerciseImageUrl(images[0]) }));
+}
+
+/** The shared library plus exercises this user created (theirs listed first). */
+export async function getExerciseOptions(userId: string): Promise<ExerciseOption[]> {
+  const [library, mine] = await Promise.all([
+    getExerciseLibrary(),
+    db.exercise.findMany({
+      where: { createdById: userId },
+      orderBy: { name: "asc" },
+      select: { id: true, slug: true, name: true, equipment: true, primaryMuscles: true, aliases: true },
+    }),
+  ]);
+  return [...mine.map((m) => ({ ...m, image: null, custom: true })), ...library];
 }
 
 export async function getUnitSystem(userId: string) {

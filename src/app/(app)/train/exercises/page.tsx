@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { requireUser } from "@/lib/auth";
-import { getExerciseLibrary } from "@/lib/training";
+import { getExerciseOptions } from "@/lib/training";
 import { ExerciseBrowser } from "./ExerciseBrowser";
 
 export const metadata: Metadata = { title: "Exercises" };
 
 export default async function ExercisesPage() {
-  await requireUser();
-  const library = await getExerciseLibrary();
+  const user = await requireUser();
+  const library = await getExerciseOptions(user.id);
   return (
     <div style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}>
       <Link href="/train" className="ml-4 inline-flex items-center gap-1 py-2 text-sm font-medium text-chalk-muted">
