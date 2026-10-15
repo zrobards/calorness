@@ -53,6 +53,8 @@ tracking that shares data with training.
 - Search understands gym slang ("pec deck", "rdl", "ohp") through alias lists
 - Create your own exercise in a few taps when something's missing, right from the picker; it gets history, PRs, and the muscle map like any other
 - Routine builder: sets, rep ranges, and rest time per exercise
+- Programs: seven ready-made plans (Push/Pull/Legs, Upper/Lower, Full Body, Strength 5×5, Machines Only, Glutes & Legs, Home Dumbbells) added to your routines in one tap
+- Coach: chat with an AI coach that sees your routines, recent workouts, and goals; remembers injuries, goals, and preferences (visible and removable); and can rework a routine around pain or a plateau with one-tap Replace or Save as new. It suggests pain-free alternatives and when to see a professional, never "push through it"
 - Live workout logger: previous-session values on every set, warm-up/drop/failure sets
 - Next-set targets using double progression: add reps within your range, then add weight once every set hits the top; tap the check to log the target
 - Autosaves every set to the phone instantly and to the server within seconds, so closing the app or switching phones loses nothing; the rest timer survives too
@@ -80,6 +82,7 @@ tracking that shares data with training.
 - Calorie and macro targets calculated from your stats (Mifflin–St Jeor + activity level + goal), then editable by hand, with a check that your macros add up to your calories
 
 **Feel**
+- Every tab shows a shaped loading screen the instant you tap (about 0.15 s), then fills in; numbers only animate when they actually change
 - Motion throughout: count-up numbers, a calorie ring that draws in, bars and charts that grow, cards that rise in, page crossfades (React View Transitions), and a burst of tiny bumper plates when you finish a workout
 - Everything respects the phone's "reduce motion" setting
 

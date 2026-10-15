@@ -5,7 +5,9 @@ type Macro = { label: string; eaten: number; goal: number; unit: string; color: 
 export function MacroBars({
   eaten,
   goal,
+  showCalories = true,
 }: {
+  showCalories?: boolean; // hide when a calorie ring already shows it
   eaten: { calories: number; proteinG: number; carbsG: number; fatG: number };
   goal: { calories: number; proteinG: number; carbsG: number; fatG: number };
 }) {
@@ -18,7 +20,7 @@ export function MacroBars({
 
   return (
     <dl className="space-y-4">
-      {macros.map((m) => {
+      {macros.filter((m) => showCalories || m.label !== "Calories").map((m) => {
         const pct = m.goal > 0 ? Math.min(100, (m.eaten / m.goal) * 100) : 0;
         const left = Math.max(0, Math.round(m.goal - m.eaten));
         return (

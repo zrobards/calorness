@@ -37,7 +37,7 @@ export function CalorieRing({ eaten, goal }: { eaten: number; goal: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <span className="font-display text-5xl leading-none font-bold"><AnimatedNumber value={Math.abs(remaining)} /></span>
+        <span className="font-display text-5xl leading-none font-bold"><AnimatedNumber id="calories-left" value={Math.abs(remaining)} /></span>
         <span className={`mt-1 text-sm ${over ? "text-plate-yellow" : "text-chalk-muted"}`}>{over ? "calories over" : "calories left"}</span>
       </div>
       <p className="sr-only">

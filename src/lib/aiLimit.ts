@@ -11,7 +11,7 @@ export async function aiUsedToday(userId: string) {
 }
 
 /** Records one AI request, or explains why it can't run. */
-export async function consumeAiQuota(userId: string, kind: "photo" | "describe" | "label" | "shortcut" | "recheck") {
+export async function consumeAiQuota(userId: string, kind: "photo" | "describe" | "label" | "shortcut" | "recheck" | "coach") {
   const limit = aiDailyLimit();
   if ((await aiUsedToday(userId)) >= limit) {
     return {

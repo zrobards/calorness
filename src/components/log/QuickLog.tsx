@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Barcode, Camera, ChevronRight, Dumbbell, ImageUp, Loader2, Mic, MessageSquareText, Play, Search } from "lucide-react";
+import { Barcode, Bookmark, Camera, ChevronRight, Dumbbell, ImageUp, Loader2, Mic, MessageSquareText, Play, Plus, Search } from "lucide-react";
 import type { FoodCandidate } from "@/lib/nutrition/normalize";
 import type { AiFoodItem } from "@/lib/ai/parse";
 import type { GroundedItem } from "@/lib/ai/ground";
@@ -39,7 +39,6 @@ export function QuickLog({
   aiReady,
   savedMeals,
   fits,
-  left,
 }: {
   savedMeals: { id: string; name: string; itemCount: number; calories: number; proteinG: number }[];
   fits: { id: string; name: string; servings: number; calories: number; proteinG: number }[];
@@ -162,18 +161,6 @@ export function QuickLog({
       router.refresh();
     });
 
-  const relog = (r: Recent) =>
-    start(async () => {
-      haptic("success");
-      const result = await quickRelog({ foodId: r.food.id!, servings: r.servings, day, meal });
-      if ("error" in result) return setToast({ message: result.error ?? "Couldn't log that." });
-      setToast({
-        message: `${r.food.name}, ${result.calories} cal → ${MEAL_LABELS[meal]}`,
-        action: { label: "Undo", onClick: () => start(async () => { await deleteDiaryEntry(result.entryId); router.refresh(); }) },
-      });
-      router.refresh();
-    });
-
   const relogById = (food: { id: string; name: string; servings: number }) =>
     start(async () => {
       haptic("success");
@@ -210,6 +197,24 @@ export function QuickLog({
   }, []);
 
   const caloriesLeft = today.goal ? Math.round(today.goal - today.calories) : null;
+  const [showAll, setShowAll] = useState(false);
+  type QuickItem = { kind: "meal" | "food"; id: string; name: string; servings: number; calories: number; proteinG: number; note: string; fits?: boolean };
+  const fitIds = new Set(fits.map((f) => f.id));
+  const seen = new Set<string>();
+  const quickAdd: QuickItem[] = [
+    ...savedMeals.map((m) => ({ kind: "meal" as const, id: m.id, name: m.name, servings: 1, calories: m.calories, proteinG: m.proteinG, note: `Saved meal, ${m.itemCount} ${m.itemCount === 1 ? "item" : "items"}` })),
+    // foods that fit what's left come first, then the rest of your recent foods
+    ...fits.map((f) => ({ kind: "food" as const, id: f.id, name: f.name, servings: f.servings, calories: Math.round(f.calories), proteinG: Math.round(f.proteinG), note: "Fits what's left today", fits: true })),
+    ...recent.filter((r) => r.food.id && !fitIds.has(r.food.id)).map((r) => ({
+      kind: "food" as const, id: r.food.id!, name: r.food.name, servings: r.servings,
+      calories: Math.round(r.food.calories * r.servings), proteinG: Math.round(r.food.proteinG * r.servings),
+      note: r.count > 1 ? `Logged ${r.count} times` : "Recent",
+    })),
+    // the same food logged from different sources shows up once
+  ].filter((q) => {
+    const key = `${q.kind}-${q.name.trim().toLowerCase()}`;
+    return !seen.has(key) && !!seen.add(key);
+  });
 
   return (
     <div className="px-5 pb-6">
@@ -218,14 +223,14 @@ export function QuickLog({
         <div>
           <p className="text-sm text-chalk-muted">{caloriesLeft !== null ? (caloriesLeft >= 0 ? "Calories left today" : "Over today by") : "Eaten today"}</p>
           <p className="font-display text-5xl leading-none font-bold">
-            <AnimatedNumber value={caloriesLeft !== null ? Math.abs(caloriesLeft) : today.calories} />
+            <AnimatedNumber id="calories-left" value={caloriesLeft !== null ? Math.abs(caloriesLeft) : today.calories} />
           </p>
         </div>
         {today.proteinGoal && (
           <div className="text-right">
             <p className="text-sm text-chalk-muted">Protein</p>
             <p className="font-display text-2xl font-bold text-plate-blue">
-              <AnimatedNumber value={today.proteinG} />
+              <AnimatedNumber id="protein-eaten" value={today.proteinG} />
               <span className="text-base text-chalk-muted">/{today.proteinGoal}g</span>
             </p>
           </div>
@@ -277,65 +282,45 @@ export function QuickLog({
         </Link>
       </div>
 
-      {/* Saved meals: your usual breakfast in one tap */}
-      {savedMeals.length > 0 && (
-        <section className="animate-rise mt-7" style={{ "--i": 4 } as React.CSSProperties} aria-labelledby="meals-heading">
-          <h2 id="meals-heading" className="font-display text-2xl font-semibold">Saved meals</h2>
-          <ul className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1">
-            {savedMeals.map((m) => (
-              <li key={m.id} className="relative shrink-0">
-                <button onClick={() => logMeal(m)} disabled={pending} className="flex h-24 w-40 flex-col items-start rounded-2xl bg-plate-blue/15 p-3 text-left ring-1 ring-plate-blue/40">
-                  <span className="line-clamp-2 pr-4 text-sm font-semibold">{m.name}</span>
-                  <span className="mt-auto font-display text-lg font-bold text-plate-blue tabular-nums">
-                    {m.calories}<span className="ml-1 text-xs font-medium text-chalk-muted">cal, {m.proteinG}g P</span>
+      {/* Quick add: saved meals, foods that fit what's left, and recent foods, in one list */}
+      {quickAdd.length > 0 && (
+        <section className="animate-rise mt-7" style={{ "--i": 4 } as React.CSSProperties} aria-labelledby="quick-heading">
+          <div className="flex items-baseline justify-between">
+            <h2 id="quick-heading" className="font-display text-2xl font-semibold">Quick add</h2>
+            <span className="text-xs text-chalk-muted">One tap → {MEAL_LABELS[meal]}</span>
+          </div>
+          <ul className="mt-3 divide-y divide-rack-line overflow-hidden rounded-2xl bg-rack-raised">
+            {quickAdd.slice(0, showAll ? 20 : 6).map((q) => (
+              <li key={`${q.kind}-${q.id}`} className="flex items-center">
+                <button
+                  onClick={() => (q.kind === "meal" ? logMeal(q) : relogById(q))}
+                  disabled={pending}
+                  className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left active:bg-rack-line/50"
+                >
+                  <span className={`flex size-9 shrink-0 items-center justify-center rounded-full ${q.kind === "meal" ? "bg-plate-blue/20 text-plate-blue" : q.fits ? "bg-plate-green/20 text-plate-green" : "bg-rack text-chalk-muted"}`} aria-hidden>
+                    {q.kind === "meal" ? <Bookmark size={16} /> : <Plus size={16} />}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium">{q.name}</span>
+                    <span className="block truncate text-xs text-chalk-muted">{q.note}</span>
+                  </span>
+                  <span className="text-right">
+                    <span className="block font-display text-lg leading-tight font-bold tabular-nums">{q.calories}</span>
+                    <span className="block text-xs text-plate-blue tabular-nums">{q.proteinG}g P</span>
                   </span>
                 </button>
-                <button onClick={() => confirm(`Delete saved meal “${m.name}”?`) && start(async () => { await deleteSavedMeal(m.id); router.refresh(); })}
-                  className="absolute top-1.5 right-1.5 px-1.5 text-chalk-muted" aria-label={`Delete ${m.name}`}>×</button>
+                {q.kind === "meal" && (
+                  <button onClick={() => confirm(`Delete saved meal “${q.name}”?`) && start(async () => { await deleteSavedMeal(q.id); router.refresh(); })}
+                    className="px-3 py-3 text-chalk-muted" aria-label={`Delete ${q.name}`}>×</button>
+                )}
               </li>
             ))}
           </ul>
-        </section>
-      )}
-
-      {/* What fits what's left today */}
-      {left && fits.length > 0 && (
-        <section className="animate-rise mt-7" style={{ "--i": 4 } as React.CSSProperties} aria-labelledby="fits-heading">
-          <h2 id="fits-heading" className="font-display text-2xl font-semibold">What fits</h2>
-          <p className="text-sm text-chalk-muted">
-            {Math.max(0, Math.round(left.proteinG))}g protein and {Math.max(0, Math.round(left.calories)).toLocaleString("en-US")} cal left. Foods you eat that fit:
-          </p>
-          <ul className="mt-3 space-y-2">
-            {fits.map((f) => (
-              <li key={f.id}>
-                <button onClick={() => relogById(f)} disabled={pending} className="flex w-full items-center gap-3 rounded-2xl bg-rack-raised px-4 py-3 text-left">
-                  <span className="min-w-0 flex-1 truncate font-medium">{f.name}</span>
-                  <span className="text-sm text-plate-blue tabular-nums">{Math.round(f.proteinG)}g P</span>
-                  <span className="font-display text-lg font-bold tabular-nums">{Math.round(f.calories)}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/* One-tap repeats */}
-      {recent.length > 0 && (
-        <section className="animate-rise mt-7" style={{ "--i": 4 } as React.CSSProperties} aria-labelledby="again-heading">
-          <h2 id="again-heading" className="font-display text-2xl font-semibold">Tap to log again</h2>
-          <p className="text-sm text-chalk-muted">Same amount as last time, straight to {MEAL_LABELS[meal]}.</p>
-          <ul className="mt-3 grid grid-cols-2 gap-2">
-            {recent.slice(0, 8).map((r) => (
-              <li key={r.food.id}>
-                <button onClick={() => relog(r)} disabled={pending} className="flex h-full w-full flex-col items-start rounded-2xl bg-rack-raised p-3 text-left">
-                  <span className="line-clamp-2 text-sm leading-snug font-medium">{r.food.name}</span>
-                  <span className="mt-auto pt-1 font-display text-lg font-bold text-plate-red tabular-nums">
-                    {Math.round(r.food.calories * r.servings)}<span className="ml-1 text-xs font-medium text-chalk-muted">cal</span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          {quickAdd.length > 6 && (
+            <button onClick={() => setShowAll((v) => !v)} className="mt-2 w-full text-sm font-medium text-plate-blue">
+              {showAll ? "Show less" : `Show ${Math.min(20, quickAdd.length) - 6} more`}
+            </button>
+          )}
         </section>
       )}
 
