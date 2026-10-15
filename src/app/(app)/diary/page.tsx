@@ -40,14 +40,13 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
             <div><dd className="font-display text-xl font-semibold tabular-nums">{Math.round(totals.calories).toLocaleString("en-US")}</dd><dt className="text-xs text-chalk-muted">Food</dt></div>
             <div><dd className="font-display text-xl font-semibold tabular-nums">{Math.round(goal.calories - totals.calories).toLocaleString("en-US")}</dd><dt className="text-xs text-chalk-muted">Remaining</dt></div>
           </dl>
-          <MacroBars eaten={totals} goal={goal} />
+          <MacroBars eaten={totals} goal={goal} showCalories={false} />
           {diary.verified !== null && (
-            <p className={`mt-4 flex items-center gap-2 text-sm ${diary.verified >= 0.8 ? "text-plate-green" : "text-plate-yellow"}`}>
+            <p className={`mt-4 flex items-center gap-1.5 text-sm ${diary.verified >= 0.8 ? "text-plate-green" : "text-plate-yellow"}`}
+              title={diary.verified >= 0.999 ? "All from labels, barcodes, or the food database" : "The rest is AI estimates, tagged below"}>
               <ShieldCheck size={16} aria-hidden />
               {Math.round(diary.verified * 100)}% verified
-              <span className="text-chalk-muted">
-                {diary.verified >= 0.999 ? "(all from labels, barcodes, or the food database)" : "(the rest is AI estimates, tagged below)"}
-              </span>
+              {diary.verified < 0.999 && <span className="text-chalk-muted">, AI estimates tagged below</span>}
             </p>
           )}
         </section>
