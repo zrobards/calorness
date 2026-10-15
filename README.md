@@ -74,6 +74,9 @@ tracking that shares data with training.
 **Nutrition (MyFitnessPal-style)**
 - Food search across USDA FoodData Central (generic, restaurant/FNDDS, and branded foods) and Open Food Facts, plus your own foods
 - Forgiving search: ignores dashes, apostrophes, and spacing, knows ~50 restaurant and brand spellings ("chickfila" → Chick-fil-A), and tolerates a typo
+- One result per food: duplicate crowd-sourced entries ("Chick-fil-A Sauce" ×5 with different numbers) collapse into the one closest to the group's typical values
+- Search memory: whatever you pick for a search ranks first next time, even your own foods; new foods created from a search start with its brand and name filled in, and your own foods can be edited
+- Your foods and saved foods appear instantly while USDA and Open Food Facts fill in
 - Bad database entries are filtered out: anything over ~900 cal per 100 g, more than 100 g of macros per 100 g, or calories far from what the macros add up to; whole-package servings are labeled "big serving"
 - Barcode scanning with the phone camera (native BarcodeDetector, with a WebAssembly fallback for iPhone)
 - Log by servings or by grams/ml, with a live calorie count and macro split

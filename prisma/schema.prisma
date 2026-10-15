@@ -43,6 +43,7 @@ model User {
   aiCalls         AiCall[]
   coachNotes      CoachNote[]
   coachMessages   CoachMessage[]
+  searchPicks     SearchPick[]
 }
 
 model Account {
@@ -243,6 +244,7 @@ model Food {
 
   diaryEntries DiaryEntry[]
   savedMealItems SavedMealItem[]
+  searchPicks    SearchPick[]
 
   @@unique([source, externalId])
   @@index([barcode])
@@ -445,4 +447,21 @@ model CoachMessage {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+// Which food you picked for a search, so next time "chickfila" puts the
+// grilled nuggets you always log at the top, even if the name doesn't match.
+model SearchPick {
+  id     String   @id @default(cuid())
+  userId String
+  query  String // normalized search words
+  foodId String
+  count  Int      @default(1)
+  lastAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  food Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, query, foodId])
+  @@index([userId])
 }
