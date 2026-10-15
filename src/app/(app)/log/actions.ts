@@ -9,6 +9,7 @@ import { aiFoodItemSchema } from "@/lib/ai/parse";
 import { dayToDate, MEALS } from "@/lib/nutrition/diary";
 import { saveAiItems } from "@/lib/nutrition/aiLog";
 import { groundItems } from "@/lib/ai/ground";
+import { consumeAiQuota } from "@/lib/aiLimit";
 import { candidateSchema, ensureFood } from "@/lib/nutrition/foods";
 
 const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -21,7 +22,7 @@ export async function aiEstimate(input: {
   previous?: unknown[];
   correction?: string;
 }) {
-  await requireUser();
+  const user = await requireUser();
   const parsed = z
     .object({
       imageBase64: z.string().max(1_400_000).optional(), // ~1 MB image after resizing on the phone
@@ -35,6 +36,8 @@ export async function aiEstimate(input: {
     return { error: "Add a photo or describe what you ate." };
   }
   const { imageBase64, mediaType, text, previous, correction } = parsed.data;
+  const allowed = await consumeAiQuota(user.id, correction ? "recheck" : imageBase64 ? "photo" : "describe");
+  if ("error" in allowed) return { error: allowed.error };
   const result = await estimateFoods({
     image: imageBase64 ? { base64: imageBase64, mediaType: mediaType ?? "image/jpeg" } : undefined,
     text,
@@ -43,7 +46,6 @@ export async function aiEstimate(input: {
   });
   if ("error" in result) return result;
   // Packaged foods: swap the guess for the real label values when we can find the product
-  const user = await requireUser();
   return { ...result, items: await groundItems(user.id, result.items) };
 }
 
@@ -96,10 +98,12 @@ export async function quickRelog(input: { foodId: string; servings: number; day:
 
 /** Photo of a Nutrition Facts panel → exact per-serving numbers to confirm and save. */
 export async function scanLabel(input: { imageBase64: string; mediaType: string }) {
-  await requireUser();
+  const user = await requireUser();
   const parsed = z
     .object({ imageBase64: z.string().min(10).max(1_400_000), mediaType: z.enum(["image/jpeg", "image/png", "image/webp"]) })
     .safeParse(input);
   if (!parsed.success) return { error: "Couldn't read that photo." };
+  const allowed = await consumeAiQuota(user.id, "label");
+  if ("error" in allowed) return { error: allowed.error };
   return readLabel({ base64: parsed.data.imageBase64, mediaType: parsed.data.mediaType });
 }
