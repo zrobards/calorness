@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, ClipboardList, Library, Play, Plus } from "lucide-react";
+import { ChevronRight, ClipboardList, LayoutGrid, Library, Play, Plus, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { requireUser } from "@/lib/auth";
 import { getActiveWorkout, getRecentWorkouts, getRoutines, getThisWeek, getUnitSystem } from "@/lib/training";
@@ -8,6 +8,7 @@ import { compactNumber, displayWeight, weightUnit } from "@/lib/fitness/units";
 import { formatDay, formatDuration, isoDay } from "@/lib/fitness/dates";
 import { userToday } from "@/lib/userPrefs";
 import { startWorkout } from "./actions";
+import { db } from "@/lib/db";
 import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
 
 export const metadata: Metadata = { title: "Train" };
@@ -15,25 +16,42 @@ export const metadata: Metadata = { title: "Train" };
 export default async function TrainPage() {
   const user = await requireUser();
   const now = new Date();
-  const [active, routines, recent, week, unitSystem] = await Promise.all([
+  const [active, routines, recent, week, unitSystem, { today: todayIso }, injuries] = await Promise.all([
     getActiveWorkout(user.id),
     getRoutines(user.id),
     getRecentWorkouts(user.id, 5),
     getThisWeek(user.id, now),
     getUnitSystem(user.id),
+    userToday(user.id, now),
+    db.coachNote.findMany({ where: { userId: user.id, active: true, kind: "injury" }, select: { id: true, text: true } }),
   ]);
   const unit = weightUnit(unitSystem);
   const maxDay = Math.max(1, ...week.days.map((d) => d.volumeKg));
-  const { today: todayIso } = await userToday(user.id, now);
   const todayIndex = week.days.findIndex((d) => isoDay(d.date) === todayIso);
 
   return (
     <>
       <PageHeader title="Train">
-        <Link href="/train/exercises" className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-chalk-muted hover:text-chalk">
-          <Library size={18} aria-hidden /> Exercises
-        </Link>
+        <div className="flex items-center gap-1">
+          <Link href="/coach" className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-plate-yellow">
+            <Sparkles size={18} aria-hidden /> Coach
+          </Link>
+          <Link href="/train/exercises" className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-chalk-muted hover:text-chalk">
+            <Library size={18} aria-hidden /> Exercises
+          </Link>
+        </div>
       </PageHeader>
+
+      {/* Anything Coach is keeping in mind about pain or injuries */}
+      {injuries.length > 0 && (
+        <Link href="/coach" className="mx-5 mb-4 flex items-start gap-3 rounded-2xl border border-plate-yellow/40 bg-plate-yellow/10 px-4 py-3 text-sm">
+          <Sparkles size={18} className="mt-0.5 shrink-0 text-plate-yellow" aria-hidden />
+          <span className="flex-1">
+            {injuries.map((n) => <span key={n.id} className="block">{n.text}</span>)}
+            <span className="text-chalk-muted">Tap to talk it through with Coach</span>
+          </span>
+        </Link>
+      )}
 
       {active && (
         <Link
@@ -81,12 +99,12 @@ export default async function TrainPage() {
           <div>
             <dt className="text-xs text-chalk-muted">Volume</dt>
             <dd className="font-display text-3xl font-bold tabular-nums">
-              <AnimatedNumber value={Math.round(displayWeight(week.volumeKg, unitSystem))} /> <span className="text-base font-semibold text-chalk-muted">{unit}</span>
+              <AnimatedNumber id="week-volume" value={Math.round(displayWeight(week.volumeKg, unitSystem))} /> <span className="text-base font-semibold text-chalk-muted">{unit}</span>
             </dd>
           </div>
           <div>
             <dt className="text-xs text-chalk-muted">Working sets</dt>
-            <dd className="font-display text-3xl font-bold tabular-nums"><AnimatedNumber value={week.sets} duration={600} /></dd>
+            <dd className="font-display text-3xl font-bold tabular-nums"><AnimatedNumber id="week-sets" value={week.sets} /></dd>
           </div>
         </dl>
       </section>
@@ -102,18 +120,28 @@ export default async function TrainPage() {
       <section className="mt-8" aria-labelledby="routines-heading">
         <div className="flex items-center justify-between px-5">
           <h2 id="routines-heading" className="font-display text-2xl font-semibold">Routines</h2>
-          <Link href="/train/routines/new" className="flex items-center gap-1 text-sm font-medium text-plate-blue">
-            <Plus size={17} aria-hidden /> New routine
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/train/templates" className="flex items-center gap-1 text-sm font-medium text-plate-blue">
+              <LayoutGrid size={16} aria-hidden /> Programs
+            </Link>
+            <Link href="/train/routines/new" className="flex items-center gap-1 text-sm font-medium text-plate-blue">
+              <Plus size={17} aria-hidden /> New
+            </Link>
+          </div>
         </div>
         {routines.length === 0 ? (
-          <Link href="/train/routines/new" className="mx-5 mt-3 flex items-center gap-4 rounded-2xl border-2 border-dashed border-rack-line p-5 hover:border-plate-blue">
-            <ClipboardList className="shrink-0 text-chalk-muted" size={28} aria-hidden />
-            <span>
-              <span className="block font-display text-lg font-semibold">Build your first routine</span>
-              <span className="text-sm text-chalk-muted">Save a workout you repeat, like Push, Pull, or Legs, and start it in one tap.</span>
-            </span>
-          </Link>
+          <div className="mx-5 mt-3 grid grid-cols-2 gap-3">
+            <Link href="/train/templates" className="rounded-2xl bg-plate-blue/15 p-4 ring-1 ring-plate-blue/40">
+              <LayoutGrid className="text-plate-blue" size={24} aria-hidden />
+              <span className="mt-2 block font-display text-lg font-semibold">Pick a program</span>
+              <span className="text-sm text-chalk-muted">Push/Pull/Legs, 5×5, and more, ready to go</span>
+            </Link>
+            <Link href="/train/routines/new" className="rounded-2xl border-2 border-dashed border-rack-line p-4">
+              <ClipboardList className="text-chalk-muted" size={24} aria-hidden />
+              <span className="mt-2 block font-display text-lg font-semibold">Build your own</span>
+              <span className="text-sm text-chalk-muted">Pick the exercises yourself</span>
+            </Link>
+          </div>
         ) : (
           <ul className="mt-3 space-y-3 px-5">
             {routines.map((r) => (

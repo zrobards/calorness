@@ -41,6 +41,8 @@ model User {
   savedMeals      SavedMeal[]
   pushSubscriptions PushSubscription[]
   aiCalls         AiCall[]
+  coachNotes      CoachNote[]
+  coachMessages   CoachMessage[]
 }
 
 model Account {
@@ -409,6 +411,35 @@ model AiCall {
   id        String   @id @default(cuid())
   userId    String
   kind      String // "photo", "describe", "label", "shortcut"
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// ─── Coach ────────────────────────────────────────────────────────────────
+// Things you've told the AI coach that it should keep in mind: injuries,
+// goals, preferences. You can see and delete every one in the Coach screen.
+model CoachNote {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String // "injury", "goal", "preference", "other"
+  text      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, active])
+}
+
+model CoachMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  role      String // "user" or "assistant"
+  content   String   @db.Text
+  proposal  Json? // a reworked routine the coach suggested, shown with Apply buttons
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

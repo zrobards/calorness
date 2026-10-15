@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { toKg, type UnitSystem } from "@/lib/fitness/units";
 import type { Prisma } from "@prisma/client";
+import { TEMPLATES } from "@/lib/templates";
 import { getPreviousSets, getUnitSystem } from "@/lib/training";
 import { toDisplayPrevious } from "@/lib/training-display";
 
@@ -329,4 +330,45 @@ export async function deleteExercise(id: string) {
   await db.exercise.deleteMany({ where: { id, createdById: user.id } });
   revalidatePath("/train");
   return { ok: true };
+}
+
+// ─── Program templates ────────────────────────────────────────────────────
+
+/** Add every routine in a ready-made program to your routines. */
+export async function importTemplate(templateId: string) {
+  const user = await requireUser();
+  const template = TEMPLATES.find((t) => t.id === templateId);
+  if (!template) return { error: "That program isn't available." };
+
+  const names = [...new Set(template.routines.flatMap((r) => r.exercises.map(([n]) => n)))];
+  const found = await db.exercise.findMany({ where: { createdById: null, name: { in: names } }, select: { id: true, name: true } });
+  const idFor = new Map(found.map((e) => [e.name, e.id]));
+  const position = await db.routine.count({ where: { userId: user.id } });
+
+  await db.$transaction(
+    template.routines.map((r, i) =>
+      db.routine.create({
+        data: {
+          userId: user.id,
+          name: r.name,
+          notes: `From the ${template.name} program`,
+          position: position + i,
+          exercises: {
+            create: r.exercises
+              .filter(([n]) => idFor.has(n))
+              .map(([n, sets, min, max, rest], order) => ({
+                exerciseId: idFor.get(n)!,
+                order,
+                targetSets: sets,
+                targetRepsMin: min,
+                targetRepsMax: max,
+                restSeconds: rest,
+              })),
+          },
+        },
+      }),
+    ),
+  );
+  revalidatePath("/train");
+  return { ok: true, count: template.routines.length };
 }
