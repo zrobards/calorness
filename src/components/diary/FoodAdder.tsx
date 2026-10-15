@@ -135,6 +135,7 @@ export function FoodAdder({
                 <span className="flex items-center gap-1.5">
                   <span className="truncate font-medium">{f.name}</span>
                   {macroCheck(f).flagged && <span className="shrink-0 text-xs text-plate-yellow" title="Numbers don't add up">⚠ check</span>}
+                  {f.calories > 900 && <span className="shrink-0 rounded-full bg-plate-yellow/15 px-1.5 text-[10px] font-semibold text-plate-yellow">big serving</span>}
                 </span>
                 <span className="block truncate text-sm text-chalk-muted">
                   {[f.brand, f.servingLabel].filter(Boolean).join(", ")}

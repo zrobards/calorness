@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeBarcode, normalizeOff, normalizeUsda, tidyName } from "./normalize";
+import { normalizeBarcode, normalizeOff, normalizeUsda, plausiblePer100, tidyName } from "./normalize";
 
 describe("normalizeUsda", () => {
   const chobani = {
@@ -84,5 +84,20 @@ describe("helpers", () => {
   it("matches UPC-A and EAN-13 barcodes", () => {
     expect(normalizeBarcode("049000028911")).toBe("0049000028911");
     expect(normalizeBarcode("0049000028911")).toBe("0049000028911");
+  });
+});
+
+describe("plausiblePer100", () => {
+  it("accepts real foods, including pure oil", () => {
+    expect(plausiblePer100({ calories: 250, proteinG: 24, carbsG: 10, fatG: 12 })).toBe(true); // nuggets
+    expect(plausiblePer100({ calories: 884, proteinG: 0, carbsG: 0, fatG: 100 })).toBe(true); // olive oil
+  });
+  it("rejects impossible entries", () => {
+    expect(plausiblePer100({ calories: 1046, proteinG: 24, carbsG: 10, fatG: 12 })).toBe(false); // kJ typed as kcal
+    expect(plausiblePer100({ calories: 250, proteinG: 80, carbsG: 60, fatG: 10 })).toBe(false); // over 100 g of macros
+    expect(plausiblePer100({ calories: 900, proteinG: 24, carbsG: 10, fatG: 12 })).toBe(false); // calories way above macros
+  });
+  it("drops implausible Open Food Facts products during normalizing", () => {
+    expect(normalizeOff({ code: "1", product_name: "Nuggets", nutriments: { "energy-kcal_100g": 2000, proteins_100g: 15, carbohydrates_100g: 15, fat_100g: 15 } })).toBeNull();
   });
 });

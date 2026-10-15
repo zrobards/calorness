@@ -25,6 +25,23 @@ export type FoodCandidate = {
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
+/**
+ * Throws out entries that can't be real food. Per 100 g nothing can have
+ * more than ~900 calories (pure fat is 884) or more than 100 g of macros.
+ * These catch the classic database mistakes: kilojoules typed as calories,
+ * a whole package entered as "per 100 g", or a decimal point in the wrong place.
+ */
+export function plausiblePer100(p: { calories: number | null; proteinG: number | null; carbsG: number | null; fatG: number | null }) {
+  const c = p.calories ?? 0, pr = p.proteinG ?? 0, cb = p.carbsG ?? 0, f = p.fatG ?? 0;
+  if ([c, pr, cb, f].some((v) => v < 0)) return false;
+  if (c > 910 || pr > 100 || cb > 100 || f > 100) return false;
+  if (pr + cb + f > 105) return false;
+  // calories should be roughly what the macros add up to (allowing fiber, alcohol, rounding)
+  const fromMacros = pr * 4 + cb * 4 + f * 9;
+  if (c > 40 && fromMacros > 40 && (c > fromMacros * 2.2 || fromMacros > c * 2.2)) return false;
+  return true;
+}
+
 /** USDA brand names come in ALL CAPS; make them readable. */
 export function tidyName(name: string): string {
   const trimmed = name.trim().replace(/\s+/g, " ");
@@ -75,6 +92,7 @@ export function normalizeUsda(food: UsdaFood): FoodCandidate | null {
   const carbsG = get(USDA_IDS.carbs);
   const fatG = get(USDA_IDS.fat);
   if (calories === null && proteinG === null && carbsG === null && fatG === null) return null;
+  if (!plausiblePer100({ calories, proteinG, carbsG, fatG })) return null;
 
   const unit = (food.servingSizeUnit ?? "").toLowerCase();
   const metricUnit = unit === "g" || unit === "grm" ? "g" : unit === "ml" || unit === "mlt" ? "ml" : null;
@@ -128,6 +146,7 @@ export function normalizeOff(p: OffProduct): FoodCandidate | null {
   const fatG = num("fat_100g");
   const name = p.product_name?.trim();
   if (!name || (calories === null && proteinG === null && carbsG === null && fatG === null)) return null;
+  if (!plausiblePer100({ calories, proteinG, carbsG, fatG })) return null;
 
   const qty = Number(p.serving_quantity);
   const hasServing = Number.isFinite(qty) && qty > 0;

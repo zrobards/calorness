@@ -1,5 +1,7 @@
 import "server-only";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import { expandQuery, normalize } from "./searchText";
 import { scaleNutrients } from "@/lib/fitness/nutrition";
 import { addDays } from "@/lib/fitness/dates";
 import { zonedDayStart } from "@/lib/time";
@@ -88,16 +90,25 @@ export async function getMyFoods(userId: string) {
   return foods.map(toCandidate);
 }
 
+/**
+ * Search foods already in the database (yours, and ones saved from USDA or
+ * Open Food Facts) ignoring spaces and punctuation, so "chickfila" finds
+ * "Chick-fil-A". Any word can match here; the caller ranks the results with
+ * typo-tolerant scoring, so "nugets" still finds nuggets.
+ */
 export async function searchSavedFoods(userId: string, query: string) {
-  const words = query.trim().split(/\s+/).filter(Boolean).slice(0, 5);
+  const words = normalize(expandQuery(query)).split(" ").filter((w) => w.length > 1).slice(0, 5);
   if (words.length === 0) return [];
-  const foods = await db.food.findMany({
-    where: {
-      OR: [{ createdById: null }, { createdById: userId }],
-      AND: words.map((w) => ({ OR: [{ name: { contains: w, mode: "insensitive" as const } }, { brand: { contains: w, mode: "insensitive" as const } }] })),
-    },
-    take: 10,
-  });
+  const squashed = Prisma.sql`regexp_replace(lower(coalesce("brand", '') || "name"), '[^a-z0-9]', '', 'g')`;
+  const conditions = words.map((w) => Prisma.sql`${squashed} LIKE ${"%" + w.replace(/[^a-z0-9]/g, "") + "%"}`);
+  const rows = await db.$queryRaw<{ id: string }[]>`
+    SELECT "id" FROM "Food"
+    WHERE ("createdById" IS NULL OR "createdById" = ${userId})
+      AND (${Prisma.join(conditions, " OR ")})
+    ORDER BY ${Prisma.join(conditions.map((c) => Prisma.sql`(${c})::int`), " + ")} DESC
+    LIMIT 40`;
+  if (rows.length === 0) return [];
+  const foods = await db.food.findMany({ where: { id: { in: rows.map((r) => r.id) } } });
   return foods.map(toCandidate);
 }
 
