@@ -1,5 +1,5 @@
 import "server-only";
-import { exerciseImageUrl, getExerciseLibrary, getUnitSystem, getWorkoutForLogging } from "@/lib/training";
+import { exerciseImageUrl, getExerciseOptions, getUnitSystem, getWorkoutForLogging } from "@/lib/training";
 import { toDisplayPrevious } from "@/lib/training-display";
 import { displayWeight, weightUnit } from "@/lib/fitness/units";
 
@@ -7,7 +7,7 @@ import { displayWeight, weightUnit } from "@/lib/fitness/units";
 export async function loadLoggerProps(userId: string, workoutId: string) {
   const [data, library, unitSystem] = await Promise.all([
     getWorkoutForLogging(userId, workoutId),
-    getExerciseLibrary(),
+    getExerciseOptions(userId),
     getUnitSystem(userId),
   ]);
   if (!data) return null;

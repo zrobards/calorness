@@ -49,7 +49,9 @@ tracking that shares data with training.
 - iPhone Shortcut / widget: tap, take a photo (or dictate), and a notification shows what was logged, without opening the app. Powered by a small API (`POST /api/quick-log`) with per-user keys made in Profile, stored as SHA-256 hashes, revocable, and rate limited
 
 **Training (Hevy-style)**
-- Exercise library of 876 exercises with photos, instructions, and muscle groups, searchable and filterable
+- Exercise library of 1,000+ exercises: 876 with photos and instructions from free-exercise-db, plus 126 common gym moves it lacks (Pec Deck, Seated Cable Row, Bulgarian Split Squat, Hack Squat Machine, cardio machines…)
+- Search understands gym slang ("pec deck", "rdl", "ohp") through alias lists
+- Create your own exercise in a few taps when something's missing, right from the picker; it gets history, PRs, and the muscle map like any other
 - Routine builder: sets, rep ranges, and rest time per exercise
 - Live workout logger: previous-session values on every set, warm-up/drop/failure sets
 - Next-set targets using double progression: add reps within your range, then add weight once every set hits the top; tap the check to log the target

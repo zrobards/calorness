@@ -9,6 +9,7 @@ import { requireUser } from "@/lib/auth";
 import { exerciseImageUrl, getExerciseDetail, getUnitSystem } from "@/lib/training";
 import { displayWeight, weightUnit } from "@/lib/fitness/units";
 import { formatDay } from "@/lib/fitness/dates";
+import { DeleteExerciseButton } from "./DeleteExerciseButton";
 
 export const metadata: Metadata = { title: "Exercise" };
 
@@ -67,6 +68,12 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
         <p className="mt-6 rounded-2xl border border-dashed border-rack-line p-5 text-chalk-muted">
           Log this exercise in a workout and your best sets and progress chart will appear here.
         </p>
+      )}
+
+      {exercise.createdById === user.id && (
+        <div className="mt-6">
+          <DeleteExerciseButton id={exercise.id} />
+        </div>
       )}
 
       {exercise.instructions.length > 0 && (

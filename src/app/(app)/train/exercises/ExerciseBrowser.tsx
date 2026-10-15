@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CreateExerciseSheet } from "@/components/train/CreateExerciseSheet";
 import type { ExerciseOption } from "@/lib/training";
 import { ExerciseThumb } from "@/components/train/ExerciseThumb";
 import { MUSCLE_FILTERS, matchesFilter, searchByName, titleCase } from "@/components/train/muscleFilters";
@@ -10,6 +12,8 @@ import { MUSCLE_FILTERS, matchesFilter, searchByName, titleCase } from "@/compon
 export function ExerciseBrowser({ library }: { library: ExerciseOption[] }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState(0);
+  const [creating, setCreating] = useState(false);
+  const router = useRouter();
   const results = useMemo(() => {
     return searchByName(library.filter((e) => matchesFilter(e.primaryMuscles, filter)), query);
   }, [library, query, filter]);
@@ -29,7 +33,19 @@ export function ExerciseBrowser({ library }: { library: ExerciseOption[] }) {
           </button>
         ))}
       </div>
-      <p className="mt-3 px-5 text-sm text-chalk-muted">{results.length} exercises</p>
+      <div className="mt-3 flex items-center justify-between px-5">
+        <p className="text-sm text-chalk-muted">{results.length} exercises</p>
+        <button onClick={() => setCreating(true)} className="flex items-center gap-1 text-sm font-medium text-plate-blue">
+          <Plus size={16} aria-hidden /> Create exercise
+        </button>
+      </div>
+      {creating && (
+        <CreateExerciseSheet
+          initialName={query.trim() ? query.trim().replace(/\b\w/g, (c) => c.toUpperCase()) : ""}
+          onClose={() => setCreating(false)}
+          onCreated={(e) => { setCreating(false); router.push(`/train/exercises/${e.slug}`); }}
+        />
+      )}
       <ul className="mt-1 px-5">
         {results.slice(0, 200).map((e) => (
           <li key={e.id}>
@@ -38,7 +54,7 @@ export function ExerciseBrowser({ library }: { library: ExerciseOption[] }) {
               <span className="min-w-0">
                 <span className="block truncate font-medium">{e.name}</span>
                 <span className="block truncate text-sm text-chalk-muted">
-                  {titleCase(e.primaryMuscles.join(", "))}{e.equipment ? `, ${e.equipment}` : ""}
+                  {e.custom ? "Your exercise, " : ""}{titleCase(e.primaryMuscles.join(", "))}{e.equipment ? `, ${e.equipment}` : ""}
                 </span>
               </span>
             </Link>

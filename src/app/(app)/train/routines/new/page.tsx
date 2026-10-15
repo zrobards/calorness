@@ -3,13 +3,13 @@ import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
 import { RoutineEditor } from "@/components/train/RoutineEditor";
 import { requireUser } from "@/lib/auth";
-import { getExerciseLibrary } from "@/lib/training";
+import { getExerciseOptions } from "@/lib/training";
 
 export const metadata: Metadata = { title: "New routine" };
 
 export default async function NewRoutinePage() {
-  await requireUser();
-  const library = await getExerciseLibrary();
+  const user = await requireUser();
+  const library = await getExerciseOptions(user.id);
   return (
     <>
       <PageHeader title="New routine">
