@@ -31,6 +31,8 @@ const BRANDS: Record<string, string> = {
   hersheys: "hershey's", kelloggs: "kellogg's", traderjoes: "trader joe's", costco: "kirkland", kirkland: "kirkland",
 };
 
+const BRAND_LIST = BRANDS;
+
 const STOP = new Set(["a", "an", "the", "of", "with", "and", "in", "on", "from", "for", "1", "one"]);
 
 /** Turn what was typed into the spelling the databases use, e.g. "chickfila nuggets" → "chick-fil-a nuggets". */
@@ -97,4 +99,33 @@ export function textMatch(query: string, candidate: { name: string; brand: strin
     else if (w.length >= 5 && (words.some((t) => closeEnough(w, t)) || typoInside(w, squashed))) total += 0.7; // one typo
   }
   return total / qWords.length;
+}
+
+const SIZE_WORDS = new Set(["oz", "fl", "floz", "ml", "l", "g", "kg", "lb", "lbs", "ct", "count", "pc", "pcs", "piece", "pieces", "pack", "pk", "bottle", "jar", "packet", "packets", "serving", "size", "family", "value"]);
+
+/**
+ * The "same food" key for collapsing duplicates: brand words, package sizes,
+ * and word order removed. "Chick-fil-A Sauce, 16 Fl Oz" and "Chick Fil A
+ * Sauce" both become "sauce".
+ */
+export function groupKey(food: { name: string; brand: string | null }): string {
+  const brandWords = new Set(normalize(expandQuery(food.brand ?? "")).split(" "));
+  const nameWords = normalize(expandQuery(food.name)).split(" ");
+  // brand words also often appear inside the name ("Chick-fil-A Sauce")
+  const knownBrand = Object.values(BRAND_LIST).some((b) => normalize(food.name).startsWith(normalize(b)))
+    ? normalize(Object.values(BRAND_LIST).find((b) => normalize(food.name).startsWith(normalize(b)))!).split(" ")
+    : [];
+  const drop = new Set([...brandWords, ...knownBrand]);
+  return nameWords
+    .filter((w) => w && !drop.has(w) && !SIZE_WORDS.has(w) && !/^\d+(\.\d+)?$/.test(w) && !STOP.has(w))
+    .map((w) => w.replace(/s$/, ""))
+    .sort()
+    .join(" ");
+}
+
+/** Brand that a search is about, if any ("chickfila nuggets" → "Chick-fil-A"), for prefilling new foods. */
+export function brandInQuery(q: string): string | null {
+  const expanded = expandQuery(q);
+  const hit = Object.values(BRAND_LIST).find((b) => normalize(expanded).includes(normalize(b)));
+  return hit ? hit.replace(/\b\w/g, (c) => c.toUpperCase()).replace("Chick-Fil-A", "Chick-fil-A") : null;
 }
