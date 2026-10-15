@@ -130,5 +130,41 @@
 ],
 "Standing Calf Raises": [
 "calf raise"
+],
+"EZ-Bar Curl": [
+"ez curl"
+],
+"Inverted Row": [
+"australian pull up",
+"bodyweight row"
+],
+"Chin-Up": [
+"chin up",
+"chinup"
+],
+"Hanging Leg Raise": [
+"leg raise"
+],
+"Pallof Press": [
+"anti rotation press"
+],
+"Trap Bar Deadlift": [
+"hex bar deadlift"
+],
+"Smith Machine Squat": [
+"smith squat"
+],
+"Machine Bicep Curl": [
+"bicep curl machine"
+],
+"Machine Triceps Extension": [
+"tricep extension machine"
+],
+"Incline Dumbbell Press": [
+"incline db press",
+"incline dumbbell bench"
+],
+"Incline Dumbbell Curl": [
+"incline curl"
 ]
 }

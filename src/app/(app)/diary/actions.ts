@@ -8,6 +8,7 @@ import { lookupBarcodeOnline, searchOpenFoodFacts, searchUsda } from "@/lib/nutr
 import { findFoodByBarcode, searchSavedFoods, dayToDate, MEALS, toCandidate } from "@/lib/nutrition/diary";
 import { normalizeBarcode, type FoodCandidate } from "@/lib/nutrition/normalize";
 import { macroCheck } from "@/lib/nutrition/quality";
+import { expandQuery, normalize, textMatch } from "@/lib/nutrition/searchText";
 import { candidateSchema, ensureFood } from "@/lib/nutrition/foods";
 
 const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -24,31 +25,35 @@ export async function searchFoods(query: string) {
   const q = z.string().trim().min(2).max(80).safeParse(query);
   if (!q.success) return { foods: [] as FoodCandidate[] };
 
+  // The food APIs need the usual spelling ("chick-fil-a"), not what was typed ("chickfila")
+  const apiQuery = expandQuery(q.data);
   const [saved, usda, off] = await Promise.all([
     searchSavedFoods(user.id, q.data),
-    searchUsda(q.data),
-    searchOpenFoodFacts(q.data),
+    searchUsda(apiQuery),
+    searchOpenFoodFacts(apiQuery),
   ]);
 
-  // Interleave the two outside sources so neither drowns out the other,
-  // and drop anything we already listed from the saved foods
-  const seen = new Set(saved.map((f) => `${f.source}:${f.externalId}`));
-  const merged: FoodCandidate[] = [...saved];
-  // Generic USDA foods (no brand) lead, then branded results alternate by source
-  for (const f of usda.filter((x) => !x.brand)) {
-    seen.add(`${f.source}:${f.externalId}`);
-    merged.push(f);
-  }
-  for (let i = 0; i < Math.max(usda.length, off.length); i++) {
-    for (const f of [usda[i], off[i]]) {
-      if (f && !seen.has(`${f.source}:${f.externalId}`)) {
-        seen.add(`${f.source}:${f.externalId}`);
-        merged.push(f);
-      }
-    }
-  }
-  // Entries whose calories and macros disagree sink to the bottom
-  const ranked = [...merged].sort((a, b) => Number(macroCheck(a).flagged) - Number(macroCheck(b).flagged));
+  // Rank everything together: how well the name matches what you typed, plus
+  // a nudge toward more trustworthy sources. Entries whose calories and
+  // macros badly disagree are dropped; mild mismatches sink and get a warning.
+  const SOURCE_BONUS = { CUSTOM: 0.25, USDA: 0.12, AI_ESTIMATE: 0.05, OPEN_FOOD_FACTS: 0 } as const;
+  const seen = new Set<string>();
+  const ranked = [...saved, ...usda, ...off]
+    .filter((f) => {
+      const key = `${f.source}:${f.externalId ?? f.id}`;
+      return !seen.has(key) && !!seen.add(key);
+    })
+    .map((f) => {
+      const match = textMatch(q.data, f);
+      const check = macroCheck(f);
+      const mine = f.id && f.source === "CUSTOM" ? 0.2 : 0; // your own foods first
+      return { f, match, score: match + SOURCE_BONUS[f.source] + mine - (check.flagged ? 0.3 : 0), badData: check.flagged && Math.abs(check.diff) > 0.4 * Math.max(f.calories, check.expected) };
+    })
+    // longer searches must match more of their words, so "chick-fil-a nuggets" doesn't list every sauce
+    .filter((x) => x.match >= (normalize(apiQuery).split(" ").length >= 3 ? 0.75 : 0.6) && !x.badData)
+    .sort((a, b) => b.score - a.score)
+    .map((x) => x.f);
+
   return { foods: ranked.slice(0, 40) };
 }
 

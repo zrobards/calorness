@@ -58,10 +58,10 @@ function mirroredPath(d: string) {
   return d.replace(/(-?\d+(?:\.\d+)?)\s(-?\d+(?:\.\d+)?)/g, (_, x, y) => `${120 - Number(x)} ${y}`);
 }
 
-function Body({ regions, sets, max, title }: { regions: [MuscleRegion, Shape[]][]; sets: Record<MuscleRegion, number>; max: number; title: string }) {
+function Body({ regions, sets, max, title, className = "h-64 w-auto", caption = true }: { regions: [MuscleRegion, Shape[]][]; sets: Record<MuscleRegion, number>; max: number; title: string; className?: string; caption?: boolean }) {
   return (
     <figure className="flex flex-col items-center">
-      <svg viewBox="0 0 120 236" className="h-64 w-auto" role="img" aria-label={`${title} muscle map`}>
+      <svg viewBox="0 0 120 236" className={className} role="img" aria-label={`${title} muscle map`}>
         {/* silhouette */}
         <g fill="var(--color-rack-line)">
           <circle cx="60" cy="17" r="12" />
@@ -83,7 +83,7 @@ function Body({ regions, sets, max, title }: { regions: [MuscleRegion, Shape[]][
           }),
         )}
       </svg>
-      <figcaption className="mt-1 text-xs text-chalk-muted">{title}</figcaption>
+      {caption && <figcaption className="mt-1 text-xs text-chalk-muted">{title}</figcaption>}
     </figure>
   );
 }
@@ -112,4 +112,15 @@ export function MuscleMap({ sets }: { sets: Record<MuscleRegion, number> }) {
       )}
     </div>
   );
+}
+
+/**
+ * Stand-in for exercises without a photo: a small figure with the main
+ * muscles lit, shown from whichever side those muscles are on.
+ */
+export function MuscleFigure({ muscles, className = "h-full w-auto" }: { muscles: string[]; className?: string }) {
+  const sets = Object.fromEntries([...FRONT, ...BACK].map(([m]) => [m, 0])) as Record<MuscleRegion, number>;
+  for (const m of muscles) if (m in sets) sets[m as MuscleRegion] = 10;
+  const onBack = BACK.some(([m]) => sets[m] > 0) && !FRONT.some(([m]) => sets[m] > 0);
+  return <Body regions={onBack ? BACK : FRONT} sets={sets} max={10} title={onBack ? "Back" : "Front"} className={className} caption={false} />;
 }

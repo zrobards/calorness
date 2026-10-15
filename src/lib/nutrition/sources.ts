@@ -31,7 +31,8 @@ async function usdaSearch(query: string, dataType: string, pageSize: number) {
  */
 export async function searchUsda(query: string): Promise<FoodCandidate[]> {
   const [generic, branded] = await Promise.all([
-    usdaSearch(query, "Foundation,SR Legacy", 6),
+    // Survey (FNDDS) adds restaurant and fast-food items with lab-based values
+    usdaSearch(query, "Foundation,SR Legacy,Survey (FNDDS)", 8),
     usdaSearch(query, "Branded", 20),
   ]);
   return [...generic, ...branded];

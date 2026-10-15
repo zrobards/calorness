@@ -82,7 +82,7 @@ export function RoutineEditor({
         {rows.map((row, i) => (
           <li key={row.key} className="rounded-2xl bg-rack-raised p-4">
             <div className="flex items-center gap-3">
-              <ExerciseThumb src={row.image} size={40} />
+              <ExerciseThumb src={row.image} muscles={row.muscles} size={40} />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-display text-lg font-semibold">{row.name}</p>
                 <p className="truncate text-xs text-chalk-muted">{titleCase(row.muscles.join(", "))}</p>

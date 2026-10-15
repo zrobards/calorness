@@ -86,6 +86,12 @@ export function FoodSheet({
       </div>
       <p className="mt-2 text-sm text-chalk-muted">1 serving = {food.servingLabel ?? `${food.servingSize} ${food.servingUnit}`}</p>
 
+      {food.calories > 900 && !check.flagged && (
+        <p role="note" className="mt-4 rounded-xl border border-plate-yellow/50 bg-plate-yellow/10 p-3 text-sm">
+          Heads up: one serving of this entry is {food.servingLabel ?? `${food.servingSize} ${food.servingUnit}`} at {Math.round(food.calories).toLocaleString("en-US")} cal, probably a whole package or a family size.
+          {weighable ? " Switch to grams or lower the amount if you had less." : " Lower the amount if you had less."}
+        </p>
+      )}
       {check.flagged && (
         <p role="note" className="mt-4 flex gap-2 rounded-xl border border-plate-yellow/50 bg-plate-yellow/10 p-3 text-sm">
           <AlertTriangle size={18} className="mt-0.5 shrink-0 text-plate-yellow" aria-hidden />
