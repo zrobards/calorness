@@ -96,7 +96,7 @@ export function ExercisePicker({
                 aria-pressed={on}
                 className="flex w-full items-center gap-3 border-b border-rack-line py-2.5 text-left"
               >
-                <ExerciseThumb src={e.image} />
+                <ExerciseThumb src={e.image} muscles={e.primaryMuscles} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{e.name}</span>
                   <span className="block truncate text-sm text-chalk-muted">

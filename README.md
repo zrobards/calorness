@@ -49,7 +49,7 @@ tracking that shares data with training.
 - iPhone Shortcut / widget: tap, take a photo (or dictate), and a notification shows what was logged, without opening the app. Powered by a small API (`POST /api/quick-log`) with per-user keys made in Profile, stored as SHA-256 hashes, revocable, and rate limited
 
 **Training (Hevy-style)**
-- Exercise library of 1,000+ exercises: 876 with photos and instructions from free-exercise-db, plus 126 common gym moves it lacks (Pec Deck, Seated Cable Row, Bulgarian Split Squat, Hack Squat Machine, cardio machines…)
+- Exercise library of 985 exercises, every one with step-by-step instructions: 873 from free-exercise-db plus 109 common gym moves it lacks (Pec Deck, Seated Cable Row, Bulgarian Split Squat, cardio machines…). Added moves reuse photos of the same movement where one exists; the rest show a muscle figure
 - Search understands gym slang ("pec deck", "rdl", "ohp") through alias lists
 - Create your own exercise in a few taps when something's missing, right from the picker; it gets history, PRs, and the muscle map like any other
 - Routine builder: sets, rep ranges, and rest time per exercise
@@ -72,7 +72,9 @@ tracking that shares data with training.
 - Calories eaten over the last 7 days against your goal
 
 **Nutrition (MyFitnessPal-style)**
-- Food search across USDA FoodData Central (generic and branded foods) and Open Food Facts, plus your own foods
+- Food search across USDA FoodData Central (generic, restaurant/FNDDS, and branded foods) and Open Food Facts, plus your own foods
+- Forgiving search: ignores dashes, apostrophes, and spacing, knows ~50 restaurant and brand spellings ("chickfila" → Chick-fil-A), and tolerates a typo
+- Bad database entries are filtered out: anything over ~900 cal per 100 g, more than 100 g of macros per 100 g, or calories far from what the macros add up to; whole-package servings are labeled "big serving"
 - Barcode scanning with the phone camera (native BarcodeDetector, with a WebAssembly fallback for iPhone)
 - Log by servings or by grams/ml, with a live calorie count and macro split
 - Daily diary by meal with a calorie ring and macro bars; tap any entry to edit or delete it

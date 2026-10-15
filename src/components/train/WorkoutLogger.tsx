@@ -330,7 +330,7 @@ export function WorkoutLogger({
           return (
             <section key={ex.key} className="rounded-2xl bg-rack-raised py-4" aria-label={ex.name}>
               <div className="flex items-center gap-3 px-4">
-                <ExerciseThumb src={ex.image} size={42} />
+                <ExerciseThumb src={ex.image} muscles={ex.muscles} size={42} />
                 <div className="min-w-0 flex-1">
                   <h2 className="truncate font-display text-xl font-semibold text-plate-blue">{ex.name}</h2>
                   <p className="truncate text-xs text-chalk-muted">{titleCase(ex.muscles.join(", "))}</p>

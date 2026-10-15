@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { LineChart } from "@/components/charts/LineChart";
+import { MuscleFigure } from "@/components/charts/MuscleMap";
 import { titleCase } from "@/components/train/muscleFilters";
 import { requireUser } from "@/lib/auth";
 import { exerciseImageUrl, getExerciseDetail, getUnitSystem } from "@/lib/training";
@@ -37,6 +38,12 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
         {exercise.level ? `, ${exercise.level}` : ""}
       </p>
 
+      {exercise.images.length === 0 && (
+        <div className="mt-5 flex items-center gap-4 rounded-2xl bg-rack-raised p-4">
+          <div className="h-36 shrink-0"><MuscleFigure muscles={exercise.primaryMuscles} /></div>
+          <p className="text-sm text-chalk-muted">No photo for this one yet. The figure shows the main muscle it works.</p>
+        </div>
+      )}
       {exercise.images.length > 0 && (
         <div className="mt-5 grid grid-cols-2 gap-2 overflow-hidden rounded-2xl">
           {exercise.images.map((img, i) => (

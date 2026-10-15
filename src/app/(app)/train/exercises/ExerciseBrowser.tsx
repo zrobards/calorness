@@ -50,7 +50,7 @@ export function ExerciseBrowser({ library }: { library: ExerciseOption[] }) {
         {results.slice(0, 200).map((e) => (
           <li key={e.id}>
             <Link href={`/train/exercises/${e.slug}`} className="flex items-center gap-3 border-b border-rack-line py-2.5">
-              <ExerciseThumb src={e.image} />
+              <ExerciseThumb src={e.image} muscles={e.primaryMuscles} />
               <span className="min-w-0">
                 <span className="block truncate font-medium">{e.name}</span>
                 <span className="block truncate text-sm text-chalk-muted">
