@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import type { FoodCandidate } from "@/lib/nutrition/normalize";
-import { createCustomFood } from "@/app/(app)/diary/actions";
+import { createCustomFood, updateCustomFood } from "@/app/(app)/diary/actions";
 import { Sheet } from "./Sheet";
 
 const field = "mt-1 w-full rounded-xl border border-rack-line bg-rack px-3 py-2.5 text-chalk focus:border-plate-yellow focus:outline-none";
@@ -13,12 +13,14 @@ export type FoodPrefill = { name?: string; brand?: string | null; servingLabel?:
 export function CustomFoodForm({
   barcode,
   prefill,
-  title = "Create a food",
+  foodId,
+  title = foodId ? "Edit food" : "Create a food",
   onCreated,
   onClose,
 }: {
   barcode?: string;
   prefill?: FoodPrefill;
+  foodId?: string; // editing one of your own foods
   title?: string;
   onCreated: (food: FoodCandidate) => void;
   onClose: () => void;
@@ -28,14 +30,15 @@ export function CustomFoodForm({
 
   return (
     <Sheet title={title} onClose={onClose}>
-      {prefill && <p className="mt-1 text-sm text-chalk-muted">Read from the label. Check it matches, then save.</p>}
+      {prefill && !foodId && title === "From the label" && <p className="mt-1 text-sm text-chalk-muted">Read from the label. Check it matches, then save.</p>}
+      {prefill?.brand && !foodId && title !== "From the label" && <p className="mt-1 text-sm text-chalk-muted">Tip: copy the numbers from the restaurant&apos;s app or website for an exact match.</p>}
       <form
         className="mt-4 space-y-3"
         onSubmit={(e) => {
           e.preventDefault();
           const data = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
           start(async () => {
-            const result = await createCustomFood(data);
+            const result = foodId ? await updateCustomFood(foodId, data) : await createCustomFood(data);
             if ("error" in result && result.error) setError(result.error);
             else if ("food" in result && result.food) onCreated(result.food);
           });

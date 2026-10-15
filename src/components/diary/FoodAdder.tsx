@@ -8,7 +8,8 @@ import { macroCheck } from "@/lib/nutrition/quality";
 import { addDiaryEntry, lookupBarcode, searchFoods } from "@/app/(app)/diary/actions";
 import { FoodSheet } from "./FoodSheet";
 import { BarcodeScanner } from "./BarcodeScanner";
-import { CustomFoodForm } from "./CustomFoodForm";
+import { CustomFoodForm, type FoodPrefill } from "./CustomFoodForm";
+import { brandInQuery } from "@/lib/nutrition/searchText";
 
 type Tab = "search" | "recent" | "mine";
 
@@ -32,7 +33,8 @@ export function FoodAdder({
   const [searching, setSearching] = useState(false);
   const [selected, setSelected] = useState<{ food: FoodCandidate; servings: number } | null>(null);
   const [scanning, setScanning] = useState(false);
-  const [creating, setCreating] = useState<{ barcode?: string } | null>(null);
+  const [creating, setCreating] = useState<{ barcode?: string; prefill?: FoodPrefill; foodId?: string } | null>(null);
+  const [addedFromQuery, setAddedFromQuery] = useState<string | undefined>(undefined);
   const [notice, setNotice] = useState<string | null>(null);
   const [added, setAdded] = useState<string[]>([]);
   const [pending, start] = useTransition();
@@ -42,14 +44,20 @@ export function FoodAdder({
     const q = query.trim();
     if (q.length < 2) return;
     let cancelled = false;
+    let fullArrived = false;
     const t = setTimeout(async () => {
       setSearching(true);
-      const { foods } = await searchFoods(q);
+      // Your foods and saved foods show instantly; the big databases fill in after
+      searchFoods(q, "local").then(({ foods }) => {
+        if (!cancelled && !fullArrived && foods.length) setResults(foods);
+      });
+      const { foods } = await searchFoods(q, "all");
+      fullArrived = true;
       if (!cancelled) {
         setResults(foods);
         setSearching(false);
       }
-    }, 400);
+    }, 250);
     return () => {
       cancelled = true;
       clearTimeout(t);
@@ -74,7 +82,8 @@ export function FoodAdder({
   const confirm = (servings: number) =>
     start(async () => {
       if (!selected) return;
-      const result = await addDiaryEntry({ food: selected.food, day, meal, servings });
+      // remember which food answered this search, so it's first next time
+      const result = await addDiaryEntry({ food: selected.food, day, meal, servings, query: addedFromQuery });
       if (result.error) return setNotice(result.error);
       setAdded((a) => [...a, selected.food.name]);
       setSelected(null);
@@ -102,7 +111,16 @@ export function FoodAdder({
           <button onClick={() => setScanning(true)} className="flex items-center justify-center gap-2 rounded-xl bg-plate-blue py-3 font-display text-lg font-semibold text-white">
             <Barcode size={20} aria-hidden /> Scan barcode
           </button>
-          <button onClick={() => setCreating({})} className="flex items-center justify-center gap-2 rounded-xl bg-rack-raised py-3 font-display text-lg font-semibold">
+          <button
+            onClick={() => {
+              // Start from what was searched: "chickfila grilled nuggets" → brand Chick-fil-A, name "Grilled Nuggets"
+              const brand = query.trim() ? brandInQuery(query) : null;
+              const rest = brand ? query.toLowerCase().replace(/chick\s*-?\s*fil\s*-?\s*a|chickfila|cfa/g, "").trim() : query.trim();
+              setAddedFromQuery(query.trim() || undefined);
+              setCreating({ prefill: { brand, name: rest ? rest.replace(/\b\w/g, (c) => c.toUpperCase()) : undefined } });
+            }}
+            className="flex items-center justify-center gap-2 rounded-xl bg-rack-raised py-3 font-display text-lg font-semibold"
+          >
             <PenLine size={18} aria-hidden /> Create food
           </button>
         </div>
@@ -128,7 +146,10 @@ export function FoodAdder({
         {list.map((f, i) => (
           <li key={`${f.source}-${f.externalId ?? f.id}-${i}`}>
             <button
-              onClick={() => setSelected({ food: f, servings: tab === "recent" ? recent[i]?.servings ?? 1 : 1 })}
+              onClick={() => {
+                setAddedFromQuery(tab === "search" ? query : undefined);
+                setSelected({ food: f, servings: tab === "recent" ? recent[i]?.servings ?? 1 : 1 });
+              }}
               className="flex w-full items-center gap-3 border-b border-rack-line py-3 text-left"
             >
               <span className="min-w-0 flex-1">
@@ -159,11 +180,18 @@ export function FoodAdder({
 
       {selected && (
         <FoodSheet food={selected.food} initialServings={selected.servings} confirmLabel={`Add to ${mealLabel}`} pending={pending}
-          onConfirm={confirm} onClose={() => setSelected(null)} />
+          onConfirm={confirm} onClose={() => setSelected(null)}
+          onEdit={selected.food.source === "CUSTOM" && selected.food.id && mine.some((m) => m.id === selected.food.id)
+            ? () => {
+                const f = selected.food;
+                setSelected(null);
+                setCreating({ foodId: f.id, prefill: { name: f.name, brand: f.brand, servingLabel: f.servingLabel ?? undefined, servingSize: f.servingUnit === "g" ? f.servingSize : null, calories: f.calories, proteinG: f.proteinG, carbsG: f.carbsG, fatG: f.fatG } });
+              }
+            : undefined} />
       )}
       {scanning && <BarcodeScanner onDetected={onDetected} onClose={() => setScanning(false)} />}
       {creating && (
-        <CustomFoodForm barcode={creating.barcode} onClose={() => setCreating(null)}
+        <CustomFoodForm barcode={creating.barcode} prefill={creating.prefill} foodId={creating.foodId} onClose={() => setCreating(null)}
           onCreated={(food) => { setCreating(null); setNotice(null); setSelected({ food, servings: 1 }); }} />
       )}
     </div>
