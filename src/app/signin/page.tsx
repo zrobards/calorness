@@ -35,6 +35,9 @@ export default function SignInPage() {
           </Suspense>
         </>
       )}
+      <p className="mt-8 text-center text-sm text-chalk-muted">
+        <Link href="/privacy" className="underline underline-offset-4">How Calorness handles your data</Link>
+      </p>
       <div className="h-10" />
     </main>
   );

@@ -8,6 +8,11 @@ import { TargetsEditor } from "./TargetsEditor";
 import { SetPasswordForm } from "./SetPasswordForm";
 import { ShortcutKeys } from "./ShortcutKeys";
 import { NotificationsCard } from "./NotificationsCard";
+import { InviteCard } from "./InviteCard";
+import { DeleteAccount } from "./DeleteAccount";
+import Link from "next/link";
+import QRCode from "qrcode";
+import { aiDailyLimit, aiUsedToday } from "@/lib/aiLimit";
 import { setUnitSystem } from "./actions";
 
 export const metadata: Metadata = { title: "Profile" };
@@ -21,6 +26,12 @@ export default async function ProfilePage() {
       apiKeys: { orderBy: { createdAt: "desc" }, select: { id: true, name: true, prefix: true, createdAt: true, lastUsedAt: true } },
     },
   });
+
+  const siteUrl = (process.env.NEXTAUTH_URL ?? "https://calorness.vercel.app").replace(/\/$/, "");
+  const [qrSvg, aiUsed] = await Promise.all([
+    QRCode.toString(siteUrl, { type: "svg", margin: 0, color: { dark: "#17212b", light: "#ffffff" } }),
+    aiUsedToday(user.id),
+  ]);
 
   return (
     <>
@@ -85,6 +96,11 @@ export default async function ProfilePage() {
           </>
         )}
       </section>
+      <section id="invite" className="animate-rise mx-5 mt-4 rounded-2xl bg-rack-raised p-5">
+        <h2 className="font-display text-2xl font-semibold">Invite friends</h2>
+        <InviteCard url={siteUrl} qrSvg={qrSvg} />
+      </section>
+
       <section id="notifications" className="animate-rise mx-5 mt-4 rounded-2xl bg-rack-raised p-5">
         <h2 className="font-display text-2xl font-semibold">Notifications</h2>
         <NotificationsCard />
@@ -99,6 +115,11 @@ export default async function ProfilePage() {
             lastUsedAt: k.lastUsedAt?.toISOString() ?? null,
           }))}
         />
+      </section>
+      <section className="mx-5 mb-8 space-y-4 px-1 text-sm text-chalk-muted">
+        <p>AI logs today: {aiUsed} of {aiDailyLimit()}. Barcode, search, and saved meals don&apos;t count.</p>
+        <p><Link href="/privacy" className="underline underline-offset-4">Privacy: what Calorness stores and shares</Link></p>
+        <DeleteAccount />
       </section>
     </>
   );

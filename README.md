@@ -81,6 +81,10 @@ tracking that shares data with training.
 - Motion throughout: count-up numbers, a calorie ring that draws in, bars and charts that grow, cards that rise in, page crossfades (React View Transitions), and a burst of tiny bumper plates when you finish a workout
 - Everything respects the phone's "reduce motion" setting
 
+**Sharing**
+- Invite a friend: opens the phone's share sheet with the link and install steps, plus a QR code for showing someone in person
+- Built for more than one person: private accounts, a daily AI allowance per person (`AI_DAILY_LIMIT`, default 25) to keep costs predictable, a first-run prompt to set targets, a plain-language privacy page, and self-serve account deletion
+
 **General**
 - Sign in with email and password (bcrypt-hashed), GitHub, Google, or a shared demo account; stay signed in for 90 days
 - GitHub users can add a password in Profile to sign in on the phone app

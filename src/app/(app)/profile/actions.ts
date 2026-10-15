@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { requireUser } from "@/lib/auth";
+import { DEMO_EMAIL, requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { bmrMifflinStJeor, macroTargets, tdee } from "@/lib/fitness/nutrition";
 import { inToCm, lbToKg } from "@/lib/fitness/units";
@@ -165,4 +165,20 @@ export async function sendTestNotification() {
   const user = await requireUser();
   const sent = await sendPush(user.id, { title: "Notifications are on", body: "You'll get rest timers and a lunchtime nudge.", url: "/log", tag: "test" });
   return { sent };
+}
+
+/** Delete the signed-in account and all of its data. */
+export async function deleteAccount(confirmation: string) {
+  const user = await requireUser();
+  if (confirmation !== "DELETE") return { error: "Type DELETE to confirm." };
+  const row = await db.user.findUniqueOrThrow({ where: { id: user.id }, select: { email: true } });
+  if (row.email === DEMO_EMAIL) return { error: "The shared demo account can't be deleted." };
+  // Diary entries point at foods, so remove them first; everything else is
+  // removed automatically with the user (onDelete: Cascade in the schema).
+  await db.$transaction([
+    db.diaryEntry.deleteMany({ where: { userId: user.id } }),
+    db.workout.deleteMany({ where: { userId: user.id } }),
+    db.user.delete({ where: { id: user.id } }),
+  ]);
+  return { ok: true };
 }

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ChevronRight, Target } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { QuickLogClient } from "@/components/log/QuickLogClient";
 import { requireUser } from "@/lib/auth";
@@ -62,6 +64,17 @@ export default async function QuickLogPage({ searchParams }: { searchParams: Pro
   return (
     <>
       <PageHeader title="Quick log" />
+      {/* New here? One step makes everything else work */}
+      {!diary.goal && (
+        <Link href="/profile#goals" className="animate-rise mx-5 mb-5 flex items-center gap-3 rounded-2xl border border-plate-yellow/50 bg-plate-yellow/10 p-4">
+          <Target className="shrink-0 text-plate-yellow" size={26} aria-hidden />
+          <span className="flex-1">
+            <span className="block font-display text-xl font-semibold">Set your daily targets</span>
+            <span className="text-sm text-chalk-muted">Takes a minute. Then Calorness shows what&apos;s left and what fits.</span>
+          </span>
+          <ChevronRight className="text-chalk-muted" aria-hidden />
+        </Link>
+      )}
       <QuickLogClient
         mode={mode}
         aiReady={aiConfigured()}
