@@ -19,19 +19,20 @@ export const candidateSchema = z.object({
   fiberG: z.number().min(0).max(1000).nullable(),
   sugarG: z.number().min(0).max(1000).nullable(),
   sodiumMg: z.number().min(0).max(100000).nullable(),
+  shared: z.boolean().optional(),
 });
 
 /** Save a food from search results so diary entries can point at it. */
 export async function ensureFood(userId: string, candidate: z.infer<typeof candidateSchema>) {
   if (candidate.id) {
     const existing = await db.food.findFirst({
-      where: { id: candidate.id, OR: [{ createdById: null }, { createdById: userId }] },
+      where: { id: candidate.id, OR: [{ createdById: null }, { createdById: userId }, { shared: true }] },
     });
     if (existing) return existing.id;
   }
   if (candidate.source === "CUSTOM" || candidate.source === "AI_ESTIMATE" || !candidate.externalId) throw new Error("Unknown food");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { id, ...data } = candidate;
+  const { id, shared, ...data } = candidate;
   const food = await db.food.upsert({
     where: { source_externalId: { source: candidate.source, externalId: candidate.externalId } },
     update: {},

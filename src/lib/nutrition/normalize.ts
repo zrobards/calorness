@@ -21,6 +21,7 @@ export type FoodCandidate = {
   fiberG: number | null;
   sugarG: number | null;
   sodiumMg: number | null;
+  shared?: boolean; // a label scan shared by a Calorness user
 };
 
 const round1 = (n: number) => Math.round(n * 10) / 10;

@@ -240,6 +240,9 @@ model Food {
   sodiumMg    Float?
   createdById String?
   createdBy   User?      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  // Copied from a printed Nutrition Facts label, so it's shared with everyone
+  // (name and numbers only) to grow the food database
+  shared      Boolean    @default(false)
   createdAt   DateTime   @default(now())
 
   diaryEntries DiaryEntry[]

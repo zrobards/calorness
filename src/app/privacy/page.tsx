@@ -16,7 +16,7 @@ const SECTIONS = [
   },
   {
     title: "Food databases",
-    body: "Food searches and barcodes are looked up in USDA FoodData Central and Open Food Facts. Only the search words or barcode number are sent, never your account details.",
+    body: "Food searches and barcodes are looked up in USDA FoodData Central and Open Food Facts. Only the search words or barcode number are sent, never your account details. Foods you add by scanning a Nutrition Facts label are shared with other Calorness users (just the food's name, brand, and numbers, never who scanned it or when you ate it) so everyone's search gets more accurate.",
   },
   {
     title: "Who can see your data",

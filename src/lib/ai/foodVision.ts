@@ -5,10 +5,19 @@ import { LOG_FOODS_TOOL, READ_LABEL_TOOL, parseLabelResponse, parseLogFoodsRespo
 // Needs ANTHROPIC_API_KEY (console.anthropic.com). Each photo costs a fraction
 // of a cent with Haiku; set AI_MODEL to use a different Claude model.
 const MODEL = () => process.env.AI_MODEL || "claude-haiku-5-5";
+// Photos are where accuracy matters most, so they get the stronger model by
+// default (about $2/month at 10 photos a day). AI_VISION_MODEL overrides it.
+const VISION_MODEL = () => process.env.AI_VISION_MODEL || "claude-sonnet-5-5";
 
-const SYSTEM = `You are a registered dietitian estimating nutrition for a food-logging app.
-List each distinct food or drink separately. Estimate realistic portions from visual cues (plate size, utensils, packaging) or the user's words.
-Use typical US restaurant or home-cooking values, and include likely cooking oil, butter, and sauces in the numbers.
+const SYSTEM = `You are a registered dietitian estimating nutrition for a food-logging app. Accuracy matters more than speed.
+How to list items:
+- Log each dish ONCE as people order or eat it ("3 chicken street tacos", "burrito bowl"), with its tortillas, toppings, garnishes, sauces, and cooking fat included in that dish's numbers.
+- Do not also list a dish's own parts (tortillas, lime, cilantro, onions, salsa on the tacos). If you mention one, set included_in to the dish's name.
+- List separately only things that are truly separate: a side of chips, a drink, a dessert.
+How to estimate:
+- Judge portions from visual cues: plate or bowl size (dinner plates are about 10-11 in), utensils, hands, packaging, and how many pieces you can count.
+- Estimate grams first, then calories from typical values per 100 g for that food as prepared; restaurant food usually has more oil and salt than home cooking.
+- Packaged or branded items: set packaged true and give the brand and exact product with flavor so the app can look up the label.
 If the image or text contains no food, return an empty items list. Always answer by calling the log_foods tool.`;
 
 export function aiConfigured() {
@@ -40,7 +49,7 @@ export async function estimateFoods(input: {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: MODEL(),
+        model: input.image ? VISION_MODEL() : MODEL(),
         max_tokens: 1500,
         system: SYSTEM,
         tools: [LOG_FOODS_TOOL],
@@ -89,7 +98,7 @@ export async function readLabel(image: { base64: string; mediaType: "image/jpeg"
       method: "POST",
       headers: { "content-type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY!, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
-        model: MODEL(),
+        model: VISION_MODEL(),
         max_tokens: 800,
         system: "You read Nutrition Facts labels for a food-logging app. Copy the per-serving numbers exactly as printed. Never estimate or round differently than the label. If there's no readable label, set readable to false.",
         tools: [READ_LABEL_TOOL],

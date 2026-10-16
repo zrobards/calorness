@@ -30,7 +30,9 @@ export function CustomFoodForm({
 
   return (
     <Sheet title={title} onClose={onClose}>
-      {prefill && !foodId && title === "From the label" && <p className="mt-1 text-sm text-chalk-muted">Read from the label. Check it matches, then save.</p>}
+      {prefill && !foodId && title === "From the label" && (
+        <p className="mt-1 text-sm text-chalk-muted">Read from the label. Check it matches, then save. Label foods are shared (name and numbers only) so everyone&apos;s search gets better.</p>
+      )}
       {prefill?.brand && !foodId && title !== "From the label" && <p className="mt-1 text-sm text-chalk-muted">Tip: copy the numbers from the restaurant&apos;s app or website for an exact match.</p>}
       <form
         className="mt-4 space-y-3"
@@ -45,6 +47,7 @@ export function CustomFoodForm({
         }}
       >
         {barcode && <input type="hidden" name="barcode" value={barcode} />}
+        {title === "From the label" && !foodId && <input type="hidden" name="fromLabel" value="true" />}
         <label className={label}>Name<input defaultValue={prefill?.name ?? undefined} name="name" required className={field} placeholder="Protein bar" /></label>
         <label className={label}>Brand (optional)<input defaultValue={prefill?.brand ?? undefined} name="brand" className={field} /></label>
         <div className="grid grid-cols-[1.4fr_1fr] gap-2">

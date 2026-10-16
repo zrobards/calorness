@@ -132,7 +132,7 @@ export function AiReviewSheet({
   return (
     <Sheet title="Here's what I see" onClose={onClose}>
       <p className="mt-1 flex items-center gap-1.5 text-sm text-chalk-muted">
-        <Sparkles size={15} className="text-plate-yellow" aria-hidden /> AI estimate. Tap any item to adjust it.
+        <Sparkles size={15} className="text-plate-yellow" aria-hidden /> AI estimate. Tap any item to adjust it. Best results: shoot from above with a fork in frame.
       </p>
       {photo && (
         // eslint-disable-next-line @next/next/no-img-element -- a local preview of the user's own photo
@@ -169,6 +169,11 @@ export function AiReviewSheet({
                 <button onClick={() => setServings(i.key, 0.25)} className="rounded-lg bg-rack-raised p-1.5" aria-label="More"><Plus size={16} /></button>
                 {i.confidence === "low" && i.chosen === null && <span className="ml-auto text-xs text-plate-red">Check this one</span>}
               </div>
+              {i.basis && i.chosen === null && !i.edited && (
+                <p className="-mt-1 px-3 pb-3 pl-7 text-xs text-chalk-muted">
+                  <span className="text-plate-green">USDA values</span> for &ldquo;{i.basis.name}&rdquo; at this portion
+                </p>
+              )}
 
               {/* Packaged food: the real product's label values instead of a guess */}
               {i.matches && i.matches.length > 0 && (

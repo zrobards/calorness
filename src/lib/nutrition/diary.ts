@@ -61,11 +61,12 @@ export async function getDiaryDay(userId: string, day: string, timeZone = "Ameri
 export const toCandidate = (f: {
   id: string; source: FoodCandidate["source"]; externalId: string | null; barcode: string | null; name: string; brand: string | null;
   servingSize: number; servingUnit: string; servingLabel: string | null; calories: number; proteinG: number; carbsG: number; fatG: number;
-  fiberG: number | null; sugarG: number | null; sodiumMg: number | null;
+  fiberG: number | null; sugarG: number | null; sodiumMg: number | null; shared?: boolean;
 }): FoodCandidate => ({
   id: f.id, source: f.source, externalId: f.externalId, barcode: f.barcode, name: f.name, brand: f.brand,
   servingSize: f.servingSize, servingUnit: f.servingUnit, servingLabel: f.servingLabel, calories: f.calories,
   proteinG: f.proteinG, carbsG: f.carbsG, fatG: f.fatG, fiberG: f.fiberG, sugarG: f.sugarG, sodiumMg: f.sodiumMg,
+  shared: f.shared ?? false,
 });
 
 /** Foods this user logged most recently, newest first, no duplicates. */
@@ -103,7 +104,7 @@ export async function searchSavedFoods(userId: string, query: string) {
   const conditions = words.map((w) => Prisma.sql`${squashed} LIKE ${"%" + w.replace(/[^a-z0-9]/g, "") + "%"}`);
   const rows = await db.$queryRaw<{ id: string }[]>`
     SELECT "id" FROM "Food"
-    WHERE ("createdById" IS NULL OR "createdById" = ${userId})
+    WHERE ("createdById" IS NULL OR "createdById" = ${userId} OR "shared" = true)
       AND (${Prisma.join(conditions, " OR ")})
     ORDER BY ${Prisma.join(conditions.map((c) => Prisma.sql`(${c})::int`), " + ")} DESC
     LIMIT 40`;
@@ -113,7 +114,7 @@ export async function searchSavedFoods(userId: string, query: string) {
 }
 
 export async function findFoodByBarcode(userId: string, barcode: string) {
-  const food = await db.food.findFirst({ where: { barcode, OR: [{ createdById: null }, { createdById: userId }] } });
+  const food = await db.food.findFirst({ where: { barcode, OR: [{ createdById: null }, { createdById: userId }, { shared: true }] } });
   return food ? toCandidate(food) : null;
 }
 

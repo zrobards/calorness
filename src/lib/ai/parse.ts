@@ -14,6 +14,8 @@ export const aiFoodItemSchema = z.object({
   packaged: z.boolean().optional(),
   brand: z.string().max(80).nullable().optional(),
   product: z.string().max(160).nullable().optional(),
+  // Set when this item is really part of another listed dish (tortillas in tacos)
+  included_in: z.string().max(120).nullable().optional(),
 });
 
 export const aiFoodResultSchema = z.object({
@@ -47,6 +49,7 @@ export const LOG_FOODS_TOOL = {
             packaged: { type: "boolean", description: "True for a branded, packaged product (yogurt cup, protein bar, chips, bottled drink), whether the package is visible or named" },
             brand: { type: "string", description: "Brand for packaged products, e.g. 'Chobani'" },
             product: { type: "string", description: "Full product name including line and flavor as printed, e.g. 'Chobani Flip Key Lime Crumble'" },
+            included_in: { type: "string", description: "Only if this item is an ingredient, topping, or garnish of another item in this list (e.g. corn tortillas or lime for 'Street tacos'), the name of that item. Its calories must already be counted in that item." },
           },
           required: ["name", "portion", "grams", "calories", "protein_g", "carbs_g", "fat_g", "confidence"],
         },
@@ -66,9 +69,15 @@ export function parseLogFoodsResponse(body: { content?: ContentBlock[] }): AiFoo
   const parsed = aiFoodResultSchema.safeParse(call.input);
   if (!parsed.success) return null;
   // Round to sensible precision and drop empty rows
+  // Never count a dish and its own parts twice: drop items the AI marked as
+  // part of another listed item (only if that item really is in the list)
+  const names = new Set(parsed.data.items.map((i) => i.name.trim().toLowerCase()));
+  const parts = parsed.data.items.filter((i) => i.included_in && names.has(i.included_in.trim().toLowerCase()) && i.included_in.trim().toLowerCase() !== i.name.trim().toLowerCase());
+  const partNote = parts.length ? `Counted inside the dish: ${parts.map((p) => p.name.toLowerCase()).join(", ")}.` : "";
   return {
-    note: parsed.data.note,
+    note: [parsed.data.note, partNote].filter(Boolean).join(" ") || undefined,
     items: parsed.data.items
+      .filter((i) => !parts.includes(i))
       .filter((i) => i.calories > 0 || i.protein_g > 0 || i.carbs_g > 0 || i.fat_g > 0)
       .map((i) => ({
         ...i,

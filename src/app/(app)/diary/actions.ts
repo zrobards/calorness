@@ -180,6 +180,7 @@ const customFoodSchema = z.object({
   carbsG: z.coerce.number().min(0).max(500),
   fatG: z.coerce.number().min(0).max(500),
   barcode: z.string().trim().max(20).optional(),
+  fromLabel: z.literal("true").optional(), // copied from a Nutrition Facts label photo
 });
 
 export async function createCustomFood(input: Record<string, string>) {
@@ -201,6 +202,7 @@ export async function createCustomFood(input: Record<string, string>) {
       fatG: d.fatG,
       barcode: d.barcode ? normalizeBarcode(d.barcode) : null,
       createdById: user.id,
+      shared: d.fromLabel === "true",
     },
   });
   return { food: toCandidate(food) };
