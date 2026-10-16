@@ -243,6 +243,9 @@ model Food {
   // Copied from a printed Nutrition Facts label, so it's shared with everyone
   // (name and numbers only) to grow the food database
   shared      Boolean    @default(false)
+  // brand + name squashed to letters and digits, maintained by a database
+  // trigger (see the search_cache_and_index migration) for fast fuzzy search
+  searchKey   String     @default("") @map("search_key")
   createdAt   DateTime   @default(now())
 
   diaryEntries DiaryEntry[]
@@ -252,6 +255,7 @@ model Food {
   @@unique([source, externalId])
   @@index([barcode])
   @@index([name])
+  @@index([searchKey(ops: raw("gin_trgm_ops"))], type: Gin, map: "Food_search_key_trgm")
 }
 
 enum FoodSource {
@@ -467,4 +471,12 @@ model SearchPick {
 
   @@unique([userId, query, foodId])
   @@index([userId])
+}
+
+// Results from USDA and Open Food Facts, kept for a week so popular searches
+// are instant and don't count against API limits. Only non-empty results.
+model SearchCache {
+  key       String   @id // source + normalized query
+  results   Json
+  createdAt DateTime @default(now())
 }

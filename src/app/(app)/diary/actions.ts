@@ -4,11 +4,10 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { lookupBarcodeOnline, searchOpenFoodFacts, searchUsda } from "@/lib/nutrition/sources";
-import { findFoodByBarcode, searchSavedFoods, dayToDate, MEALS, toCandidate } from "@/lib/nutrition/diary";
+import { lookupBarcodeOnline } from "@/lib/nutrition/sources";
+import { findFoodByBarcode, dayToDate, MEALS, toCandidate } from "@/lib/nutrition/diary";
 import { normalizeBarcode, type FoodCandidate } from "@/lib/nutrition/normalize";
-import { macroCheck } from "@/lib/nutrition/quality";
-import { expandQuery, groupKey, normalize, textMatch } from "@/lib/nutrition/searchText";
+import { findFoods, pickKey } from "@/lib/nutrition/search";
 import { candidateSchema, ensureFood } from "@/lib/nutrition/foods";
 
 const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -20,87 +19,16 @@ const mealSchema = z.enum(MEALS);
  * Searches three places at once: foods already saved (instant, includes the
  * user's custom foods), USDA (generic + branded), and Open Food Facts.
  */
-/** The normalized form of a search, used to remember what you picked for it. */
-const pickKey = (q: string) => normalize(expandQuery(q));
-
 /**
  * Two speeds: `local` searches only your foods and foods already saved in
- * the app (instant), and the full search also asks USDA and Open Food Facts
- * (a second or two). The screen shows the local results right away.
+ * the app (instant), and `all` also asks USDA and Open Food Facts. The screen
+ * shows the local results right away. Ranking lives in lib/nutrition/search.ts.
  */
 export async function searchFoods(query: string, scope: "local" | "all" = "all") {
   const user = await requireUser();
   const q = z.string().trim().min(2).max(80).safeParse(query);
   if (!q.success) return { foods: [] as FoodCandidate[] };
-
-  // The food APIs need the usual spelling ("chick-fil-a"), not what was typed ("chickfila")
-  const apiQuery = expandQuery(q.data);
-  const key = pickKey(q.data);
-  const [saved, usda, off, picks] = await Promise.all([
-    searchSavedFoods(user.id, q.data),
-    scope === "all" ? searchUsda(apiQuery) : Promise.resolve([] as FoodCandidate[]),
-    scope === "all" ? searchOpenFoodFacts(apiQuery) : Promise.resolve([] as FoodCandidate[]),
-    // Foods you picked for this search before (or a search that starts the same way)
-    db.searchPick.findMany({
-      where: { userId: user.id, OR: [{ query: key }, { query: { startsWith: key } }, ...(key.length >= 4 ? [{ query: { contains: key } }] : [])] },
-      include: { food: true },
-      orderBy: [{ count: "desc" }, { lastAt: "desc" }],
-      take: 8,
-    }),
-  ]);
-  const pickedCount = new Map<string, number>();
-  for (const p of picks) pickedCount.set(p.foodId, (pickedCount.get(p.foodId) ?? 0) + p.count);
-
-  // Score everything together: how well the name matches what you typed, a
-  // nudge toward trustworthy sources, and a big boost for foods you've
-  // picked for this search before. Badly inconsistent entries are dropped.
-  const SOURCE_BONUS = { CUSTOM: 0.25, USDA: 0.12, AI_ESTIMATE: 0.05, OPEN_FOOD_FACTS: 0 } as const;
-  const minMatch = normalize(apiQuery).split(" ").length >= 3 ? 0.75 : 0.6;
-  const candidates = [...picks.map((p) => toCandidate(p.food)), ...saved, ...usda, ...off];
-  const seen = new Set<string>();
-  const scored = candidates
-    .filter((f) => {
-      const id = `${f.source}:${f.externalId ?? f.id}`;
-      return !seen.has(id) && !!seen.add(id);
-    })
-    .map((f) => {
-      const match = textMatch(q.data, f);
-      const check = macroCheck(f);
-      const picked = f.id ? pickedCount.get(f.id) ?? 0 : 0;
-      const mine = f.id && (f.source === "CUSTOM" || f.source === "AI_ESTIMATE") && saved.concat(picks.map((p) => toCandidate(p.food))).some((s) => s.id === f.id);
-      return {
-        f,
-        picked,
-        mine,
-        score: match + SOURCE_BONUS[f.source] + (mine ? 0.2 : 0) + (picked ? 0.6 + Math.log2(1 + picked) * 0.1 : 0) - (check.flagged ? 0.3 : 0),
-        keep: picked > 0 || match >= (mine ? 0.5 : minMatch),
-        badData: check.flagged && Math.abs(check.diff) > 0.4 * Math.max(f.calories, check.expected),
-      };
-    })
-    .filter((x) => x.keep && !x.badData);
-
-  // One entry per food: "Chick-fil-A Sauce" from five crowd-sourced entries
-  // becomes a single result. Within a group, prefer what you've used, then
-  // your own foods, then the version closest to the group's typical calories
-  // per 100 g (the crowd consensus), then the more trusted source.
-  const groups = new Map<string, typeof scored>();
-  for (const x of scored) {
-    const g = x.picked || x.mine ? `mine:${x.f.id}` : groupKey(x.f) || `${x.f.source}:${x.f.externalId}`;
-    groups.set(g, [...(groups.get(g) ?? []), x]);
-  }
-  const density = (f: FoodCandidate) => (f.servingUnit === "g" || f.servingUnit === "ml") && f.servingSize > 0 ? (f.calories / f.servingSize) * 100 : null;
-  const best = [...groups.values()].map((items) => {
-    const ds = items.map((x) => density(x.f)).filter((d): d is number => d !== null).sort((a, b) => a - b);
-    const median = ds.length >= 3 ? ds[Math.floor(ds.length / 2)] : null;
-    const adjusted = items.map((x) => {
-      const d = density(x.f);
-      const off = median && d !== null ? Math.min(1, Math.abs(d - median) / median) : 0;
-      return { ...x, score: x.score - off * 0.4 };
-    });
-    return adjusted.sort((a, b) => b.score - a.score)[0];
-  });
-
-  return { foods: best.sort((a, b) => b.score - a.score).slice(0, 30).map((x) => x.f) };
+  return { foods: await findFoods(user.id, q.data, scope) };
 }
 
 export async function lookupBarcode(code: string) {
