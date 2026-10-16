@@ -27,3 +27,19 @@ describe("parseLogFoodsResponse", () => {
     expect(parseLogFoodsResponse({ content: [{ type: "tool_use", name: "log_foods", input: { items: [{ name: "x" }] } }] })).toBeNull();
   });
 });
+
+describe("double counting", () => {
+  it("drops ingredients the AI marked as part of a listed dish", () => {
+    const tacos = { ...item, name: "Street tacos", portion: "3 tacos", grams: 300, calories: 480, confidence: "medium" };
+    const tortillas = { ...item, name: "Corn tortillas", portion: "3", grams: 75, calories: 150, included_in: "Street tacos" };
+    const lime = { ...item, name: "Lime", portion: "2 wedges", grams: 15, calories: 5, included_in: "street tacos" };
+    const result = parseLogFoodsResponse({ content: [{ type: "tool_use", name: "log_foods", input: { items: [tacos, tortillas, lime] } }] });
+    expect(result?.items.map((i) => i.name)).toEqual(["Street tacos"]);
+    expect(result?.note).toContain("corn tortillas, lime");
+  });
+
+  it("keeps items that point at a dish that isn't in the list", () => {
+    const salsa = { ...item, name: "Salsa", calories: 20, included_in: "Burrito" };
+    expect(parseLogFoodsResponse({ content: [{ type: "tool_use", name: "log_foods", input: { items: [salsa] } }] })?.items).toHaveLength(1);
+  });
+});
