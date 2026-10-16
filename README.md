@@ -80,6 +80,9 @@ tracking that shares data with training.
 - One result per food: duplicate crowd-sourced entries ("Chick-fil-A Sauce" ×5 with different numbers) collapse into the one closest to the group's typical values
 - Search memory: whatever you pick for a search ranks first next time, even your own foods; new foods created from a search start with its brand and name filled in, and your own foods can be edited
 - Your foods and saved foods appear instantly while USDA and Open Food Facts fill in
+- Gets smarter with use: outside results are cached for a week, and what people pick for a search (counts only) nudges ranking for everyone
+- Built to scale: a trigger-maintained, trigram-indexed search key keeps fuzzy food search fast past millions of rows
+- Owner-only `/admin` page: accounts, food database by source, top searches, most logged foods, AI usage and estimated cost
 - Bad database entries are filtered out: anything over ~900 cal per 100 g, more than 100 g of macros per 100 g, or calories far from what the macros add up to; whole-package servings are labeled "big serving"
 - Barcode scanning with the phone camera (native BarcodeDetector, with a WebAssembly fallback for iPhone)
 - Log by servings or by grams/ml, with a live calorie count and macro split
@@ -141,6 +144,10 @@ tracking that shares data with training.
 The color system comes from Olympic bumper plates. Each number the app tracks
 has its plate color everywhere it appears: red (25 kg) for calories, blue
 (20 kg) for protein, yellow (15 kg) for carbs, green (10 kg) for fat.
+
+## Architecture
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how the pieces fit, how food search ranks results, how the database grows, and scaling notes.
 
 ## Project structure
 

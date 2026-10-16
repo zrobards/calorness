@@ -1,4 +1,6 @@
 import "server-only";
+import type { Prisma } from "@prisma/client";
+import { db } from "@/lib/db";
 import { normalizeBarcode, normalizeOff, normalizeUsda, type FoodCandidate, type OffProduct, type UsdaFood } from "./normalize";
 
 // Open Food Facts asks every app to identify itself
@@ -8,6 +10,27 @@ const OFF_FIELDS = "code,product_name,brands,serving_size,serving_quantity,servi
 // Free key from https://fdc.nal.usda.gov/api-key-signup. DEMO_KEY works but
 // only allows a handful of searches per hour.
 const usdaKey = () => process.env.USDA_API_KEY || "DEMO_KEY";
+
+const CACHE_DAYS = 7;
+
+/**
+ * Remember non-empty results from the outside databases for a week. Popular
+ * searches become instant for everyone and stay well inside API limits.
+ */
+async function cached(key: string, fetcher: () => Promise<FoodCandidate[]>): Promise<FoodCandidate[]> {
+  const hit = await db.searchCache.findUnique({ where: { key } }).catch(() => null);
+  if (hit && Date.now() - hit.createdAt.getTime() < CACHE_DAYS * 86_400_000) return hit.results as unknown as FoodCandidate[];
+  const fresh = await fetcher();
+  if (fresh.length > 0) {
+    const results = fresh as unknown as Prisma.InputJsonValue;
+    await db.searchCache
+      .upsert({ where: { key }, update: { results, createdAt: new Date() }, create: { key, results } })
+      .catch(() => {}); // a cache write failing should never break search
+  }
+  return fresh;
+}
+
+const cacheKey = (source: string, query: string) => `${source}:${query.trim().toLowerCase().replace(/\s+/g, " ")}`;
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T | null> {
   try {
@@ -27,7 +50,7 @@ async function usdaSearch(query: string, dataType: string, pageSize: number) {
 
 /** Generic and restaurant reference foods only (no branded products). */
 export function searchUsdaGeneric(query: string) {
-  return usdaSearch(query, "Foundation,SR Legacy,Survey (FNDDS)", 8);
+  return cached(cacheKey("usda-generic", query), () => usdaSearch(query, "Foundation,SR Legacy,Survey (FNDDS)", 8));
 }
 
 /**
@@ -35,6 +58,10 @@ export function searchUsdaGeneric(query: string) {
  * products. In one combined search, branded items crowd the generic ones out.
  */
 export async function searchUsda(query: string): Promise<FoodCandidate[]> {
+  return cached(cacheKey("usda", query), () => searchUsdaFresh(query));
+}
+
+async function searchUsdaFresh(query: string): Promise<FoodCandidate[]> {
   const [generic, branded] = await Promise.all([
     // Survey (FNDDS) adds restaurant and fast-food items with lab-based values
     usdaSearch(query, "Foundation,SR Legacy,Survey (FNDDS)", 8),
@@ -44,6 +71,10 @@ export async function searchUsda(query: string): Promise<FoodCandidate[]> {
 }
 
 export async function searchOpenFoodFacts(query: string): Promise<FoodCandidate[]> {
+  return cached(cacheKey("off", query), () => searchOpenFoodFactsFresh(query));
+}
+
+async function searchOpenFoodFactsFresh(query: string): Promise<FoodCandidate[]> {
   const params = new URLSearchParams({ q: query, page_size: "20", fields: OFF_FIELDS, langs: "en" });
   const data = await fetchJson<{ hits?: OffProduct[] }>(`https://search.openfoodfacts.org/search?${params}`, { headers: OFF_HEADERS });
   return (data?.hits ?? []).map(normalizeOff).filter((f): f is FoodCandidate => f !== null);

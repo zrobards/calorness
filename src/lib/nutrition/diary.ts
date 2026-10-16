@@ -100,8 +100,9 @@ export async function getMyFoods(userId: string) {
 export async function searchSavedFoods(userId: string, query: string) {
   const words = normalize(expandQuery(query)).split(" ").filter((w) => w.length > 1).slice(0, 5);
   if (words.length === 0) return [];
-  const squashed = Prisma.sql`regexp_replace(lower(coalesce("brand", '') || "name"), '[^a-z0-9]', '', 'g')`;
-  const conditions = words.map((w) => Prisma.sql`${squashed} LIKE ${"%" + w.replace(/[^a-z0-9]/g, "") + "%"}`);
+  // "search_key" is brand + name squashed to letters and digits, kept current
+  // by a database trigger and indexed for fast LIKE '%word%' lookups
+  const conditions = words.map((w) => Prisma.sql`"search_key" LIKE ${"%" + w.replace(/[^a-z0-9]/g, "") + "%"}`);
   const rows = await db.$queryRaw<{ id: string }[]>`
     SELECT "id" FROM "Food"
     WHERE ("createdById" IS NULL OR "createdById" = ${userId} OR "shared" = true)
