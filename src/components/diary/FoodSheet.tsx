@@ -61,7 +61,7 @@ export function FoodSheet({
   return (
     <Sheet title={food.name} onClose={onClose}>
       <p className="mt-1 flex items-center gap-2 text-sm text-chalk-muted">
-        <span>{[food.brand, SOURCE_LABEL[food.source]].filter(Boolean).join(", ")}</span>
+        <span>{[food.brand, food.shared ? "Label scan" : SOURCE_LABEL[food.source]].filter(Boolean).join(", ")}</span>
         {onEdit && <button onClick={onEdit} className="font-medium text-plate-blue">Edit food</button>}
       </p>
 

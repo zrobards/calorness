@@ -89,7 +89,7 @@ export async function quickRelog(input: { foodId: string; servings: number; day:
   const { foodId, servings, day, meal } = z
     .object({ foodId: z.string(), servings: z.number().positive().max(100), day: daySchema, meal: z.enum(MEALS) })
     .parse(input);
-  const food = await db.food.findFirst({ where: { id: foodId, OR: [{ createdById: null }, { createdById: user.id }] } });
+  const food = await db.food.findFirst({ where: { id: foodId, OR: [{ createdById: null }, { createdById: user.id }, { shared: true }] } });
   if (!food) return { error: "That food is gone." };
   const entry = await db.diaryEntry.create({ data: { userId: user.id, foodId, servings, meal, date: dayToDate(day) } });
   revalidatePath("/diary");

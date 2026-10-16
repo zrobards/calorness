@@ -25,6 +25,11 @@ async function usdaSearch(query: string, dataType: string, pageSize: number) {
   return (data?.foods ?? []).map(normalizeUsda).filter((f): f is FoodCandidate => f !== null);
 }
 
+/** Generic and restaurant reference foods only (no branded products). */
+export function searchUsdaGeneric(query: string) {
+  return usdaSearch(query, "Foundation,SR Legacy,Survey (FNDDS)", 8);
+}
+
 /**
  * Generic foods ("Yogurt, Greek, plain, nonfat") come first, then branded
  * products. In one combined search, branded items crowd the generic ones out.
