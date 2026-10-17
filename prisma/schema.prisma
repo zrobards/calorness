@@ -24,6 +24,11 @@ model User {
   unitSystem    UnitSystem @default(IMPERIAL)
   timeZone      String     @default("America/New_York") // the phone's zone, so "today" matches your day
   restAlarmAt   DateTime? // when a "rest's over" notification is due; cleared to cancel it
+  // Body stats, used to estimate calories burned and daily needs
+  sex            String? // "male" or "female" (for the calorie equations)
+  birthYear      Int?
+  heightCm       Float?
+  exerciseCredit Int     @default(75) // % of exercise calories added to the day's calorie goal
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
@@ -44,6 +49,7 @@ model User {
   coachNotes      CoachNote[]
   coachMessages   CoachMessage[]
   searchPicks     SearchPick[]
+  activities      ActivityEntry[]
 }
 
 model Account {
@@ -479,4 +485,29 @@ model SearchCache {
   key       String   @id // source + normalized query
   results   Json
   createdAt DateTime @default(now())
+}
+
+// ─── Cardio and other activities ──────────────────────────────────────────
+// Running, climbing, hacky sack, basketball… anything that isn't sets and reps.
+model ActivityEntry {
+  id            String   @id @default(cuid())
+  userId        String
+  activity      String // key from the activity catalog (src/lib/fitness/activities.ts), or "custom"
+  name          String // shown name, e.g. "Rock climbing" or your own
+  intensity     String   @default("moderate") // light, moderate, vigorous
+  date          DateTime @db.Date // your local calendar day
+  startedAt     DateTime @default(now())
+  durationMin   Float
+  distanceM     Float?
+  inclinePct    Float?
+  avgHeartRate  Int?
+  caloriesTotal Int // everything burned during the activity
+  caloriesNet   Int // above what you'd burn resting anyway (what gets added to your day)
+  method        String // how it was estimated: "heart-rate", "acsm", or "met"
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
 }
