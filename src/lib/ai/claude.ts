@@ -47,6 +47,9 @@ const isModelProblem = (status: number, detail: string) => status === 404 || (st
  * not available on this account), retry once with the default so the app
  * keeps working, and log loudly so the setting gets fixed.
  */
+// Models that refused a forced tool_choice; skip forcing for them next time
+const noForcedTools = new Set<string>();
+
 export async function claudeMessages(body: Record<string, unknown>, fallbackModel: string, timeoutMs = 30_000): Promise<unknown> {
   const base = process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com";
   const send = (model: string) =>
@@ -58,9 +61,22 @@ export async function claudeMessages(body: Record<string, unknown>, fallbackMode
     });
 
   const model = String(body.model);
+  if (noForcedTools.has(model) && body.tool_choice) body = { ...body, tool_choice: { type: "auto" } };
   let res = await send(model);
   if (!res.ok) {
-    const detail = await res.text().catch(() => "");
+    let detail = await res.text().catch(() => "");
+    // Some newer models (which think before answering) don't allow forcing a
+    // specific tool. Ask again letting the model choose; the system prompt
+    // already tells it to answer with the tool.
+    if (res.status === 400 && /tool_choice/i.test(detail) && body.tool_choice) {
+      const { tool_choice: _forced, ...rest } = body;
+      void _forced;
+      body = { ...rest, tool_choice: { type: "auto" } };
+      noForcedTools.add(model);
+      res = await send(model);
+      if (res.ok) return res.json();
+      detail = await res.text().catch(() => "");
+    }
     if (isModelProblem(res.status, detail) && model !== fallbackModel) {
       console.error(`Claude model "${model}" failed (${res.status}); falling back to ${fallbackModel}. Fix the model setting in Vercel.`, detail);
       res = await send(fallbackModel);

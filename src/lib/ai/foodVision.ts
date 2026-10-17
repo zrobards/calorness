@@ -80,7 +80,7 @@ export async function readLabel(image: { base64: string; mediaType: "image/jpeg"
       {
         model: visionModel(),
         max_tokens: 800,
-        system: "You read Nutrition Facts labels for a food-logging app. Copy the per-serving numbers exactly as printed. Never estimate or round differently than the label. If there's no readable label, set readable to false.",
+        system: "You read Nutrition Facts labels for a food-logging app. Copy the per-serving numbers exactly as printed. Never estimate or round differently than the label. If there's no readable label, set readable to false. Always answer by calling the read_label tool.",
         tools: [READ_LABEL_TOOL],
         tool_choice: { type: "tool", name: READ_LABEL_TOOL.name },
         messages: [{ role: "user", content: [
