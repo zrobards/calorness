@@ -1,13 +1,12 @@
 import "server-only";
+import { ClaudeError, claudeMessages, DEFAULTS, textModel, visionModel } from "./claude";
 import { LOG_FOODS_TOOL, READ_LABEL_TOOL, parseLabelResponse, parseLogFoodsResponse, type AiFoodItem, type AiFoodResult, type LabelResult } from "./parse";
 
 // Claude reads a meal photo or a typed description and estimates nutrition.
 // Needs ANTHROPIC_API_KEY (console.anthropic.com). Each photo costs a fraction
 // of a cent with Haiku; set AI_MODEL to use a different Claude model.
-const MODEL = () => process.env.AI_MODEL || "claude-haiku-5-5";
 // Photos are where accuracy matters most, so they get the stronger model by
 // default (about $2/month at 10 photos a day). AI_VISION_MODEL overrides it.
-const VISION_MODEL = () => process.env.AI_VISION_MODEL || "claude-sonnet-5-5";
 
 const SYSTEM = `You are a registered dietitian estimating nutrition for a food-logging app. Accuracy matters more than speed.
 How to list items:
@@ -40,33 +39,17 @@ export async function estimateFoods(input: {
   content.push({ type: "text", text: buildPrompt(input) });
 
   try {
-    const base = process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com";
-    const res = await fetch(`${base}/v1/messages`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY!,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: input.image ? VISION_MODEL() : MODEL(),
-        max_tokens: 1500,
-        system: SYSTEM,
-        tools: [LOG_FOODS_TOOL],
-        tool_choice: { type: "tool", name: LOG_FOODS_TOOL.name },
-        messages: [{ role: "user", content }],
-      }),
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) {
-      console.error("Claude API error", res.status, await res.text().catch(() => ""));
-      return { error: "The AI couldn't read that one. Try again or search instead." };
-    }
-    const result = parseLogFoodsResponse(await res.json());
+    const model = input.image ? visionModel() : textModel();
+    const body = await claudeMessages(
+      { model, max_tokens: 1500, system: SYSTEM, tools: [LOG_FOODS_TOOL], tool_choice: { type: "tool", name: LOG_FOODS_TOOL.name }, messages: [{ role: "user", content }] },
+      input.image ? DEFAULTS.vision : DEFAULTS.text,
+    );
+    const result = parseLogFoodsResponse(body as { content?: [] });
     if (!result) return { error: "The AI's answer didn't make sense. Try again." };
     if (result.items.length === 0) return { error: result.note || "No food found. Try a closer photo, or describe it." };
     return result;
-  } catch {
+  } catch (e) {
+    if (e instanceof ClaudeError) return { error: e.userMessage };
     return { error: "The AI took too long to answer. Check your connection and try again." };
   }
 }
@@ -93,12 +76,9 @@ export function buildPrompt(input: { image?: unknown; text?: string; previous?: 
 export async function readLabel(image: { base64: string; mediaType: "image/jpeg" | "image/png" | "image/webp" }): Promise<LabelResult | { error: string }> {
   if (!aiConfigured()) return { error: "AI isn't set up yet. Add ANTHROPIC_API_KEY in Vercel." };
   try {
-    const base = process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com";
-    const res = await fetch(`${base}/v1/messages`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY!, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({
-        model: VISION_MODEL(),
+    const body = await claudeMessages(
+      {
+        model: visionModel(),
         max_tokens: 800,
         system: "You read Nutrition Facts labels for a food-logging app. Copy the per-serving numbers exactly as printed. Never estimate or round differently than the label. If there's no readable label, set readable to false.",
         tools: [READ_LABEL_TOOL],
@@ -107,14 +87,14 @@ export async function readLabel(image: { base64: string; mediaType: "image/jpeg"
           { type: "image", source: { type: "base64", media_type: image.mediaType, data: image.base64 } },
           { type: "text", text: "Read this nutrition label." },
         ] }],
-      }),
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) return { error: "Couldn't read that label. Try again with the label filling the frame." };
-    const label = parseLabelResponse(await res.json());
+      },
+      DEFAULTS.vision,
+    );
+    const label = parseLabelResponse(body as { content?: [] });
     if (!label || !label.readable) return { error: "No nutrition label found. Get closer so the Nutrition Facts panel fills the photo." };
     return label;
-  } catch {
+  } catch (e) {
+    if (e instanceof ClaudeError) return { error: e.userMessage };
     return { error: "The AI took too long. Check your connection and try again." };
   }
 }
