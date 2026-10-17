@@ -6,6 +6,8 @@ import { scaleNutrients } from "@/lib/fitness/nutrition";
 import { addDays } from "@/lib/fitness/dates";
 import { zonedDayStart } from "@/lib/time";
 import { verifiedShare } from "./quality";
+import { getBody } from "@/lib/body";
+import { estimateBurn, exerciseCreditCalories } from "@/lib/fitness/activities";
 import { totalVolumeKg } from "@/lib/fitness/strength";
 import type { FoodCandidate } from "./normalize";
 
@@ -28,7 +30,7 @@ const add = (a: Totals, b: Totals) => ({
 export async function getDiaryDay(userId: string, day: string, timeZone = "America/New_York") {
   const dayStart = zonedDayStart(day, timeZone);
   const date = dayToDate(day);
-  const [entries, water, goal, workouts] = await Promise.all([
+  const [entries, water, goal, workouts, activities, body, prefs] = await Promise.all([
     db.diaryEntry.findMany({ where: { userId, date }, orderBy: { createdAt: "asc" }, include: { food: true } }),
     db.waterEntry.findMany({ where: { userId, date }, orderBy: { createdAt: "asc" } }),
     db.goal.findUnique({ where: { userId } }),
@@ -37,7 +39,30 @@ export async function getDiaryDay(userId: string, day: string, timeZone = "Ameri
       where: { userId, endedAt: { not: null }, startedAt: { gte: dayStart, lt: new Date(dayStart.getTime() + 86_400_000) } },
       include: { exercises: { include: { sets: true } } },
     }),
+    db.activityEntry.findMany({ where: { userId, date }, orderBy: { createdAt: "asc" } }),
+    getBody(userId, date),
+    db.user.findUniqueOrThrow({ where: { id: userId }, select: { exerciseCredit: true } }),
   ]);
+
+  // Exercise for the day: logged cardio, plus an estimate for lifting
+  // sessions from their length (weight training averages ~5 METs including rest)
+  const lifting = workouts.map((w) => {
+    const minutes = Math.min(180, Math.max(1, Math.round(((w.endedAt?.getTime() ?? w.startedAt.getTime()) - w.startedAt.getTime()) / 60000)));
+    const burn = body.weightKg ? estimateBurn({ ...body, weightKg: body.weightKg, minutes, met: 5.0 }) : { total: 0, net: 0 };
+    return { id: w.id, kind: "workout" as const, name: w.name, minutes, total: burn.total, net: burn.net };
+  });
+  const cardio = activities.map((a) => ({ id: a.id, kind: "activity" as const, name: a.name, minutes: Math.round(a.durationMin), total: a.caloriesTotal, net: a.caloriesNet, method: a.method }));
+  const exerciseNet = [...lifting, ...cardio].reduce((s, x) => s + x.net, 0);
+  const exerciseCalories = exerciseCreditCalories(exerciseNet, prefs.exerciseCredit);
+  // Extra calories mostly fuel training: about 70% carbs, 30% fat; protein stays put
+  const adjustedGoal = goal
+    ? {
+        ...goal,
+        calories: goal.calories + exerciseCalories,
+        carbsG: goal.carbsG + Math.round((exerciseCalories * 0.7) / 4),
+        fatG: goal.fatG + Math.round((exerciseCalories * 0.3) / 9),
+      }
+    : null;
 
   const meals = MEALS.map((meal) => {
     const items = entries
@@ -53,7 +78,9 @@ export async function getDiaryDay(userId: string, day: string, timeZone = "Ameri
     verified: verifiedShare(meals.flatMap((m) => m.items.map((i) => ({ calories: i.nutrients.calories, source: i.food.source })))),
     waterMl: water.reduce((s, w) => s + w.ml, 0),
     waterEntries: water.length,
-    goal,
+    goal: adjustedGoal,
+    baseGoal: goal,
+    exercise: { items: [...cardio, ...lifting], net: exerciseNet, credit: prefs.exerciseCredit, calories: exerciseCalories },
     workouts: workouts.map((w) => ({ id: w.id, name: w.name, volumeKg: totalVolumeKg(w.exercises.flatMap((e) => e.sets)) })),
   };
 }

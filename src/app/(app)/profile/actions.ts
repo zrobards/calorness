@@ -65,6 +65,14 @@ export async function saveGoals(
     update: { ...targets, goalType: input.goal },
     create: { ...targets, goalType: input.goal, userId: user.id },
   });
+  // Remember the body stats too, so calories burned can be estimated
+  const today = new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00Z`);
+  await db.user.update({ where: { id: user.id }, data: { sex: input.sex, birthYear: new Date().getFullYear() - input.ageYears, heightCm } });
+  await db.bodyweightEntry.upsert({
+    where: { userId_date: { userId: user.id, date: today } },
+    update: { weightKg },
+    create: { userId: user.id, date: today, weightKg },
+  });
 
   revalidatePath("/diary");
   revalidatePath("/profile");

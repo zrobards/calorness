@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Dumbbell, ShieldCheck, Target } from "lucide-react";
+import { ShieldCheck, Target } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { MacroBars } from "@/components/MacroBars";
@@ -9,11 +9,11 @@ import { DayNav, shiftDay } from "@/components/diary/DayNav";
 import { MealSection } from "@/components/diary/MealSection";
 import { WaterCard } from "@/components/diary/WaterCard";
 import { CopyDayButton } from "@/components/diary/CopyDayButton";
+import { ExerciseCard } from "@/components/diary/ExerciseCard";
 import { requireUser } from "@/lib/auth";
 import { getDiaryDay, toCandidate } from "@/lib/nutrition/diary";
 import { getUnitSystem } from "@/lib/training";
 import { userToday } from "@/lib/userPrefs";
-import { compactNumber, displayWeight, weightUnit } from "@/lib/fitness/units";
 
 export const metadata: Metadata = { title: "Diary" };
 
@@ -24,7 +24,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   const day = dayParam && /^\d{4}-\d{2}-\d{2}$/.test(dayParam) ? dayParam : today;
 
   const [diary, unitSystem] = await Promise.all([getDiaryDay(user.id, day, timeZone), getUnitSystem(user.id)]);
-  const { goal, totals, meals, workouts } = diary;
+  const { goal, totals, meals, exercise } = diary;
 
   return (
     <>
@@ -35,8 +35,10 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
       {goal ? (
         <section className="animate-rise mx-5 rounded-2xl bg-rack-raised p-5" aria-label="Day summary">
           <CalorieRing eaten={totals.calories} goal={goal.calories} />
-          <dl className="mt-4 mb-5 grid grid-cols-3 text-center">
-            <div><dd className="font-display text-xl font-semibold tabular-nums">{goal.calories.toLocaleString("en-US")}</dd><dt className="text-xs text-chalk-muted">Goal</dt></div>
+          {/* MyFitnessPal's equation: goal + exercise − food = remaining */}
+          <dl className="mt-4 mb-5 grid grid-cols-4 text-center">
+            <div><dd className="font-display text-xl font-semibold tabular-nums">{diary.baseGoal!.calories.toLocaleString("en-US")}</dd><dt className="text-xs text-chalk-muted">Goal</dt></div>
+            <div><dd className="font-display text-xl font-semibold text-plate-green tabular-nums">+{exercise.calories.toLocaleString("en-US")}</dd><dt className="text-xs text-chalk-muted">Exercise</dt></div>
             <div><dd className="font-display text-xl font-semibold tabular-nums">{Math.round(totals.calories).toLocaleString("en-US")}</dd><dt className="text-xs text-chalk-muted">Food</dt></div>
             <div><dd className="font-display text-xl font-semibold tabular-nums">{Math.round(goal.calories - totals.calories).toLocaleString("en-US")}</dd><dt className="text-xs text-chalk-muted">Remaining</dt></div>
           </dl>
@@ -57,19 +59,8 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         </EmptyState>
       )}
 
-      {/* Where training and nutrition meet */}
-      {workouts.length > 0 && (
-        <Link href={`/train/history/${workouts[0].id}`} className="mx-5 mt-4 flex items-center gap-3 rounded-2xl border border-plate-blue/40 bg-plate-blue/10 px-5 py-3.5">
-          <Dumbbell className="shrink-0 text-plate-blue" size={22} aria-hidden />
-          <span className="text-sm">
-            <span className="block font-medium">Training day: {workouts.map((w) => w.name).join(", ")}</span>
-            <span className="text-chalk-muted">
-              {compactNumber(displayWeight(workouts.reduce((s, w) => s + w.volumeKg, 0), unitSystem))} {weightUnit(unitSystem)} lifted.
-              {goal ? ` Hitting ${goal.proteinG}g protein today helps you recover.` : ""}
-            </span>
-          </span>
-        </Link>
-      )}
+      {/* Exercise today, and what it adds to your targets */}
+      <ExerciseCard day={day} exercise={exercise} />
 
       {meals.every((m) => m.items.length === 0) && <CopyDayButton fromDay={shiftDay(day, -1)} toDay={day} />}
 

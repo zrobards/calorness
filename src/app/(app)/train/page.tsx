@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, ClipboardList, LayoutGrid, Library, Play, Plus, Sparkles } from "lucide-react";
+import { ChevronRight, ClipboardList, Flame, LayoutGrid, Library, Play, Plus, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { requireUser } from "@/lib/auth";
 import { getActiveWorkout, getRecentWorkouts, getRoutines, getThisWeek, getUnitSystem } from "@/lib/training";
@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Train" };
 export default async function TrainPage() {
   const user = await requireUser();
   const now = new Date();
-  const [active, routines, recent, week, unitSystem, { today: todayIso }, injuries] = await Promise.all([
+  const [active, routines, recent, week, unitSystem, { today: todayIso }, injuries, activities] = await Promise.all([
     getActiveWorkout(user.id),
     getRoutines(user.id),
     getRecentWorkouts(user.id, 5),
@@ -24,7 +24,10 @@ export default async function TrainPage() {
     getUnitSystem(user.id),
     userToday(user.id, now),
     db.coachNote.findMany({ where: { userId: user.id, active: true, kind: "injury" }, select: { id: true, text: true } }),
+    db.activityEntry.findMany({ where: { userId: user.id }, orderBy: { startedAt: "desc" }, take: 5 }),
   ]);
+  const weekStartDay = isoDay(week.days[0].date);
+  const activeCalories = activities.filter((a) => isoDay(a.date) >= weekStartDay).reduce((s, a) => s + a.caloriesTotal, 0);
   const unit = weightUnit(unitSystem);
   const maxDay = Math.max(1, ...week.days.map((d) => d.volumeKg));
   const todayIndex = week.days.findIndex((d) => isoDay(d.date) === todayIso);
@@ -95,7 +98,7 @@ export default async function TrainPage() {
             );
           })}
         </ol>
-        <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-rack-line pt-4">
+        <dl className="mt-5 grid grid-cols-3 gap-3 border-t border-rack-line pt-4">
           <div>
             <dt className="text-xs text-chalk-muted">Volume</dt>
             <dd className="font-display text-3xl font-bold tabular-nums">
@@ -106,16 +109,27 @@ export default async function TrainPage() {
             <dt className="text-xs text-chalk-muted">Working sets</dt>
             <dd className="font-display text-3xl font-bold tabular-nums"><AnimatedNumber id="week-sets" value={week.sets} /></dd>
           </div>
+          <div>
+            <dt className="text-xs text-chalk-muted">Cardio</dt>
+            <dd className="font-display text-3xl font-bold tabular-nums">
+              <AnimatedNumber id="week-cardio" value={activeCalories} /> <span className="text-base font-semibold text-chalk-muted">cal</span>
+            </dd>
+          </div>
         </dl>
       </section>
 
-      {!active && (
-        <form action={startWorkout.bind(null, null)} className="mx-5 mt-4">
-          <button className="flex w-full items-center justify-center gap-2 rounded-2xl bg-plate-red py-4 font-display text-xl font-semibold text-white">
-            <Play size={20} fill="currentColor" aria-hidden /> Start empty workout
-          </button>
-        </form>
-      )}
+      <div className="mx-5 mt-4 grid grid-cols-[1.4fr_1fr] gap-3">
+        {!active ? (
+          <form action={startWorkout.bind(null, null)}>
+            <button className="flex w-full items-center justify-center gap-2 rounded-2xl bg-plate-red py-4 font-display text-lg font-semibold text-white">
+              <Play size={18} fill="currentColor" aria-hidden /> Start workout
+            </button>
+          </form>
+        ) : <span />}
+        <Link href="/train/cardio/new" className="flex items-center justify-center gap-2 rounded-2xl bg-rack-raised py-4 font-display text-lg font-semibold">
+          <Flame size={18} className="text-plate-red" aria-hidden /> Log cardio
+        </Link>
+      </div>
 
       <section className="mt-8" aria-labelledby="routines-heading">
         <div className="flex items-center justify-between px-5">
@@ -164,6 +178,24 @@ export default async function TrainPage() {
           </ul>
         )}
       </section>
+
+      {activities.length > 0 && (
+        <section className="mt-8" aria-labelledby="cardio-heading">
+          <h2 id="cardio-heading" className="px-5 font-display text-2xl font-semibold">Recent cardio</h2>
+          <ul className="mx-5 mt-3 divide-y divide-rack-line rounded-2xl bg-rack-raised">
+            {activities.map((a) => (
+              <li key={a.id} className="flex items-center gap-3 px-4 py-3">
+                <Flame size={18} className="shrink-0 text-plate-red" aria-hidden />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium">{a.name}</span>
+                  <span className="text-sm text-chalk-muted">{formatDay(a.date, { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })}, {Math.round(a.durationMin)} min</span>
+                </span>
+                <span className="font-display text-lg font-semibold tabular-nums">{a.caloriesTotal}<span className="ml-1 text-xs text-chalk-muted">cal</span></span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="mt-8 mb-4" aria-labelledby="history-heading">
         <h2 id="history-heading" className="px-5 font-display text-2xl font-semibold">History</h2>

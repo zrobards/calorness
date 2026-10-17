@@ -9,6 +9,7 @@ import { SetPasswordForm } from "./SetPasswordForm";
 import { ShortcutKeys } from "./ShortcutKeys";
 import { NotificationsCard } from "./NotificationsCard";
 import { InviteCard } from "./InviteCard";
+import { BodyStatsCard } from "./BodyStatsCard";
 import { DeleteAccount } from "./DeleteAccount";
 import Link from "next/link";
 import QRCode from "qrcode";
@@ -96,6 +97,15 @@ export default async function ProfilePage() {
           </>
         )}
       </section>
+      <section id="body" className="animate-rise mx-5 mt-4 rounded-2xl bg-rack-raised p-5">
+        <h2 className="font-display text-2xl font-semibold">Body stats</h2>
+        <BodyStatsCard
+          imperial={user.unitSystem === "IMPERIAL"}
+          initial={{ sex: user.sex, age: user.birthYear ? new Date().getFullYear() - user.birthYear : null, heightCm: user.heightCm }}
+          credit={user.exerciseCredit}
+        />
+      </section>
+
       <section id="invite" className="animate-rise mx-5 mt-4 rounded-2xl bg-rack-raised p-5">
         <h2 className="font-display text-2xl font-semibold">Invite friends</h2>
         <InviteCard url={siteUrl} qrSvg={qrSvg} />

@@ -85,7 +85,7 @@ export type CoachProposal = {
 };
 
 async function buildContext(userId: string) {
-  const [user, goal, notes, routines, workouts, weights] = await Promise.all([
+  const [user, goal, notes, routines, workouts, weights, activities] = await Promise.all([
     db.user.findUniqueOrThrow({ where: { id: userId }, select: { name: true, unitSystem: true, timeZone: true } }),
     db.goal.findUnique({ where: { userId } }),
     db.coachNote.findMany({ where: { userId, active: true }, orderBy: { createdAt: "asc" } }),
@@ -100,6 +100,7 @@ async function buildContext(userId: string) {
       include: { exercises: { orderBy: { order: "asc" }, include: { exercise: { select: { name: true } }, sets: true } } },
     }),
     db.bodyweightEntry.findMany({ where: { userId }, orderBy: { date: "desc" }, take: 14 }),
+    db.activityEntry.findMany({ where: { userId }, orderBy: { startedAt: "desc" }, take: 10 }),
   ]);
   const unit = weightUnit(user.unitSystem);
   const w = (kg: number) => displayWeight(kg, user.unitSystem);
@@ -130,6 +131,11 @@ async function buildContext(userId: string) {
             .join("; ");
           return `- ${dayInZone(wk.startedAt, user.timeZone)} ${wk.name}: ${ex}${wk.notes ? ` (notes: ${wk.notes})` : ""}`;
         })
+      : ["- none yet"]),
+    "",
+    "Recent cardio and activities (newest first):",
+    ...(activities.length
+      ? activities.map((a) => `- ${a.date.toISOString().slice(0, 10)} ${a.name} (${a.intensity}), ${Math.round(a.durationMin)} min, ~${a.caloriesTotal} cal`)
       : ["- none yet"]),
   ];
   return { text: lines.filter((l) => l !== undefined).join("\n"), routines };
