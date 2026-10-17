@@ -6,13 +6,14 @@ import { searchByName } from "@/components/train/muscleFilters";
 import { bestSet } from "@/lib/fitness/strength";
 import { displayWeight, weightUnit } from "@/lib/fitness/units";
 import { dayInZone } from "@/lib/time";
+import { claudeMessages, coachModel, DEFAULTS } from "./claude";
 
 // The coach is Claude with three tools: remember things you tell it
 // (injuries, goals, preferences), forget them, and propose a reworked
 // routine that you can apply with one tap. It always sees your routines,
 // recent workouts, goals, and what it remembers.
 
-const MODEL = () => process.env.AI_COACH_MODEL || process.env.AI_MODEL || "claude-haiku-5-5";
+
 
 const TOOLS = [
   {
@@ -138,15 +139,10 @@ type Block = { type: string; text?: string; id?: string; name?: string; input?: 
 type Message = { role: "user" | "assistant"; content: string | unknown[] };
 
 async function callClaude(system: string, messages: Message[]) {
-  const base = process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com";
-  const res = await fetch(`${base}/v1/messages`, {
-    method: "POST",
-    headers: { "content-type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY!, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model: MODEL(), max_tokens: 1200, system, tools: TOOLS, messages }),
-    signal: AbortSignal.timeout(45_000),
-  });
-  if (!res.ok) throw new Error(`Claude API ${res.status}`);
-  return (await res.json()) as { content: Block[]; stop_reason: string };
+  return (await claudeMessages({ model: coachModel(), max_tokens: 1200, system, tools: TOOLS, messages }, DEFAULTS.text, 45_000)) as {
+    content: Block[];
+    stop_reason: string;
+  };
 }
 
 const proposalInput = z.object({

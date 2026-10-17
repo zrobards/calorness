@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { aiConfigured } from "@/lib/ai/foodVision";
 import { consumeAiQuota } from "@/lib/aiLimit";
 import { runCoach, type CoachProposal } from "@/lib/ai/coach";
+import { ClaudeError } from "@/lib/ai/claude";
 
 export async function sendCoachMessage(text: string) {
   const user = await requireUser();
@@ -29,8 +30,8 @@ export async function sendCoachMessage(text: string) {
     });
     revalidatePath("/coach");
     return { id: saved.id, reply, proposal, notesChanged };
-  } catch {
-    return { error: "Coach couldn't answer right now. Try again in a moment." };
+  } catch (e) {
+    return { error: e instanceof ClaudeError ? e.userMessage : "Coach couldn't answer right now. Try again in a moment." };
   }
 }
 

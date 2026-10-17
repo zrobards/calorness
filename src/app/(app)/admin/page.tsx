@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { PageHeader } from "@/components/PageHeader";
+import { AiCheck } from "./AiCheck";
 
 export const metadata: Metadata = { title: "Data" };
 
@@ -68,6 +69,8 @@ export default async function AdminPage() {
           {aiByKind.map((k) => <Stat key={k.kind} label={k.kind} value={k._count} />)}
           <Stat label="Estimated cost" value={`$${aiCost.toFixed(2)}`} />
         </Card>
+
+        <AiCheck />
 
         <Card title="Exercises">
           <Stat label="Library" value={exercises} />
