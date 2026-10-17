@@ -69,6 +69,12 @@ tracking that shares data with training.
 - Automatic personal records: heaviest weight, best estimated 1RM, best set volume
 - Exercise pages with your history and an estimated-1RM progress chart
 
+**Cardio and activities**
+- Log 65+ activities: running, walking, incline treadmill, cycling, swimming, rowing, stair climber, HIIT, rock climbing and bouldering, basketball, soccer, pickleball, hacky sack, yoga, dancing, skiing, yard work, and more, or name your own
+- Calories burned use the most accurate method your inputs allow: heart rate (Keytel equation) > pace and incline (ACSM walking/running equations) > MET × weight × time (Compendium of Physical Activities), personalized with weight, height, age, and sex
+- Only calories above resting count toward your day (your goal already covers rest), with a "credit" setting (0/50/75/100%) because trackers tend to overestimate
+- The Diary shows goal + exercise − food = remaining; extra calories go about 70% to carbs and 30% to fat, protein stays put. Lifting sessions are estimated from their length
+
 **Progress**
 - Muscle map: sets per muscle over the last 7 days, front and back
 - Weekly volume for the last 8 weeks, best lifts, bodyweight trend
