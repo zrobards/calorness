@@ -31,7 +31,13 @@ function friendly(status: number, detail: string) {
   if (status === 429 || status === 529) return "The AI is busy right now. Try again in a minute.";
   if (status === 402 || /credit|billing|balance/i.test(detail)) return "AI setup problem: the Anthropic account is out of credit or over its spending limit.";
   if (status === 413) return "That photo is too large. Try again.";
-  return `The AI couldn't do that one (error ${status}). Try again or search instead.`;
+  // Include the AI service's own reason (no secrets in it) so problems can be pinned down
+  let reason = "";
+  try {
+    reason = String((JSON.parse(detail) as { error?: { message?: string } }).error?.message ?? "");
+  } catch {}
+  reason = reason.replace(/\s+/g, " ").slice(0, 140);
+  return `The AI couldn't do that one (error ${status}${reason ? `: ${reason}` : ""}). Try again or search instead.`;
 }
 
 const isModelProblem = (status: number, detail: string) => status === 404 || (status === 400 && /model/i.test(detail));
