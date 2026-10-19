@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { Bookmark, Copy, Plus } from "lucide-react";
 import type { FoodCandidate } from "@/lib/nutrition/normalize";
 import { copyMealFromDay, deleteDiaryEntry, saveMealFromDay, updateDiaryEntry } from "@/app/(app)/diary/actions";
 import { FoodSheet } from "./FoodSheet";
+import { AddFoodPanel } from "./AddFoodPanel";
 
 type Item = { id: string; servings: number; food: FoodCandidate; calories: number };
 
@@ -27,6 +27,8 @@ export function MealSection({
   items: Item[];
 }) {
   const [editing, setEditing] = useState<Item | null>(null);
+  const [adding, setAdding] = useState(false);
+  const closeAdding = useCallback(() => setAdding(false), []);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -61,9 +63,9 @@ export function MealSection({
       )}
 
       <div className="flex items-center justify-between px-3 py-2">
-        <Link href={`/diary/add?meal=${meal}&day=${day}`} className="flex items-center gap-1.5 rounded-lg px-2 py-2 font-medium text-plate-blue">
+        <button onClick={() => setAdding(true)} className="flex items-center gap-1.5 rounded-lg px-2 py-2 font-medium text-plate-blue">
           <Plus size={18} aria-hidden /> Add food
-        </Link>
+        </button>
         {items.length > 0 && (
           <button
             disabled={pending}
@@ -93,6 +95,7 @@ export function MealSection({
       </div>
       {message && <p className="px-5 pb-3 text-sm text-chalk-muted">{message}</p>}
 
+      {adding && <AddFoodPanel meal={meal} mealLabel={label} day={day} onClose={closeAdding} />}
       {editing && (
         <FoodSheet
           food={editing.food}

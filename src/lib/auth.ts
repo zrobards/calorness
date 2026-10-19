@@ -8,6 +8,7 @@ import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { connection } from "next/server";
 import { db } from "@/lib/db";
 import { handoffStatus } from "@/lib/handoff";
@@ -136,7 +137,7 @@ export type CurrentUser = {
 // The one place the app asks "who is signed in?" (a Data Access Layer).
 // Every page and server action that touches user data goes through here,
 // and anyone not signed in is sent to /signin.
-export async function requireUser(): Promise<CurrentUser> {
+export const requireUser = cache(async function requireUser(): Promise<CurrentUser> {
   // Tell Next.js this must run per request, never at build time.
   await connection();
   const session = await getServerSession(authOptions);
@@ -148,7 +149,7 @@ export async function requireUser(): Promise<CurrentUser> {
     email: user.email ?? null,
     image: user.image ?? null,
   };
-}
+});
 
 export async function getOptionalUser() {
   await connection();

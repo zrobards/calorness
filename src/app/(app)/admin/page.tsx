@@ -32,6 +32,16 @@ export default async function AdminPage() {
     db.exercise.count({ where: { createdById: null } }),
     db.exercise.count({ where: { createdById: { not: null } } }),
   ]);
+  // How far the app server is from the database: a few ms is ideal
+  const dbMs = await measureDb();
+  const dbRegion = (() => {
+    try {
+      const host = new URL(process.env.DATABASE_URL ?? "").hostname; // e.g. ep-x.us-east-2.aws.neon.tech
+      return host.match(/\.(\w+-\w+-\d)\./)?.[1] ?? host.split(".").slice(1, 3).join(".");
+    } catch {
+      return "unknown";
+    }
+  })();
   const foodNames = new Map((await db.food.findMany({ where: { id: { in: topFoods.map((f) => f.foodId) } }, select: { id: true, name: true, brand: true, source: true } })).map((f) => [f.id, f]));
   const aiCost = aiByKind.reduce((s, k) => s + (COST[k.kind] ?? 0.001) * k._count, 0);
 
@@ -70,6 +80,16 @@ export default async function AdminPage() {
           <Stat label="Estimated cost" value={`$${aiCost.toFixed(2)}`} />
         </Card>
 
+        <Card title="Speed">
+          <Stat label="Database round trip (average of 5)" value={`${dbMs} ms`} />
+          <Stat label="App server region (Vercel)" value={process.env.VERCEL_REGION ?? "local"} />
+          <Stat label="Database region (Neon)" value={dbRegion} />
+          <p className="pt-2 text-xs text-chalk-muted">
+            Every screen makes several database calls, so these should be in the same part of the country.
+            If the round trip is over ~20 ms, set the Vercel function region to match the database (Vercel → Settings → Functions → Region).
+          </p>
+        </Card>
+
         <AiCheck />
 
         <Card title="Exercises">
@@ -84,6 +104,16 @@ export default async function AdminPage() {
       </div>
     </div>
   );
+}
+
+async function measureDb() {
+  const times: number[] = [];
+  for (let i = 0; i < 5; i++) {
+    const t = performance.now();
+    await db.$queryRaw`SELECT 1`;
+    times.push(performance.now() - t);
+  }
+  return Math.round(times.slice(1).reduce((a, b) => a + b, 0) / 4); // skip the first (connection warm-up)
 }
 
 function sevenDaysAgo() {

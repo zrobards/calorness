@@ -26,6 +26,7 @@ export function NavBar({ pathname }: { pathname: string | null }) {
       <li key={href}>
         <Link
           href={href}
+          prefetch // load each tab ahead of time so tapping it is instant
           aria-current={active ? "page" : undefined}
           className={`flex h-16 flex-col items-center justify-center gap-1 text-xs font-medium ${active ? "text-chalk" : "text-chalk-muted"}`}
         >
@@ -50,6 +51,7 @@ export function NavBar({ pathname }: { pathname: string | null }) {
           {/* The center button: a bumper plate. Everything you log starts here. */}
           <Link
             href="/log"
+            prefetch
             aria-label="Quick log"
             aria-current={logActive ? "page" : undefined}
             className={`relative -mt-7 mb-2 flex size-16 items-center justify-center rounded-full border-[5px] border-[#a8302c] bg-plate-red text-white shadow-[0_8px_24px_-6px_rgba(216,69,62,0.7)] ${logActive ? "ring-4 ring-plate-red/30" : ""}`}
