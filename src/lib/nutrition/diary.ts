@@ -178,3 +178,25 @@ export async function getSavedMeals(userId: string) {
     proteinG: Math.round(m.items.reduce((s, i) => s + i.food.proteinG * i.servings, 0)),
   }));
 }
+
+/** Foods you've had at each meal in the last six weeks, most frequent first. */
+export async function getMealQuickPicks(userId: string) {
+  const since = new Date(Date.now() - 42 * 86_400_000);
+  const entries = await db.diaryEntry.findMany({
+    where: { userId, createdAt: { gte: since } },
+    orderBy: { createdAt: "desc" },
+    take: 400,
+    include: { food: true },
+  });
+  const out: Record<MealName, { food: FoodCandidate; servings: number; count: number }[]> = { BREAKFAST: [], LUNCH: [], DINNER: [], SNACKS: [] };
+  for (const meal of MEALS) {
+    const byFood = new Map<string, { food: FoodCandidate; servings: number; count: number }>();
+    for (const e of entries.filter((x) => x.meal === meal)) {
+      const hit = byFood.get(e.foodId);
+      if (hit) hit.count++;
+      else byFood.set(e.foodId, { food: toCandidate(e.food), servings: e.servings, count: 1 });
+    }
+    out[meal] = [...byFood.values()].sort((a, b) => b.count - a.count).slice(0, 6);
+  }
+  return out;
+}

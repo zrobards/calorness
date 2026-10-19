@@ -8,7 +8,7 @@ import { deleteActivity } from "@/app/(app)/train/cardio/actions";
 type Item = { id: string; kind: "workout" | "activity"; name: string; minutes: number; total: number; net: number };
 
 /** Today's exercise in the Diary, with what it adds to the calorie goal. */
-export function ExerciseCard({ day, exercise }: { day: string; exercise: { items: Item[]; net: number; credit: number; calories: number } }) {
+export function ExerciseCard({ day, exercise, onChanged }: { day: string; exercise: { items: Item[]; net: number; credit: number; calories: number }; onChanged?: () => void }) {
   const [pending, start] = useTransition();
   return (
     <section className="animate-rise mx-5 mt-4 rounded-2xl bg-rack-raised" aria-label="Exercise">
@@ -31,7 +31,7 @@ export function ExerciseCard({ day, exercise }: { day: string; exercise: { items
               </span>
               <span className="text-right font-display text-lg font-semibold tabular-nums">{x.net}</span>
               {x.kind === "activity" && (
-                <button disabled={pending} onClick={() => confirm(`Delete ${x.name}?`) && start(() => deleteActivity(x.id))} className="p-1 text-chalk-muted hover:text-plate-red" aria-label={`Delete ${x.name}`}>
+                <button disabled={pending} onClick={() => confirm(`Delete ${x.name}?`) && start(async () => { await deleteActivity(x.id); onChanged?.(); })} className="p-1 text-chalk-muted hover:text-plate-red" aria-label={`Delete ${x.name}`}>
                   <Trash2 size={16} />
                 </button>
               )}
