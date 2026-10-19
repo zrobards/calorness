@@ -5,7 +5,9 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { lookupBarcodeOnline } from "@/lib/nutrition/sources";
-import { findFoodByBarcode, dayToDate, getMyFoods, getRecentFoods, MEALS, toCandidate } from "@/lib/nutrition/diary";
+import { findFoodByBarcode, dayToDate, getDiaryDay, getMealQuickPicks, getMyFoods, getRecentFoods, MEALS, toCandidate } from "@/lib/nutrition/diary";
+import type { DiaryData } from "@/lib/nutrition/diaryData";
+import { getUserPrefs } from "@/lib/userPrefs";
 import { normalizeBarcode, type FoodCandidate } from "@/lib/nutrition/normalize";
 import { findFoods, pickKey } from "@/lib/nutrition/search";
 import { candidateSchema, ensureFood } from "@/lib/nutrition/foods";
@@ -244,4 +246,26 @@ export async function loadFoodAdder() {
   const user = await requireUser();
   const [recent, mine] = await Promise.all([getRecentFoods(user.id), getMyFoods(user.id)]);
   return { recent, mine };
+}
+
+/** Everything the Diary shows for one day, in a JSON-safe shape the phone can keep. */
+export async function getDiary(day: string): Promise<DiaryData> {
+  const user = await requireUser();
+  const d = daySchema.parse(day);
+  const prefs = await getUserPrefs(user.id);
+  const [diary, quick] = await Promise.all([getDiaryDay(user.id, d, prefs.timeZone), getMealQuickPicks(user.id)]);
+  const g = diary.baseGoal;
+  return {
+    day: d,
+    baseGoal: g ? { calories: g.calories, proteinG: g.proteinG, carbsG: g.carbsG, fatG: g.fatG, waterMl: g.waterMl } : null,
+    exercise: diary.exercise,
+    meals: diary.meals.map((m) => ({
+      meal: m.meal,
+      label: m.label,
+      items: m.items.map((i) => ({ id: i.id, servings: i.servings, food: toCandidate(i.food) })),
+    })),
+    waterMl: diary.waterMl,
+    imperial: prefs.unitSystem === "IMPERIAL",
+    quick,
+  };
 }
