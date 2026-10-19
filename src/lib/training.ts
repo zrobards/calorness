@@ -1,6 +1,7 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/lib/db";
+import { getUserPrefs } from "@/lib/userPrefs";
 import { addDays, startOfWeek, weeksAgo } from "@/lib/fitness/dates";
 import { setsPerMuscle } from "@/lib/fitness/muscles";
 import {
@@ -60,8 +61,7 @@ export async function getExerciseOptions(userId: string): Promise<ExerciseOption
 }
 
 export async function getUnitSystem(userId: string) {
-  const user = await db.user.findUniqueOrThrow({ where: { id: userId }, select: { unitSystem: true } });
-  return user.unitSystem;
+  return (await getUserPrefs(userId)).unitSystem; // shared, cached per request
 }
 
 export async function getActiveWorkout(userId: string) {

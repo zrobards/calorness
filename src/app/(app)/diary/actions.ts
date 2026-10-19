@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { lookupBarcodeOnline } from "@/lib/nutrition/sources";
-import { findFoodByBarcode, dayToDate, MEALS, toCandidate } from "@/lib/nutrition/diary";
+import { findFoodByBarcode, dayToDate, getMyFoods, getRecentFoods, MEALS, toCandidate } from "@/lib/nutrition/diary";
 import { normalizeBarcode, type FoodCandidate } from "@/lib/nutrition/normalize";
 import { findFoods, pickKey } from "@/lib/nutrition/search";
 import { candidateSchema, ensureFood } from "@/lib/nutrition/foods";
@@ -237,4 +237,11 @@ export async function updateCustomFood(foodId: string, input: Record<string, str
   });
   revalidatePath("/diary");
   return { food: toCandidate(updated) };
+}
+
+/** What the add-food panel needs, loaded when it opens (so the Diary itself stays light). */
+export async function loadFoodAdder() {
+  const user = await requireUser();
+  const [recent, mine] = await Promise.all([getRecentFoods(user.id), getMyFoods(user.id)]);
+  return { recent, mine };
 }

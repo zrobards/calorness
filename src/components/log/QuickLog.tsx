@@ -20,6 +20,7 @@ import { BarcodeScanner } from "@/components/diary/BarcodeScanner";
 import { FoodSheet } from "@/components/diary/FoodSheet";
 import { Sheet } from "@/components/diary/Sheet";
 import { AiReviewSheet, type ReviewedItem } from "./AiReviewSheet";
+import { AddFoodPanel } from "@/components/diary/AddFoodPanel";
 import { LabelScan } from "./LabelScan";
 import { resizeImage } from "./resizeImage";
 import { findBarcode } from "./findBarcode";
@@ -72,6 +73,8 @@ export function QuickLog({
   const [barcodeFood, setBarcodeFood] = useState<FoodCandidate | null>(null);
   const [toast, setToast] = useState<ToastData | null>(null);
   const [celebrate, setCelebrate] = useState(0);
+  const [searching, setSearching] = useState(false);
+  const closeSearch = useCallback(() => { setSearching(false); router.refresh(); }, [router]);
   const [pending, start] = useTransition();
   const clearToast = useCallback(() => setToast(null), []);
 
@@ -277,9 +280,9 @@ export function QuickLog({
         <button onClick={() => { haptic(); setDescribing(true); }} disabled={!aiReady} className="flex flex-col items-center gap-1.5 rounded-2xl bg-rack-raised py-4 font-semibold disabled:opacity-50">
           <MessageSquareText size={24} aria-hidden /> Describe
         </button>
-        <Link href={`/diary/add?meal=${meal}&day=${day}`} className="flex flex-col items-center gap-1.5 rounded-2xl bg-rack-raised py-4 font-semibold">
+        <button onClick={() => { haptic(); setSearching(true); }} className="flex flex-col items-center gap-1.5 rounded-2xl bg-rack-raised py-4 font-semibold">
           <Search size={24} aria-hidden /> Search
-        </Link>
+        </button>
       </div>
 
       {/* Quick add: saved meals, foods that fit what's left, and recent foods, in one list */}
@@ -396,6 +399,7 @@ export function QuickLog({
             router.refresh();
           })} />
       )}
+      {searching && <AddFoodPanel meal={meal} mealLabel={MEAL_LABELS[meal]} day={day} onClose={closeSearch} />}
       {celebrate > 0 && <PlateBurst key={celebrate} />}
       <Toast toast={toast} onDone={clearToast} />
     </div>
