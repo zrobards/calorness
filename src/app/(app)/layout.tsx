@@ -3,12 +3,13 @@ import { BottomNav, NavBar } from "@/components/BottomNav";
 import { requireUser } from "@/lib/auth";
 import { getUserPrefs } from "@/lib/userPrefs";
 import { TimeZoneSync } from "@/components/TimeZoneSync";
+import { MusicProvider } from "@/components/music/MusicProvider";
 
 // Everything inside the (app) folder is behind sign-in. The parentheses mean
 // the folder name doesn't appear in the URL: (app)/train is just /train.
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto min-h-dvh max-w-md pb-[calc(5rem+env(safe-area-inset-bottom))]">
+    <div className="mx-auto min-h-dvh max-w-md pb-[calc(5rem+env(safe-area-inset-bottom)+var(--music-dock-h,0px))]">
       {/* Reading the session happens per request, so it streams in behind a
           Suspense boundary while the nav renders instantly. */}
       <Suspense fallback={<PageLoading />}>
@@ -30,7 +31,8 @@ async function AuthGate({ children }: { children: React.ReactNode }) {
   return (
     <>
       <TimeZoneSync current={timeZone} />
-      {children}
+      {/* music keeps playing while you move between tabs */}
+      <MusicProvider>{children}</MusicProvider>
     </>
   );
 }

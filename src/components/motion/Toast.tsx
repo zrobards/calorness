@@ -16,7 +16,7 @@ export function Toast({ toast, onDone }: { toast: ToastData | null; onDone: () =
     <div
       role="status"
       className="fixed left-1/2 z-[70] flex w-[calc(100%-2rem)] max-w-sm items-center gap-3 rounded-2xl bg-chalk px-4 py-3 text-rack shadow-2xl"
-      style={{ bottom: "calc(env(safe-area-inset-bottom) + 5.5rem)", transform: "translateX(-50%)", animation: "toast-in 260ms cubic-bezier(0.2,0.9,0.3,1.2)" }}
+      style={{ bottom: "calc(env(safe-area-inset-bottom) + 5.5rem + var(--music-dock-h, 0px))", transform: "translateX(-50%)", animation: "toast-in 260ms cubic-bezier(0.2,0.9,0.3,1.2)" }}
     >
       <span className="flex-1 text-sm font-medium">{toast.message}</span>
       {toast.action && (
