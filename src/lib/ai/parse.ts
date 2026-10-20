@@ -16,6 +16,9 @@ export const aiFoodItemSchema = z.object({
   product: z.string().max(160).nullable().optional(),
   // Set when this item is really part of another listed dish (tortillas in tacos)
   included_in: z.string().max(120).nullable().optional(),
+  // When the item is one of the user's own foods listed in the prompt
+  my_food: z.string().max(40).nullable().optional(),
+  my_food_servings: z.number().positive().max(50).nullable().optional(),
 });
 
 export const aiFoodResultSchema = z.object({
@@ -49,6 +52,8 @@ export const LOG_FOODS_TOOL = {
             packaged: { type: "boolean", description: "True for a branded, packaged product (yogurt cup, protein bar, chips, bottled drink), whether the package is visible or named" },
             brand: { type: "string", description: "Brand for packaged products, e.g. 'Chobani'" },
             product: { type: "string", description: "Full product name including line and flavor as printed, e.g. 'Chobani Flip Key Lime Crumble'" },
+            my_food: { type: "string", description: "If this item is one of the user's own foods listed in the message, that food's id (e.g. 'f3'). Use it whenever the user refers to their usual or saved food." },
+            my_food_servings: { type: "number", description: "With my_food: how many of that food's servings (e.g. 2 for two shakes)" },
             included_in: { type: "string", description: "Only if this item is an ingredient, topping, or garnish of another item in this list (e.g. corn tortillas or lime for 'Street tacos'), the name of that item. Its calories must already be counted in that item." },
           },
           required: ["name", "portion", "grams", "calories", "protein_g", "carbs_g", "fat_g", "confidence"],

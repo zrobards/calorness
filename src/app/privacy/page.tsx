@@ -16,7 +16,7 @@ const SECTIONS = [
   },
   {
     title: "Food databases",
-    body: "Food searches and barcodes are looked up in USDA FoodData Central and Open Food Facts. Only the search words or barcode number are sent, never your account details. Foods you add by scanning a Nutrition Facts label are shared with other Calorness users (just the food's name, brand, and numbers, never who scanned it or when you ate it) so everyone's search gets more accurate.",
+    body: "Food searches and barcodes are looked up in USDA FoodData Central and Open Food Facts. Only the search words or barcode number are sent, never your account details. Foods you add by scanning a Nutrition Facts label are shared with other Calorness users (just the food's name, brand, and numbers, never who scanned it or when you ate it) so everyone's search gets more accurate. Foods you type in by hand stay private, unless several different people enter the same food with matching numbers; then a shared \"community\" version is made from the typical values (again, just the food and its numbers). When you correct an AI estimate, how far off it was for that kind of food is pooled anonymously to make future estimates better for everyone.",
   },
   {
     title: "Who can see your data",

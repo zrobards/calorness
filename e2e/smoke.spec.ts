@@ -47,7 +47,7 @@ test("log cardio and see it in the diary", async ({ page }) => {
   if (await weight.isVisible()) await weight.fill("170");
   await page.getByRole("button", { name: "Log it" }).click();
   await page.waitForURL("**/diary**");
-  await expect(page.getByRole("region", { name: "Exercise" }).getByText("Hacky sack")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Exercise" }).getByText("Hacky sack").first()).toBeVisible();
 });
 
 test("unknown pages show a friendly 404", async ({ page }) => {

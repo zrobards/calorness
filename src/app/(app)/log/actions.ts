@@ -9,6 +9,10 @@ import { aiFoodItemSchema } from "@/lib/ai/parse";
 import { dayToDate, MEALS } from "@/lib/nutrition/diary";
 import { saveAiItems } from "@/lib/nutrition/aiLog";
 import { groundItems } from "@/lib/ai/ground";
+import { applyCorrections, recordCorrections } from "@/lib/ai/corrections";
+import { getMyFoods, getRecentFoods } from "@/lib/nutrition/diary";
+import type { FoodCandidate } from "@/lib/nutrition/normalize";
+import type { MyFood } from "@/lib/ai/foodVision";
 import { consumeAiQuota } from "@/lib/aiLimit";
 import { candidateSchema, ensureFood } from "@/lib/nutrition/foods";
 
@@ -38,15 +42,25 @@ export async function aiEstimate(input: {
   const { imageBase64, mediaType, text, previous, correction } = parsed.data;
   const allowed = await consumeAiQuota(user.id, correction ? "recheck" : imageBase64 ? "photo" : "describe");
   if ("error" in allowed) return { error: allowed.error };
+  // Your own foods, so "my usual shake" logs your exact numbers
+  const mine = await yourFoodsForAi(user.id);
   const result = await estimateFoods({
     image: imageBase64 ? { base64: imageBase64, mediaType: mediaType ?? "image/jpeg" } : undefined,
     text,
     previous,
     correction,
+    myFoods: mine.map((m) => m.prompt),
   });
   if ("error" in result) return result;
   // Packaged foods: swap the guess for the real label values when we can find the product
-  return { ...result, items: await groundItems(user.id, result.items) };
+  const grounded = await groundItems(user.id, result.items);
+  // Items the AI recognized as one of your foods use that food, exactly
+  const withMine = grounded.map((item) => {
+    const own = item.my_food ? mine.find((m) => m.prompt.id === item.my_food) : undefined;
+    return own ? { ...item, matches: [{ food: own.food, score: 1 }, ...(item.matches ?? [])], suggestedServings: item.my_food_servings ?? 1 } : item;
+  });
+  // What everyone's corrections have taught us about foods like these
+  return { ...result, items: await applyCorrections(withMine) };
 }
 
 /** Save reviewed AI estimates as foods and log them in one go. */
@@ -63,6 +77,8 @@ export async function logAiItems(input: { day: string; meal: string; items: unkn
             match: z.object({ food: candidateSchema, servings: z.number().positive().max(50) }).optional(),
             // set when the user typed their own numbers
             edited: z.boolean().optional(),
+            // what the AI said before the user changed it, to learn from the correction
+            original: z.object({ calories: z.number().min(0), protein_g: z.number().min(0) }).nullable().optional(),
           }),
         )
         .min(1)
@@ -80,6 +96,7 @@ export async function logAiItems(input: { day: string; meal: string; items: unkn
       data: matched.map((i, n) => ({ userId: user.id, foodId: foodIds[n], servings: i.match!.servings, meal, date: dayToDate(day) })),
     });
   await saveAiItems(user.id, day, meal, items.filter((i) => !i.match));
+  await recordCorrections(user.id, items.filter((i) => i.edited && !i.match));
   revalidatePath("/diary");
   revalidatePath("/log");
   return { ok: true, count: items.length };
@@ -108,4 +125,12 @@ export async function scanLabel(input: { imageBase64: string; mediaType: string 
   const allowed = await consumeAiQuota(user.id, "label");
   if ("error" in allowed) return { error: allowed.error };
   return readLabel({ base64: parsed.data.imageBase64, mediaType: parsed.data.mediaType });
+}
+
+/** Up to 25 of your foods (recent and created), with short ids for the AI. */
+async function yourFoodsForAi(userId: string): Promise<{ prompt: MyFood; food: FoodCandidate }[]> {
+  const [recent, created] = await Promise.all([getRecentFoods(userId), getMyFoods(userId)]);
+  const seen = new Set<string>();
+  const foods = [...created, ...recent.map((r) => r.food)].filter((f) => f.id && f.source !== "AI_ESTIMATE" && !seen.has(f.id) && !!seen.add(f.id)).slice(0, 25);
+  return foods.map((food, i) => ({ food, prompt: { id: `f${i + 1}`, name: food.name, brand: food.brand, servingLabel: food.servingLabel, calories: food.calories } }));
 }

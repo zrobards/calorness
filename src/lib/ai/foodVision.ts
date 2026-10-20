@@ -29,6 +29,8 @@ export async function estimateFoods(input: {
   /** A previous estimate plus the user's correction, to re-check more accurately */
   previous?: AiFoodItem[];
   correction?: string;
+  /** The user's own foods, so "my usual shake" logs their exact numbers */
+  myFoods?: MyFood[];
 }): Promise<AiFoodResult | { error: string }> {
   if (!aiConfigured()) return { error: "AI logging isn't set up yet. Add ANTHROPIC_API_KEY in Vercel." };
 
@@ -55,7 +57,9 @@ export async function estimateFoods(input: {
 }
 
 /** The user-facing words we send along with the photo. Exported for tests. */
-export function buildPrompt(input: { image?: unknown; text?: string; previous?: AiFoodItem[]; correction?: string }) {
+export type MyFood = { id: string; name: string; brand: string | null; servingLabel: string | null; calories: number };
+
+export function buildPrompt(input: { image?: unknown; text?: string; previous?: AiFoodItem[]; correction?: string; myFoods?: MyFood[] }) {
   const parts: string[] = [];
   if (input.text?.trim()) parts.push(`${input.image ? "Details from the user about this photo" : "Log this meal"}: ${input.text.trim()}`);
   else parts.push("Log the food in this photo.");
@@ -67,6 +71,13 @@ export function buildPrompt(input: { image?: unknown; text?: string; previous?: 
       `Your previous estimate was:\n${summary}\n\nThe user says this needs fixing: "${input.correction.trim()}"\n` +
         "Trust the user's information about portions, ingredients, and cooking methods over what the photo suggests. " +
         "Return the complete corrected list, including items that didn't change.",
+    );
+  }
+  // The user's own foods: "my usual shake" should log their exact shake
+  if (input.myFoods?.length) {
+    parts.push(
+      "The user's own foods (exact numbers they saved). If an item is one of these, set my_food to its id and my_food_servings to how many servings, and use its numbers:\n" +
+        input.myFoods.map((f) => `- ${f.id}: ${f.name}${f.brand ? ` (${f.brand})` : ""}, ${f.servingLabel ?? "1 serving"}, ${Math.round(f.calories)} cal`).join("\n"),
     );
   }
   return parts.join("\n\n");

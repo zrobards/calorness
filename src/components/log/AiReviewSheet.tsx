@@ -17,6 +17,7 @@ const CONFIDENCE = {
 
 type ReviewItem = GroundedItem & {
   servings: number;
+  original: { calories: number; protein_g: number }; // the AI's numbers, to learn from corrections
   key: string;
   chosen: number | null; // which database match is in use, if any
   edited?: boolean; // the user typed their own numbers
@@ -24,13 +25,15 @@ type ReviewItem = GroundedItem & {
 export type ReviewedItem = AiFoodItem & {
   match?: { food: NonNullable<GroundedItem["matches"]>[number]["food"]; servings: number };
   edited?: boolean;
+  original?: { calories: number; protein_g: number } | null;
 };
 
 let nextKey = 0;
 // Strong matches are applied automatically; weaker ones are offered to pick from
 const toReview = (i: GroundedItem): ReviewItem => ({
   ...i,
-  servings: 1,
+  servings: i.suggestedServings ?? 1,
+  original: { calories: i.calories, protein_g: i.protein_g },
   key: `i${nextKey++}`,
   chosen: i.matches?.[0] && i.matches[0].score >= 0.75 ? 0 : null,
 });
@@ -43,7 +46,7 @@ function applyServings(i: ReviewItem): ReviewedItem {
     return {
       name: m.name,
       portion: s === 1 ? (m.servingLabel ?? "1 serving") : `${s} × ${m.servingLabel ?? "serving"}`,
-      grams: Math.round(m.servingSize * s),
+      grams: m.servingUnit === "g" || m.servingUnit === "ml" ? Math.round(m.servingSize * s) : 0, // only real weights
       calories: Math.round(m.calories * s),
       protein_g: round1(m.proteinG * s),
       carbs_g: round1(m.carbsG * s),
@@ -54,6 +57,7 @@ function applyServings(i: ReviewItem): ReviewedItem {
   }
   return {
     edited: i.edited,
+    original: i.edited ? { calories: Math.round(i.original.calories * s), protein_g: round1(i.original.protein_g * s) } : null,
     name: i.name.trim(),
     portion: s === 1 ? i.portion : `${s} × ${i.portion}`,
     grams: Math.round(i.grams * s),
@@ -153,7 +157,7 @@ export function AiReviewSheet({
                     <ChevronDown size={15} className={`shrink-0 text-chalk-muted transition-transform ${expanded ? "rotate-180" : ""}`} aria-hidden />
                   </span>
                   <span className="block text-sm text-chalk-muted">
-                    {/\d\s*g\b|\(.*\)/i.test(shown.portion) ? shown.portion : `${shown.portion}, ${shown.grams} g`}. P {Math.round(shown.protein_g)} C {Math.round(shown.carbs_g)} F {Math.round(shown.fat_g)}
+                    {/\d\s*g\b|\(.*\)/i.test(shown.portion) || !shown.grams ? shown.portion : `${shown.portion}, ${shown.grams} g`}. P {Math.round(shown.protein_g)} C {Math.round(shown.carbs_g)} F {Math.round(shown.fat_g)}
                   </span>
                   <span className="sr-only">{CONFIDENCE[i.confidence].label}</span>
                 </button>
@@ -169,6 +173,11 @@ export function AiReviewSheet({
                 <button onClick={() => setServings(i.key, 0.25)} className="rounded-lg bg-rack-raised p-1.5" aria-label="More"><Plus size={16} /></button>
                 {i.confidence === "low" && i.chosen === null && <span className="ml-auto text-xs text-plate-red">Check this one</span>}
               </div>
+              {i.adjusted && i.chosen === null && !i.edited && (
+                <p className="-mt-1 px-3 pb-3 pl-7 text-xs text-chalk-muted">
+                  <span className="text-plate-blue">{i.adjusted.percent > 0 ? "+" : ""}{i.adjusted.percent}%</span> from {i.adjusted.people} people&apos;s corrections of this food
+                </p>
+              )}
               {i.basis && i.chosen === null && !i.edited && (
                 <p className="-mt-1 px-3 pb-3 pl-7 text-xs text-chalk-muted">
                   <span className="text-plate-green">USDA values</span> for &ldquo;{i.basis.name}&rdquo; at this portion
@@ -235,6 +244,15 @@ export function AiReviewSheet({
       {/* Tell the AI what it got wrong and let it look again */}
       <div className="mt-4 rounded-2xl border border-rack-line p-3">
         <label className="text-sm font-medium" htmlFor="ai-correction">Not quite right? Tell the AI</label>
+        {/* One-tap fixes for the most common misses */}
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {["Bigger portion than that", "Smaller portion than that", "Restaurant-style, more oil and butter", "Homemade, lighter on oil", "No sauce or dressing"].map((q) => (
+            <button key={q} type="button" disabled={refining} onClick={() => { haptic(); setCorrection(q); onRefine(q, named.map(applyServings)); }}
+              className="rounded-full bg-rack px-3 py-1.5 text-xs font-medium disabled:opacity-40">
+              {q.split(",")[0].replace(" than that", "")}
+            </button>
+          ))}
+        </div>
         <textarea
           id="ai-correction"
           value={correction}

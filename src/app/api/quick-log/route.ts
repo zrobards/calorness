@@ -6,6 +6,7 @@ import { plainText, userFromApiKey } from "@/lib/apiAuth";
 import { estimateFoods } from "@/lib/ai/foodVision";
 import { getDiaryDay, MEALS, MEAL_LABELS, type MealName } from "@/lib/nutrition/diary";
 import { nowInZone, saveAiItems } from "@/lib/nutrition/aiLog";
+import { applyCorrections } from "@/lib/ai/corrections";
 
 /*
   POST /api/quick-log : log a meal from outside the app (an iPhone Shortcut).
@@ -89,7 +90,9 @@ export async function POST(req: Request) {
   const result = await estimateFoods({ image, text: words });
   if ("error" in result) return text(result.error, 422);
 
-  await saveAiItems(user.id, day, meal, result.items);
+  // nudged by what people's corrections have taught us about these foods
+  const items = await applyCorrections(result.items);
+  await saveAiItems(user.id, day, meal, items);
   revalidatePath("/diary");
   revalidatePath("/log");
 
@@ -97,7 +100,7 @@ export async function POST(req: Request) {
   return text(
     summaryText({
       meal: MEAL_LABELS[meal],
-      items: result.items,
+      items,
       caloriesLeft: diary.goal ? diary.goal.calories - diary.totals.calories : null,
     }),
   );

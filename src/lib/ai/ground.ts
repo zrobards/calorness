@@ -13,6 +13,10 @@ export type GroundedItem = AiFoodItem & {
   matches?: FoodMatch[];
   // For unpackaged food: the reference food whose calories per gram were used
   basis?: { name: string; source: "USDA" };
+  // How many servings of a matched food (e.g. "two of my shakes")
+  suggestedServings?: number;
+  // Nudged by other people's corrections of foods like this
+  adjusted?: { people: number; percent: number };
 };
 
 /**
