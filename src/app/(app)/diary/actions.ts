@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { lookupBarcodeOnline } from "@/lib/nutrition/sources";
+import { submitFood } from "@/lib/nutrition/community";
 import { findFoodByBarcode, dayToDate, getDiaryDay, getMealQuickPicks, getMyFoods, getRecentFoods, MEALS, toCandidate } from "@/lib/nutrition/diary";
 import type { DiaryData } from "@/lib/nutrition/diaryData";
 import { getUserPrefs } from "@/lib/userPrefs";
@@ -135,6 +136,8 @@ export async function createCustomFood(input: Record<string, string>) {
       shared: d.fromLabel === "true",
     },
   });
+  // Typed-in foods count toward a shared community version (label scans are already shared)
+  if (d.fromLabel !== "true") await submitFood(user.id, food);
   return { food: toCandidate(food) };
 }
 
@@ -237,6 +240,7 @@ export async function updateCustomFood(foodId: string, input: Record<string, str
       fatG: d.fatG,
     },
   });
+  if (!updated.shared) await submitFood(user.id, updated);
   revalidatePath("/diary");
   return { food: toCandidate(updated) };
 }

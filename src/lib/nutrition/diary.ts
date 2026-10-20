@@ -88,12 +88,13 @@ export async function getDiaryDay(userId: string, day: string, timeZone = "Ameri
 export const toCandidate = (f: {
   id: string; source: FoodCandidate["source"]; externalId: string | null; barcode: string | null; name: string; brand: string | null;
   servingSize: number; servingUnit: string; servingLabel: string | null; calories: number; proteinG: number; carbsG: number; fatG: number;
-  fiberG: number | null; sugarG: number | null; sodiumMg: number | null; shared?: boolean;
+  fiberG: number | null; sugarG: number | null; sodiumMg: number | null; shared?: boolean; confirmations?: number;
 }): FoodCandidate => ({
   id: f.id, source: f.source, externalId: f.externalId, barcode: f.barcode, name: f.name, brand: f.brand,
   servingSize: f.servingSize, servingUnit: f.servingUnit, servingLabel: f.servingLabel, calories: f.calories,
   proteinG: f.proteinG, carbsG: f.carbsG, fatG: f.fatG, fiberG: f.fiberG, sugarG: f.sugarG, sodiumMg: f.sodiumMg,
   shared: f.shared ?? false,
+  confirmations: f.confirmations ?? 0,
 });
 
 /** Foods this user logged most recently, newest first, no duplicates. */

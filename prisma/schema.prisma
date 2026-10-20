@@ -50,6 +50,8 @@ model User {
   coachMessages   CoachMessage[]
   searchPicks     SearchPick[]
   activities      ActivityEntry[]
+  foodSubmissions FoodSubmission[]
+  aiCorrections   AiCorrection[]
   music           MusicLink[]
 }
 
@@ -253,6 +255,8 @@ model Food {
   // brand + name squashed to letters and digits, maintained by a database
   // trigger (see the search_cache_and_index migration) for fast fuzzy search
   searchKey   String     @default("") @map("search_key")
+  // For COMMUNITY foods: how many different people entered matching numbers
+  confirmations Int      @default(0)
   createdAt   DateTime   @default(now())
 
   diaryEntries DiaryEntry[]
@@ -270,6 +274,7 @@ enum FoodSource {
   OPEN_FOOD_FACTS
   CUSTOM
   AI_ESTIMATE // estimated by AI from a photo or description
+  COMMUNITY // built from matching entries by several different people
 }
 
 model DiaryEntry {
@@ -540,4 +545,49 @@ model MusicLink {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// ─── Learning from everyone's entries ─────────────────────────────────────
+// A food someone typed in by hand. Private on its own; when enough different
+// people enter matching numbers for the same food, a shared COMMUNITY food
+// is created from the typical values. Only the food's name and numbers are
+// ever shared, never who entered it.
+model FoodSubmission {
+  id           String   @id @default(cuid())
+  userId       String
+  foodId       String // their own private food
+  key          String // brand + name, normalized (see lib/nutrition/community.ts)
+  name         String
+  brand        String?
+  servingLabel String?
+  servingSize  Float
+  servingUnit  String
+  calories     Float
+  proteinG     Float
+  carbsG       Float
+  fatG         Float
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+  @@index([key])
+}
+
+// When someone fixes an AI estimate by typing the real numbers, how far off
+// the AI was for that kind of food. Pooled across people, these nudge future
+// estimates (e.g. "people say chicken burritos run 15% higher").
+model AiCorrection {
+  id            String   @id @default(cuid())
+  userId        String
+  key           String // normalized food name
+  aiCalories    Float
+  finalCalories Float
+  aiProteinG    Float
+  finalProteinG Float
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([key])
 }

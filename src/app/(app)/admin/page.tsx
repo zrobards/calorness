@@ -53,7 +53,7 @@ export default async function AdminPage() {
 
         <Card title="Food database">
           {foodsBySource.map((s) => (
-            <Stat key={s.source} label={{ USDA: "Saved from USDA", OPEN_FOOD_FACTS: "Saved from Open Food Facts", CUSTOM: "Created by people", AI_ESTIMATE: "AI estimates (private)" }[s.source] ?? s.source} value={s._count} />
+            <Stat key={s.source} label={{ USDA: "Saved from USDA", OPEN_FOOD_FACTS: "Saved from Open Food Facts", CUSTOM: "Created by people", AI_ESTIMATE: "AI estimates (private)", COMMUNITY: "Community foods (agreed by several people)" }[s.source] ?? s.source} value={s._count} />
           ))}
           <Stat label="Shared label scans (verified, everyone sees)" value={sharedFoods} />
           <Stat label="Cached outside searches" value={cachedSearches} />

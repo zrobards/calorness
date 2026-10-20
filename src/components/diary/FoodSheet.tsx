@@ -7,7 +7,7 @@ import type { FoodCandidate } from "@/lib/nutrition/normalize";
 import { MacroSplit } from "./MacroSplit";
 import { Sheet } from "./Sheet";
 
-const SOURCE_LABEL = { USDA: "USDA", OPEN_FOOD_FACTS: "Open Food Facts", CUSTOM: "Your food", AI_ESTIMATE: "AI estimate" } as const;
+const SOURCE_LABEL = { USDA: "USDA", OPEN_FOOD_FACTS: "Open Food Facts", CUSTOM: "Your food", AI_ESTIMATE: "AI estimate", COMMUNITY: "Community" } as const;
 
 /**
  * Choose how much you ate. Amount can be in servings, or in grams/ml when
@@ -61,7 +61,7 @@ export function FoodSheet({
   return (
     <Sheet title={food.name} onClose={onClose}>
       <p className="mt-1 flex items-center gap-2 text-sm text-chalk-muted">
-        <span>{[food.brand, food.shared ? "Label scan" : SOURCE_LABEL[food.source]].filter(Boolean).join(", ")}</span>
+        <span>{[food.brand, food.shared ? "Label scan" : food.source === "COMMUNITY" ? `Agreed by ${food.confirmations ?? 2} people` : SOURCE_LABEL[food.source]].filter(Boolean).join(", ")}</span>
         {onEdit && <button onClick={onEdit} className="font-medium text-plate-blue">Edit food</button>}
       </p>
 

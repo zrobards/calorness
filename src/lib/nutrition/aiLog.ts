@@ -4,10 +4,11 @@ import type { AiFoodItem } from "@/lib/ai/parse";
 import { dayToDate, type MealName } from "@/lib/nutrition/diary";
 import { dayInZone, hourInZone } from "@/lib/time";
 import { mealForTime } from "@/lib/nutrition/meals";
+import { submitFood } from "@/lib/nutrition/community";
 
 /** Save AI-estimated foods and log each one. Shared by the app and the phone shortcut. */
 export async function saveAiItems(userId: string, day: string, meal: MealName, items: (AiFoodItem & { edited?: boolean })[]) {
-  await db.$transaction(
+  const entries = await db.$transaction(
     items.map((i) =>
       db.diaryEntry.create({
         data: {
@@ -31,9 +32,13 @@ export async function saveAiItems(userId: string, day: string, meal: MealName, i
             },
           },
         },
+        include: { food: true },
       }),
     ),
   );
+  // Numbers people typed themselves feed the shared community foods
+  await Promise.all(entries.filter((e) => e.food.source === "CUSTOM").map((e) => submitFood(userId, e.food)));
+  return entries;
 }
 
 /** "Now" in the app's time zone, for requests that don't say which day or meal. */
