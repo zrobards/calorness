@@ -22,6 +22,17 @@ export function isoDay(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
+/** Move a YYYY-MM-DD day by n days. */
+export const shiftDay = (day: string, n: number) => new Date(Date.parse(`${day}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+
+/** "Today", "Yesterday", "Tomorrow", or "Mon, Oct 12". */
+export function dayLabel(day: string, today: string) {
+  if (day === today) return "Today";
+  if (day === shiftDay(today, -1)) return "Yesterday";
+  if (day === shiftDay(today, 1)) return "Tomorrow";
+  return new Date(`${day}T00:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
+}
+
 export function formatDuration(ms: number): string {
   const totalMin = Math.max(0, Math.round(ms / 60_000));
   const h = Math.floor(totalMin / 60);

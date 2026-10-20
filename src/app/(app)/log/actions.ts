@@ -72,11 +72,13 @@ export async function logAiItems(input: { day: string; meal: string; items: unkn
   if (!parsed.success) return { error: "Something in that list doesn't look right." };
   const { day, meal, items } = parsed.data;
 
+  // Matched foods: make sure each exists, then add them all in one write
   const matched = items.filter((i) => i.match);
-  for (const i of matched) {
-    const foodId = await ensureFood(user.id, i.match!.food);
-    await db.diaryEntry.create({ data: { userId: user.id, foodId, servings: i.match!.servings, meal, date: dayToDate(day) } });
-  }
+  const foodIds = await Promise.all(matched.map((i) => ensureFood(user.id, i.match!.food)));
+  if (matched.length)
+    await db.diaryEntry.createMany({
+      data: matched.map((i, n) => ({ userId: user.id, foodId: foodIds[n], servings: i.match!.servings, meal, date: dayToDate(day) })),
+    });
   await saveAiItems(user.id, day, meal, items.filter((i) => !i.match));
   revalidatePath("/diary");
   revalidatePath("/log");

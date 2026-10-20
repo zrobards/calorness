@@ -1,16 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
+import { isAdmin } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { PageHeader } from "@/components/PageHeader";
 import { AiCheck } from "./AiCheck";
 
 export const metadata: Metadata = { title: "Data" };
 
-// Owner-only look at what's in the database. Add your email to ADMIN_EMAILS
-// in Vercel (comma-separated for more than one) to see this page at /admin.
-const isAdmin = (email: string | null) =>
-  !!email && (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).includes(email.toLowerCase());
 
 // Rough cost per AI request, from Anthropic's price list (Sonnet for photos and labels)
 const COST = { photo: 0.006, label: 0.008, shortcut: 0.006, recheck: 0.006, describe: 0.0003, coach: 0.001 } as Record<string, number>;

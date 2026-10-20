@@ -5,7 +5,7 @@ import { FoodAdder } from "@/components/diary/FoodAdder";
 import { requireUser } from "@/lib/auth";
 import { getMyFoods, getRecentFoods, MEAL_LABELS, MEALS, type MealName } from "@/lib/nutrition/diary";
 import { userToday } from "@/lib/userPrefs";
-import { dayLabel } from "@/components/diary/DayNav";
+import { dayLabel } from "@/lib/fitness/dates";
 
 export const metadata: Metadata = { title: "Add food" };
 

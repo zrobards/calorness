@@ -36,7 +36,15 @@ something in `src/lib`, and return. Anything with real logic lives in `src/lib` 
 | `src/lib/ai/` | Claude: meal photos and labels (`foodVision.ts`), checking answers (`parse.ts`), matching to real foods (`ground.ts`), Coach (`coach.ts`). |
 | `src/lib/` (top level) | Auth, database client, push notifications, AI limits, API keys, time zones, templates. |
 
-Tests sit next to the code they test (`*.test.ts`) and run with `npm test`.
+Tests sit next to the code they test (`*.test.ts`) and run with `npm test`. End-to-end smoke tests in `e2e/` click through the real app in a browser (`npm run e2e`); CI runs both on every pull request, the end-to-end ones against a throwaway Postgres.
+
+## Patterns worth keeping
+
+- **Instant screens:** the Diary keeps each day's data on the phone and refreshes it in the background (`DiaryView`); changes show immediately and save behind the scenes.
+- **Nothing ticks the whole screen:** clocks and timers live in their own small components (`components/train/logger/clock.tsx`), and each exercise in the workout logger is a memoized block, so typing a rep doesn't re-render every set.
+- **One read per request:** `requireUser` and `getUserPrefs` are wrapped in React `cache()`.
+- **Errors are contained:** `app/(app)/error.tsx` replaces a broken screen (tab bar still works), `global-error.tsx` covers the shell, `not-found.tsx` handles bad links.
+- **Sign-in is rate limited:** 8 wrong passwords for one email locks it for 15 minutes (`lib/throttle.ts`).
 
 ## How a food search works
 

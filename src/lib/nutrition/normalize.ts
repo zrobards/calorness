@@ -1,3 +1,5 @@
+import { round1 } from "@/lib/fitness/units";
+
 // Turns raw USDA and Open Food Facts API responses into one consistent shape.
 // Both APIs report nutrients per 100 g (or 100 ml); we convert to "per
 // serving" using the label's serving size when there is one.
@@ -24,7 +26,6 @@ export type FoodCandidate = {
   shared?: boolean; // a label scan shared by a Calorness user
 };
 
-const round1 = (n: number) => Math.round(n * 10) / 10;
 
 /**
  * Throws out entries that can't be real food. Per 100 g nothing can have

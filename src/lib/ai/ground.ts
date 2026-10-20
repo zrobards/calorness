@@ -3,6 +3,7 @@ import type { AiFoodItem } from "./parse";
 import type { FoodCandidate } from "@/lib/nutrition/normalize";
 import { searchOpenFoodFacts, searchUsda, searchUsdaGeneric } from "@/lib/nutrition/sources";
 import { textMatch } from "@/lib/nutrition/searchText";
+import { round1 } from "@/lib/fitness/units";
 import { searchSavedFoods } from "@/lib/nutrition/diary";
 import { rankMatches } from "@/lib/nutrition/match";
 import { macroCheck } from "@/lib/nutrition/quality";
@@ -58,13 +59,12 @@ async function withReferenceDensity(item: AiFoodItem): Promise<GroundedItem> {
   const calories = Math.round(perGram(ref.calories) * item.grams);
   // A wildly different answer means the match is probably a different dish; keep the AI's
   if (item.calories > 0 && (calories / item.calories > 2.5 || calories / item.calories < 0.4)) return item;
-  const r1 = (n: number) => Math.round(n * 10) / 10;
   return {
     ...item,
     calories,
-    protein_g: r1(perGram(ref.proteinG) * item.grams),
-    carbs_g: r1(perGram(ref.carbsG) * item.grams),
-    fat_g: r1(perGram(ref.fatG) * item.grams),
+    protein_g: round1(perGram(ref.proteinG) * item.grams),
+    carbs_g: round1(perGram(ref.carbsG) * item.grams),
+    fat_g: round1(perGram(ref.fatG) * item.grams),
     basis: { name: ref.name, source: "USDA" },
   };
 }
