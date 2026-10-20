@@ -66,3 +66,37 @@ export function setsPerMuscle(items: MuscleSetInput[]): Record<MuscleRegion, num
   }
   return totals;
 }
+
+// ─── Which sets went into each muscle (Progress drill-down) ──────────────
+
+export type SetDetail = { weightKg: number | null; reps: number | null; type: string };
+export type Contribution = {
+  workoutId: string;
+  workoutName: string;
+  date: string; // ISO time the workout started
+  exercise: string;
+  primaryMuscles: string[];
+  secondaryMuscles: string[];
+  sets: SetDetail[]; // working sets only (no warm-ups)
+};
+export type MuscleEntry = Contribution & { role: "primary" | "secondary"; counted: number };
+
+/** Totals and the exercises behind them, for workouts between `from` and `to`. */
+export function muscleBreakdown(contributions: Contribution[], from: Date, to: Date) {
+  const totals = Object.fromEntries(MUSCLE_REGIONS.map((m) => [m, 0])) as Record<MuscleRegion, number>;
+  const entries = Object.fromEntries(MUSCLE_REGIONS.map((m) => [m, [] as MuscleEntry[]])) as Record<MuscleRegion, MuscleEntry[]>;
+  for (const c of contributions) {
+    const t = new Date(c.date);
+    if (t < from || t >= to || c.sets.length === 0) continue;
+    const add = (m: string, role: MuscleEntry["role"]) => {
+      if (!isMuscleRegion(m)) return;
+      const counted = role === "primary" ? c.sets.length : c.sets.length * 0.5;
+      totals[m] += counted;
+      entries[m].push({ ...c, role, counted });
+    };
+    c.primaryMuscles.forEach((m) => add(m, "primary"));
+    c.secondaryMuscles.filter((m) => !c.primaryMuscles.includes(m)).forEach((m) => add(m, "secondary"));
+  }
+  for (const m of MUSCLE_REGIONS) entries[m].sort((a, b) => b.date.localeCompare(a.date));
+  return { totals, entries };
+}

@@ -75,7 +75,13 @@ tracking that shares data with training.
 - Only calories above resting count toward your day (your goal already covers rest), with a "credit" setting (0/50/75/100%) because trackers tend to overestimate
 - The Diary shows goal + exercise − food = remaining; extra calories go about 70% to carbs and 30% to fat, protein stays put. Lifting sessions are estimated from their length
 
+**Music**
+- Paste a link from YouTube Music, Spotify, Apple Music, or SoundCloud (playlist, album, or song); Calorness looks up its name and plays it in that service's own embedded player
+- The player lives in the app layout, so music keeps playing while you switch tabs; it shrinks to a mini player or expands, without restarting
+- Saved music is one tap away from Train and the workout screen
+
 **Progress**
+- Tappable muscle map: pick a muscle (on the body or the list) to see every set that counted toward it, with the main/helper split, for this week, the last 7 days, or last week
 - Muscle map: sets per muscle over the last 7 days, front and back
 - Weekly volume for the last 8 weeks, best lifts, bodyweight trend
 - Calories eaten over the last 7 days against your goal
