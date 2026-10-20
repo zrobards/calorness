@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { BarChart } from "@/components/charts/BarChart";
 import { LineChart } from "@/components/charts/LineChart";
-import { MuscleMap } from "@/components/charts/MuscleMap";
+import { MuscleExplorer } from "@/components/charts/MuscleExplorer";
 import { requireUser } from "@/lib/auth";
 import { getProgress, getUnitSystem } from "@/lib/training";
 import { getCalorieWeek } from "@/lib/nutrition/diary";
@@ -30,7 +30,7 @@ export default async function ProgressPage() {
   const loggedDays = calorieWeek.filter((d) => d.calories > 0);
   const unit = weightUnit(unitSystem);
   const w = (kg: number) => displayWeight(kg, unitSystem);
-  const { weeks, muscles, bodyweights, topLifts } = progress;
+  const { weeks, bodyweights, topLifts } = progress;
   const hasTraining = topLifts.length > 0;
 
   return (
@@ -48,8 +48,8 @@ export default async function ProgressPage() {
 
       {hasTraining && (
         <>
-          <Card title="Muscles, last 7 days" subtitle="Sets per muscle. Secondary muscles count as half.">
-            <MuscleMap sets={muscles} />
+          <Card title="Muscles" subtitle="Working sets per muscle. Tap one to see which sets counted.">
+            <MuscleExplorer contributions={progress.contributions} windows={progress.windows} imperial={unitSystem === "IMPERIAL"} />
           </Card>
 
           <Card title="Weekly volume" subtitle={`Total ${unit} lifted, last 8 weeks`}>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { setsPerMuscle } from "./muscles";
+import { muscleBreakdown, setsPerMuscle } from "./muscles";
 import { compactNumber, displayWeight, toKg } from "./units";
 import { startOfWeek, weeksAgo, formatDuration } from "./dates";
 
@@ -49,5 +49,23 @@ describe("week math", () => {
   it("formats workout durations", () => {
     expect(formatDuration(47 * 60_000)).toBe("47m");
     expect(formatDuration(83 * 60_000)).toBe("1h 23m");
+  });
+});
+
+describe("muscleBreakdown", () => {
+  const bench = { workoutId: "w1", workoutName: "Push", date: "2026-10-19T15:00:00Z", exercise: "Bench Press", primaryMuscles: ["chest"], secondaryMuscles: ["triceps", "shoulders"], sets: [{ weightKg: 60, reps: 8, type: "NORMAL" }, { weightKg: 60, reps: 7, type: "NORMAL" }, { weightKg: 60, reps: 6, type: "NORMAL" }] };
+  const pushdown = { ...bench, exercise: "Triceps Pushdown", primaryMuscles: ["triceps"], secondaryMuscles: [], sets: [{ weightKg: 20, reps: 12, type: "NORMAL" }, { weightKg: 20, reps: 10, type: "NORMAL" }] };
+  const old = { ...bench, date: "2026-10-01T15:00:00Z" };
+
+  it("counts primary sets fully and secondary as half, with the sets behind them", () => {
+    const { totals, entries } = muscleBreakdown([bench, pushdown, old], new Date("2026-10-13"), new Date("2026-10-20"));
+    expect(totals.chest).toBe(3);
+    expect(totals.triceps).toBe(3.5); // 2 pushdown + half of 3 bench
+    expect(entries.triceps.map((e) => [e.exercise, e.role, e.counted])).toEqual([["Bench Press", "secondary", 1.5], ["Triceps Pushdown", "primary", 2]].sort(() => 0));
+    expect(entries.chest[0].sets).toHaveLength(3);
+  });
+
+  it("leaves out workouts outside the window", () => {
+    expect(muscleBreakdown([old], new Date("2026-10-13"), new Date("2026-10-20")).totals.chest).toBe(0);
   });
 });

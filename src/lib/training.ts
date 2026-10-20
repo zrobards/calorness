@@ -3,7 +3,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/lib/db";
 import { getUserPrefs } from "@/lib/userPrefs";
 import { addDays, startOfWeek, weeksAgo } from "@/lib/fitness/dates";
-import { setsPerMuscle } from "@/lib/fitness/muscles";
+import { setsPerMuscle, type Contribution } from "@/lib/fitness/muscles";
 import {
   bestSet,
   estimateOneRepMax,
@@ -329,5 +329,23 @@ export async function getProgress(userId: string, now: Date) {
   }
   const topLifts = [...best.values()].sort((a, b) => b.e1rmKg - a.e1rmKg).slice(0, 5);
 
-  return { weeks, muscles, bodyweights, topLifts, totalWorkouts: workouts.length };
+  // Every working set from the last two weeks, so the muscle map can show
+  // exactly which sets went into each muscle (this week, last week, last 7 days)
+  const twoWeeksAgo = addDays(startOfWeek(now), -7);
+  const contributions: Contribution[] = workouts
+    .filter((w) => w.startedAt >= twoWeeksAgo)
+    .flatMap((w) =>
+      w.exercises.map((e) => ({
+        workoutId: w.id,
+        workoutName: w.name,
+        date: w.startedAt.toISOString(),
+        exercise: e.exercise.name,
+        primaryMuscles: e.exercise.primaryMuscles,
+        secondaryMuscles: e.exercise.secondaryMuscles,
+        sets: e.sets.filter((s) => s.type !== "WARMUP").map((s) => ({ weightKg: s.weightKg, reps: s.reps, type: s.type })),
+      })),
+    );
+  const windows = { thisWeek: startOfWeek(now).toISOString(), lastWeek: twoWeeksAgo.toISOString(), now: now.toISOString() };
+
+  return { weeks, muscles, bodyweights, topLifts, totalWorkouts: workouts.length, contributions, windows };
 }
