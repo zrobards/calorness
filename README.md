@@ -41,6 +41,9 @@ tracking that shares data with training.
 - Each dish is counted once: the AI folds tortillas, garnishes, and sauces into the dish they belong to, and anything it lists as part of another item is dropped instead of double counted
 - For unpackaged food, the AI judges the portion and USDA supplies calories per gram, so "1 cup of rice" uses USDA's numbers for rice; photos use Claude Sonnet by default (`AI_VISION_MODEL` to change)
 - Label scans are shared (food name and numbers only), so the verified database grows as people use the app
+- Community foods: hand-typed foods stay private until two or more different people enter the same food with matching numbers; then a shared version is made from the median values ("Agreed by 3 people"), which ranks higher as more people agree
+- The AI learns from corrections: when people fix an estimate, how far off it was for that food is pooled; once three or more people consistently correct the same food the same way, new estimates are nudged by that amount (limited to ±40%) and the review says so
+- Describe and photos know your own foods: "two of my usual shakes" logs your saved shake, exactly, twice; one-tap fixes for common misses (bigger, smaller, restaurant-style, homemade, no sauce)
 - Packaged foods use real label values: the AI reads the brand and flavor, then Calorness finds the product in your foods, USDA, and Open Food Facts and swaps the guess for the label numbers (or asks you to pick the flavor). A barcode anywhere in the photo is read first for an exact match at no AI cost
 - Make the estimate accurate before saving: adjust amounts, edit any item's weight (calories and macros scale with it) or numbers, add foods it missed, or tell the AI what it got wrong ("the chicken was fried, 2 cups of rice") and it re-checks the photo
 - Describe a meal in words, or say it out loud with speech-to-text

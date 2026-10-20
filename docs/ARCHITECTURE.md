@@ -64,8 +64,9 @@ Tests sit next to the code they test (`*.test.ts`) and run with `npm test`. End-
 | --- | --- | --- |
 | USDA / Open Food Facts foods someone logged | everyone (saved once, reused) | public data |
 | Label scans | everyone (`shared`) | copied from a printed label, so verified |
-| Foods people type in by hand | only that person | can't verify the numbers |
+| Foods people type in by hand | only that person, until 2+ different people agree; then a shared COMMUNITY food is made from the median | agreement between independent people filters out typos (`lib/nutrition/consensus.ts`) |
 | AI estimates | only that person | estimates, not facts |
+| Corrections to AI estimates | pooled as ratios per food | 3+ people correcting the same way nudges future estimates (`lib/ai/corrections.ts`) |
 | Search picks | counts are pooled | "what most people pick for 'chickfila'" improves ranking without sharing anyone's data |
 
 ## Scaling notes

@@ -52,7 +52,7 @@ export async function findFoods(userId: string, query: string, scope: "local" | 
   // Score everything together: how well the name matches what you typed, a
   // nudge toward trustworthy sources, and a big boost for foods you've
   // picked for this search before. Badly inconsistent entries are dropped.
-  const SOURCE_BONUS = { CUSTOM: 0.25, USDA: 0.12, AI_ESTIMATE: 0.05, OPEN_FOOD_FACTS: 0 } as const;
+  const SOURCE_BONUS = { CUSTOM: 0.25, USDA: 0.12, COMMUNITY: 0.1, AI_ESTIMATE: 0.05, OPEN_FOOD_FACTS: 0 } as const;
   const minMatch = normalize(apiQuery).split(" ").length >= 3 ? 0.75 : 0.6;
   const candidates = [...picks.map((p) => toCandidate(p.food)), ...saved, ...usda, ...off];
   const seen = new Set<string>();
@@ -71,7 +71,8 @@ export async function findFoods(userId: string, query: string, scope: "local" | 
         f,
         picked,
         mine,
-        score: match + SOURCE_BONUS[f.source] + (mine ? 0.2 : 0) + (picked ? 0.6 + Math.log2(1 + picked) * 0.1 : 0) + Math.min(0.3, Math.log2(1 + popular) * 0.1) - (check.flagged ? 0.3 : 0),
+        // community foods earn more trust the more people agree on them
+        score: match + SOURCE_BONUS[f.source] + (f.source === "COMMUNITY" ? Math.min(0.1, (f.confirmations ?? 0) * 0.02) : 0) + (mine ? 0.2 : 0) + (picked ? 0.6 + Math.log2(1 + picked) * 0.1 : 0) + Math.min(0.3, Math.log2(1 + popular) * 0.1) - (check.flagged ? 0.3 : 0),
         keep: picked > 0 || match >= (mine ? 0.5 : minMatch),
         badData: check.flagged && Math.abs(check.diff) > 0.4 * Math.max(f.calories, check.expected),
       };

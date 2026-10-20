@@ -4,7 +4,7 @@ import { round1 } from "@/lib/fitness/units";
 // Both APIs report nutrients per 100 g (or 100 ml); we convert to "per
 // serving" using the label's serving size when there is one.
 
-export type FoodSourceName = "USDA" | "OPEN_FOOD_FACTS" | "CUSTOM" | "AI_ESTIMATE";
+export type FoodSourceName = "USDA" | "OPEN_FOOD_FACTS" | "CUSTOM" | "AI_ESTIMATE" | "COMMUNITY";
 
 export type FoodCandidate = {
   id?: string; // set when the food is already saved in our database
@@ -24,6 +24,7 @@ export type FoodCandidate = {
   sugarG: number | null;
   sodiumMg: number | null;
   shared?: boolean; // a label scan shared by a Calorness user
+  confirmations?: number; // COMMUNITY foods: how many people's entries agree
 };
 
 
