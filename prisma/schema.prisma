@@ -284,6 +284,7 @@ model DiaryEntry {
   food Food @relation(fields: [foodId], references: [id], onDelete: Restrict)
 
   @@index([userId, date])
+  @@index([userId, createdAt]) // "usual foods" looks back six weeks
 }
 
 enum Meal {
@@ -477,6 +478,7 @@ model SearchPick {
 
   @@unique([userId, query, foodId])
   @@index([userId])
+  @@index([query]) // community ranking: what everyone picked for a search
 }
 
 // Results from USDA and Open Food Facts, kept for a week so popular searches
@@ -510,4 +512,14 @@ model ActivityEntry {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, date])
+  @@index([userId, startedAt])
+}
+
+// Slows down password guessing: after too many wrong passwords for one
+// email, sign-in for that email pauses for 15 minutes.
+model AuthThrottle {
+  key         String    @id // "pw:<email>"
+  failures    Int       @default(0)
+  windowStart DateTime  @default(now())
+  lockedUntil DateTime?
 }
