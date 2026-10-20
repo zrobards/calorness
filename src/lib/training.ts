@@ -203,8 +203,9 @@ export async function getPreviousSets(userId: string, exerciseIds: string[], bef
   return result;
 }
 
+
 /** Best-ever numbers per exercise from workouts before a given time. */
-export async function getRecordsBefore(userId: string, exerciseIds: string[], before: Date) {
+async function getRecordsBefore(userId: string, exerciseIds: string[], before: Date) {
   const sets = await db.workoutSet.findMany({
     where: {
       type: { not: "WARMUP" },

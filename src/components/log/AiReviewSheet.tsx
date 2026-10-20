@@ -1,5 +1,6 @@
 "use client";
 
+import { round1 } from "@/lib/fitness/units";
 import { useState } from "react";
 import { BadgeCheck, ChevronDown, Loader2, Minus, Plus, RefreshCw, Sparkles, X } from "lucide-react";
 import type { GroundedItem } from "@/lib/ai/ground";
@@ -25,7 +26,6 @@ export type ReviewedItem = AiFoodItem & {
   edited?: boolean;
 };
 
-const round1 = (n: number) => Math.round(n * 10) / 10;
 let nextKey = 0;
 // Strong matches are applied automatically; weaker ones are offered to pick from
 const toReview = (i: GroundedItem): ReviewItem => ({

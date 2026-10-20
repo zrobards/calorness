@@ -13,7 +13,7 @@ import { MacroBars } from "@/components/MacroBars";
 import { FoodSheet } from "./FoodSheet";
 import { AddFoodPanel } from "./AddFoodPanel";
 import { ExerciseCard } from "./ExerciseCard";
-import { dayLabel, shiftDay } from "./DayNav";
+import { dayLabel, shiftDay } from "@/lib/fitness/dates";
 import { Toast, type ToastData } from "@/components/motion/Toast";
 
 // The Diary keeps the last copy of each day on the phone. Opening it shows

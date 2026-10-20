@@ -27,7 +27,11 @@ export function EmailForm() {
       const result = await signIn("password", { email: data.email, password: data.password, redirect: false });
       if (!result || result.error) {
         haptic("warning");
-        return setError("That email and password don't match.");
+        return setError(
+          result?.error === "LOCKED"
+            ? "Too many wrong passwords. For your security, try again in 15 minutes."
+            : "That email and password don't match.",
+        );
       }
       haptic("success");
       router.replace("/log");

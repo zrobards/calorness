@@ -1,10 +1,9 @@
 "use server";
 
 import { requireUser } from "@/lib/auth";
+import { isAdmin } from "@/lib/admin";
 import { cleanModel, coachModel, textModel, visionModel } from "@/lib/ai/claude";
 
-const isAdmin = (email: string | null) =>
-  !!email && (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).includes(email.toLowerCase());
 
 /** Owner tool: send a tiny request with each configured model and report which ones work. */
 export async function checkAi() {

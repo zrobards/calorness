@@ -13,6 +13,7 @@ import { connection } from "next/server";
 import { db } from "@/lib/db";
 import { handoffStatus } from "@/lib/handoff";
 import { emailSchema, passwordSchema, verifyPassword } from "@/lib/password";
+import { clearFailures, isLocked, recordFailure } from "@/lib/throttle";
 
 export const DEMO_EMAIL = "demo@calorness.app";
 
@@ -77,8 +78,15 @@ providers.push(
       const email = emailSchema.safeParse(credentials?.email);
       const password = passwordSchema.safeParse(credentials?.password);
       if (!email.success || !password.success) return null;
+      const key = `pw:${email.data}`;
+      // next-auth passes a thrown message back to the sign-in form
+      if (await isLocked(key)) throw new Error("LOCKED");
       const user = await db.user.findUnique({ where: { email: email.data } });
-      if (!(await verifyPassword(password.data, user?.passwordHash))) return null;
+      if (!(await verifyPassword(password.data, user?.passwordHash))) {
+        await recordFailure(key);
+        return null;
+      }
+      await clearFailures(key);
       return { id: user!.id, name: user!.name, email: user!.email, image: user!.image };
     },
   }),

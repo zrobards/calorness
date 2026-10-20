@@ -1,4 +1,7 @@
 // The database stores metric. These convert for display and input.
+/** Round to one decimal place (12.345 → 12.3). */
+export const round1 = (n: number) => Math.round(n * 10) / 10;
+
 export const KG_PER_LB = 0.45359237;
 export const CM_PER_IN = 2.54;
 export const ML_PER_FL_OZ = 29.5735;
