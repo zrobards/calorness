@@ -37,6 +37,7 @@ tracking that shares data with training.
 - Days follow your phone's time zone, so late-night logs and travel never land on the wrong day
 
 **Quick log (the center + button)**
+- A step-by-step progress screen (with your photo) shows what the AI is doing while it works, with Cancel
 - Snap a photo of a meal, or upload one you already took, and Claude (Anthropic's AI) lists each food with calories and macros
 - Each dish is counted once: the AI folds tortillas, garnishes, and sauces into the dish they belong to, and anything it lists as part of another item is dropped instead of double counted
 - For unpackaged food, the AI judges the portion and USDA supplies calories per gram, so "1 cup of rice" uses USDA's numbers for rice; photos use Claude Sonnet by default (`AI_VISION_MODEL` to change)
@@ -60,6 +61,8 @@ tracking that shares data with training.
 - Create your own exercise in a few taps when something's missing, right from the picker; it gets history, PRs, and the muscle map like any other
 - Routine builder: sets, rep ranges, and rest time per exercise
 - Programs: seven ready-made plans (Push/Pull/Legs, Upper/Lower, Full Body, Strength 5×5, Machines Only, Glutes & Legs, Home Dumbbells) added to your routines in one tap
+- AI program builder: pick a goal, days per week, session length, equipment, experience, and anything to work around; the AI builds the program, then you can rename days, swap or reorder exercises, change sets, rep ranges, and rest, add or remove days, or ask the AI to change it ("make sessions shorter") before saving it as routines
+- Coach: saved chats you can go back to (Chats list, New chat), formatted replies, a typing indicator, and whole-program suggestions you can customize or save as is
 - Coach: chat with an AI coach that sees your routines, recent workouts, and goals; remembers injuries, goals, and preferences (visible and removable); and can rework a routine around pain or a plateau with one-tap Replace or Save as new. It suggests pain-free alternatives and when to see a professional, never "push through it"
 - Live workout logger: previous-session values on every set, warm-up/drop/failure sets
 - Next-set targets using double progression: add reps within your range, then add weight once every set hits the top; tap the check to log the target
