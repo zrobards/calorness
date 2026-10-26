@@ -54,3 +54,14 @@ FROM (
   FROM "Routine"
 ) n
 WHERE r."id" = n."id" AND n.program_name IS NOT NULL;
+
+-- Start each person with their newest program switched on (usually the one
+-- they just built), so the Train screen isn't empty after the update
+UPDATE "Program" p SET "pinned" = true
+FROM (
+  SELECT DISTINCT ON (pr."userId") pr."id"
+  FROM "Program" pr
+  JOIN "Routine" r ON r."programId" = pr."id"
+  ORDER BY pr."userId", r."createdAt" DESC
+) newest
+WHERE p."id" = newest."id";

@@ -72,10 +72,10 @@ export async function getActiveWorkout(userId: string) {
   });
 }
 
-/** Your programs (pinned first, then your order), each with its routines, plus standalone routines. */
+/** Your programs (in your order; the active one has pinned = true), each with its routines, plus single routines. */
 export async function getTrainingPlan(userId: string) {
   const [programs, routines] = await Promise.all([
-    db.program.findMany({ where: { userId }, orderBy: [{ pinned: "desc" }, { position: "asc" }, { createdAt: "asc" }] }),
+    db.program.findMany({ where: { userId }, orderBy: [{ position: "asc" }, { createdAt: "asc" }] }),
     getRoutines(userId),
   ]);
   return {

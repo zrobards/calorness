@@ -343,9 +343,10 @@ export async function importTemplate(templateId: string) {
   const names = [...new Set(template.routines.flatMap((r) => r.exercises.map(([n]) => n)))];
   const found = await db.exercise.findMany({ where: { createdById: null, name: { in: names } }, select: { id: true, name: true } });
   const idFor = new Map(found.map((e) => [e.name, e.id]));
-  // The template becomes a Program holding its routines
+  // The template becomes a Program and, since you just picked it, the active one
+  await db.program.updateMany({ where: { userId: user.id }, data: { pinned: false } });
   const program = await db.program.create({
-    data: { userId: user.id, name: template.name, summary: template.description, position: await db.program.count({ where: { userId: user.id } }) },
+    data: { userId: user.id, name: template.name, summary: template.description, pinned: true, position: await db.program.count({ where: { userId: user.id } }) },
   });
 
   await db.$transaction(
@@ -409,16 +410,16 @@ export async function deleteProgram(programId: string, withRoutines: boolean) {
   revalidatePath("/train");
 }
 
-/** Pin the program you're running now (shown first and open); tap again to unpin. */
-export async function pinProgram(programId: string) {
+/** Turn a program on (it becomes the one you're running; others turn off) or off with null. */
+export async function setActiveProgram(programId: string | null) {
   const user = await requireUser();
-  const p = await db.program.findFirst({ where: { id: id.parse(programId), userId: user.id } });
-  if (!p) return;
+  if (programId && !(await db.program.findFirst({ where: { id: id.parse(programId), userId: user.id } }))) return;
   await db.$transaction([
     db.program.updateMany({ where: { userId: user.id }, data: { pinned: false } }),
-    ...(p.pinned ? [] : [db.program.update({ where: { id: p.id }, data: { pinned: true } })]),
+    ...(programId ? [db.program.updateMany({ where: { id: programId, userId: user.id }, data: { pinned: true } })] : []),
   ]);
   revalidatePath("/train");
+  revalidatePath("/log");
 }
 
 /** Swap with the neighbor above or below, then renumber so positions stay tidy. */
