@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { TrendingUp } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -36,6 +37,13 @@ export default async function ProgressPage() {
   return (
     <>
       <PageHeader title="Progress" />
+      <Link href="/progress/activity" className="animate-rise mx-5 mb-4 flex items-center justify-between rounded-2xl bg-rack-raised px-5 py-4">
+        <span>
+          <span className="block font-display text-xl font-semibold">Activity</span>
+          <span className="text-sm text-chalk-muted">Steps, active calories, walking speed, and goals</span>
+        </span>
+        <ChevronRight className="text-chalk-muted" aria-hidden />
+      </Link>
 
       {!hasTraining && (
         <div className="mb-4">
