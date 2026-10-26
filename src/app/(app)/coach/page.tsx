@@ -4,6 +4,9 @@ import { db } from "@/lib/db";
 import type { CoachProgramProposal, CoachProposal } from "@/lib/ai/coach";
 import { CoachChat } from "./CoachChat";
 
+// AI answers can take a while; give server actions on this page up to 5 minutes
+export const maxDuration = 300;
+
 export const metadata: Metadata = { title: "Coach" };
 
 // /coach opens your most recent chat (or a new one); /coach?c=<id> opens a

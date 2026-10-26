@@ -5,7 +5,7 @@ import { bestSet } from "@/lib/fitness/strength";
 import { displayWeight, weightUnit } from "@/lib/fitness/units";
 import { dayInZone } from "@/lib/time";
 import { claudeMessages, coachModel, DEFAULTS } from "./claude";
-import { PROGRAM_TOOL, programInput, resolveExercises, toDraft, type ProgramDraft } from "./program";
+import { PROGRAM_TOOL, programInput, repairProgram, resolveExercises, toDraft, type ProgramDraft } from "./program";
 
 // The coach is Claude with three tools: remember things you tell it
 // (injuries, goals, preferences), forget them, and propose a reworked
@@ -257,7 +257,7 @@ export async function runCoach(userId: string, history: { role: "user" | "assist
           output = `Shown to the user as a card with Save buttons.${proposal.unmatched.length ? ` Left out (not in the library): ${proposal.unmatched.join(", ")}` : ""}`;
         } else [output, isError] = [`Error, nothing was shown: ${issues(p.error)}. Fix the input and call propose_routine again.`, true];
       } else if (call.name === "propose_program") {
-        const p = programInput.safeParse(input);
+        const p = programInput.safeParse(repairProgram(input));
         if (p.success) {
           const draft = await toDraft(userId, p.data);
           program = { kind: "program", draft };
