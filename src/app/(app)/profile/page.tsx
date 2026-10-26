@@ -14,7 +14,7 @@ import { ActivityGoals, HealthSetup, WidgetSetup } from "./ActivitySetup";
 import { DeleteAccount } from "./DeleteAccount";
 import Link from "next/link";
 import QRCode from "qrcode";
-import { aiDailyLimit, aiUsedToday } from "@/lib/aiLimit";
+import { aiLimitFor, aiUsedToday } from "@/lib/aiLimit";
 import { setUnitSystem } from "./actions";
 
 export const metadata: Metadata = { title: "Profile" };
@@ -30,9 +30,10 @@ export default async function ProfilePage() {
   });
 
   const siteUrl = (process.env.NEXTAUTH_URL ?? "https://calorness.vercel.app").replace(/\/$/, "");
-  const [qrSvg, aiUsed] = await Promise.all([
+  const [qrSvg, aiUsed, aiLimit] = await Promise.all([
     QRCode.toString(siteUrl, { type: "svg", margin: 0, color: { dark: "#17212b", light: "#ffffff" } }),
     aiUsedToday(user.id),
+    aiLimitFor(user.id),
   ]);
 
   return (
@@ -143,7 +144,10 @@ export default async function ProfilePage() {
         />
       </section>
       <section className="mx-5 mb-8 space-y-4 px-1 text-sm text-chalk-muted">
-        <p>AI logs today: {aiUsed} of {aiDailyLimit()}. Barcode, search, and saved meals don&apos;t count.</p>
+        <p>
+          AI requests today: {aiUsed}
+          {Number.isFinite(aiLimit) ? ` of ${aiLimit}` : " (no limit for the app owner)"}. Barcode, search, and saved meals don&apos;t count.
+        </p>
         <p><Link href="/privacy" className="underline underline-offset-4">Privacy: what Calorness stores and shares</Link></p>
         <DeleteAccount />
       </section>
