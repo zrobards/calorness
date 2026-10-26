@@ -176,7 +176,7 @@ export default async function TrainPage() {
                   <Link href={`/train/routines/${r.id}`} className="min-w-0">
                     <h3 className="truncate font-display text-xl font-semibold">{r.name}</h3>
                     <p className="mt-0.5 line-clamp-2 text-sm text-chalk-muted">
-                      {r.exercises.map((e) => e.exercise.name).join(", ")}
+                      {r.exercises.length ? r.exercises.map((e) => e.exercise.name).join(", ") : r.notes}
                     </p>
                   </Link>
                   <form action={startWorkout.bind(null, r.id)}>

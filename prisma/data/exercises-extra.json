@@ -2893,5 +2893,151 @@
 "kb swing",
 "russian swing"
 ]
+},
+{
+"slug": "x-hangboard-hang",
+"name": "Hangboard Hang",
+"category": "STRENGTH",
+"equipment": "other",
+"primaryMuscles": [
+"forearms"
+],
+"secondaryMuscles": [
+"lats",
+"shoulders"
+],
+"instructions": [
+"Hang from a hangboard edge with an open-hand or half-crimp grip, arms straight but shoulders engaged (not shrugged up to your ears).",
+"Hold for the target time (often 7 to 10 seconds), then rest. Add weight only when holds feel easy.",
+"Stop before your fingers or elbows ache. Fingers adapt slowly; never train them to failure."
+],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"hangboard",
+"fingerboard",
+"max hangs",
+"repeaters"
+]
+},
+{
+"slug": "x-dead-hang",
+"name": "Dead Hang",
+"category": "STRENGTH",
+"equipment": "other",
+"primaryMuscles": [
+"forearms"
+],
+"secondaryMuscles": [
+"lats",
+"shoulders"
+],
+"instructions": [
+"Grab a pull-up bar with both hands, shoulder-width, and hang with straight arms.",
+"Keep your shoulders gently pulled down and your core braced.",
+"Hold for time. Great for grip and shoulder health."
+],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"bar hang",
+"passive hang"
+]
+},
+{
+"slug": "x-lock-off-hold",
+"name": "Lock-Off Hold",
+"category": "STRENGTH",
+"equipment": "body only",
+"primaryMuscles": [
+"lats"
+],
+"secondaryMuscles": [
+"biceps",
+"forearms"
+],
+"instructions": [
+"Pull up until your elbows are bent to about 90 degrees (or with chin over the bar).",
+"Hold that position for the target time without letting your shoulders creep up.",
+"Lower under control. Builds the pulling strength you use to reach holds."
+],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"lock off",
+"isometric pull-up"
+]
+},
+{
+"slug": "x-campus-board-ladders",
+"name": "Campus Board Ladders",
+"category": "STRENGTH",
+"equipment": "other",
+"primaryMuscles": [
+"forearms"
+],
+"secondaryMuscles": [
+"lats",
+"biceps"
+],
+"instructions": [
+"For experienced climbers only. Hang from the lowest rung and move hand over hand up the rungs without using your feet.",
+"Keep moves explosive but controlled, and stop at the first sign of finger or elbow strain.",
+"Rest fully between sets."
+],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"campus board",
+"campusing"
+]
+},
+{
+"slug": "x-reverse-wrist-curl",
+"name": "Reverse Wrist Curl",
+"category": "STRENGTH",
+"equipment": "dumbbell",
+"primaryMuscles": [
+"forearms"
+],
+"secondaryMuscles": [],
+"instructions": [
+"Rest your forearms on your thighs or a bench, palms facing down, holding light dumbbells.",
+"Lift the backs of your hands toward the ceiling, then lower slowly.",
+"Balances all the gripping climbing does, which helps prevent elbow pain."
+],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"wrist extension",
+"reverse wrist curls"
+]
+},
+{
+"slug": "x-finger-extensor-band-opens",
+"name": "Finger Extensor Band Opens",
+"category": "STRENGTH",
+"equipment": "bands",
+"primaryMuscles": [
+"forearms"
+],
+"secondaryMuscles": [],
+"instructions": [
+"Put a thick rubber band around your fingertips and thumb.",
+"Open your hand against the band as wide as you can, then close slowly.",
+"Do high reps. Trains the muscles that oppose gripping."
+],
+"images": [],
+"level": null,
+"mechanic": null,
+"aliases": [
+"finger extensions",
+"rubber band finger extension"
+]
 }
 ]
