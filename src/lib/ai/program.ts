@@ -61,7 +61,7 @@ export const programInput = z.object({
     .array(
       z.object({
         name: z.string().min(1).max(40),
-        activity: z.string().max(160).optional(),
+        activity: z.string().max(400).optional(),
         exercises: z
           .array(
             z.object({
@@ -115,7 +115,7 @@ export function repairProgram(raw: unknown): unknown {
       const exs = parseMaybe(d.exercises);
       return {
         name: text(d.name, 40) ?? `Day ${i + 1}`,
-        activity: text(d.activity, 160),
+        activity: text(d.activity, 400),
         exercises: (Array.isArray(exs) ? exs : [])
           .map((e0) => (parseMaybe(e0) ?? {}) as Record<string, unknown>)
           .filter((e) => text(e.exercise ?? e.name, 100))
@@ -170,7 +170,7 @@ export async function resolveExercises(userId: string, items: { exercise: string
   const exercises: ProgramExercise[] = [];
   const unmatched: string[] = [];
   for (const e of items) {
-    const match = options.find((o) => o.name.toLowerCase() === e.exercise.toLowerCase()) ?? searchByName(options, e.exercise)[0];
+    const match = options.find((o) => o.name.toLowerCase() === e.exercise.toLowerCase()) ?? searchByName(options, e.exercise)[0] ?? closestExercise(options, e.exercise);
     if (!match) {
       unmatched.push(e.exercise);
       continue;
@@ -186,6 +186,27 @@ export async function resolveExercises(userId: string, items: { exercise: string
     });
   }
   return { exercises, unmatched };
+}
+
+/**
+ * Last resort for names the search misses because of one extra word
+ * ("Barbell Back Squat" vs "Back Squat" / "Barbell Squat"): the exercise
+ * whose name or alias shares the most words, if it shares most of them.
+ */
+export function closestExercise<T extends { name: string; aliases?: string[] }>(options: T[], query: string): T | undefined {
+  const words = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 1).map((w) => w.replace(/s$/, ""));
+  const q = words(query);
+  if (q.length < 2) return undefined;
+  let best: { o: T; score: number } | undefined;
+  for (const o of options) {
+    for (const text of [o.name, ...(o.aliases ?? [])]) {
+      const t = new Set(words(text));
+      const shared = q.filter((w) => t.has(w)).length;
+      const score = shared / Math.max(q.length, t.size);
+      if (shared >= 2 && score >= 0.6 && (!best || score > best.score || (score === best.score && o.name.length < best.o.name.length))) best = { o, score };
+    }
+  }
+  return best?.o;
 }
 
 /** Turn the AI's program into a draft with real library exercises. */

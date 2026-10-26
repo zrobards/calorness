@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db", () => ({ db: {} }));
 vi.mock("@/lib/training", () => ({ getExerciseOptions: async () => [] }));
-import { programInput, repairProgram } from "./program";
+import { closestExercise, programInput, repairProgram } from "./program";
 
 describe("repairProgram", () => {
   it("fixes the near-misses models send instead of throwing the program away", () => {
@@ -25,5 +25,15 @@ describe("repairProgram", () => {
 
   it("still rejects a day with nothing in it", () => {
     expect(programInput.safeParse(repairProgram({ name: "X", days: [{ name: "Empty" }] })).success).toBe(false);
+  });
+});
+
+describe("closestExercise", () => {
+  const lib = [{ name: "Back Squat", aliases: ["squat", "barbell squat"] }, { name: "Front Squat", aliases: [] }, { name: "Barbell Curl", aliases: [] }];
+  it("matches a name with one extra word", () => {
+    expect(closestExercise(lib, "Barbell Back Squat")?.name).toBe("Back Squat");
+  });
+  it("doesn't force a match on a single shared word", () => {
+    expect(closestExercise(lib, "Barbell Hip Thrust")).toBeUndefined();
   });
 });
