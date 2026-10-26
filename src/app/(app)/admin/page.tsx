@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Data" };
 
 
 // Rough cost per AI request, from Anthropic's price list (Sonnet for photos and labels)
-const COST = { photo: 0.006, label: 0.008, shortcut: 0.006, recheck: 0.006, describe: 0.0003, coach: 0.001 } as Record<string, number>;
+const COST = { photo: 0.006, label: 0.008, shortcut: 0.006, recheck: 0.006, describe: 0.003, coach: 0.01 } as Record<string, number>;
 
 export default async function AdminPage() {
   const user = await requireUser();

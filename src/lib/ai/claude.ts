@@ -3,7 +3,9 @@ import "server-only";
 // One place that talks to the Claude API, so model settings and errors are
 // handled the same way for photos, labels, descriptions, and Coach.
 
-export const DEFAULTS = { vision: "claude-sonnet-5-5", text: "claude-haiku-5-5" } as const;
+// Sonnet everywhere by default: accuracy matters more than the fraction of a
+// cent saved per request. Each can be overridden in Vercel.
+export const DEFAULTS = { vision: "claude-sonnet-5-5", text: "claude-sonnet-5-5" } as const;
 
 /**
  * Model names come from Vercel settings, where it's easy to paste stray

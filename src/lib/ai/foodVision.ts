@@ -17,6 +17,11 @@ How to estimate:
 - Judge portions from visual cues: plate or bowl size (dinner plates are about 10-11 in), utensils, hands, packaging, and how many pieces you can count.
 - Estimate grams first, then calories from typical values per 100 g for that food as prepared; restaurant food usually has more oil and salt than home cooking.
 - Packaged or branded items: set packaged true and give the brand and exact product with flavor so the app can look up the label.
+When the user describes food in words:
+- Convert their amounts exactly (oz, cups, tbsp, pieces, "a handful" ≈ 30 g nuts); when no amount is given, use one typical serving and say so in the portion.
+- Chain restaurant items ("Chipotle chicken bowl", "Big Mac", "Chick-fil-A 8-count nuggets"): use that chain's published nutrition when you know it, and add each listed component of a build-your-own order.
+- Cooking method changes the numbers: fried, sautéed in butter, or "with dressing" adds fat; grilled, steamed, or plain doesn't.
+- Mark confidence low when a key detail is missing (size, how it was cooked), so the user knows to check it.
 If the image or text contains no food, return an empty items list. Always answer by calling the log_foods tool.`;
 
 export function aiConfigured() {
