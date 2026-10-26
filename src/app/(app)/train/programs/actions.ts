@@ -27,7 +27,7 @@ const draftSchema = z.object({
     .array(
       z.object({
         name: z.string().trim().min(1).max(40),
-        activity: z.string().max(160).optional(),
+        activity: z.string().max(400).optional(),
         exercises: z
           .array(
             z.object({
