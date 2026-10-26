@@ -1,12 +1,11 @@
 import "server-only";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { getExerciseOptions } from "@/lib/training";
-import { searchByName } from "@/components/train/muscleFilters";
 import { bestSet } from "@/lib/fitness/strength";
 import { displayWeight, weightUnit } from "@/lib/fitness/units";
 import { dayInZone } from "@/lib/time";
 import { claudeMessages, coachModel, DEFAULTS } from "./claude";
+import { PROGRAM_TOOL, programInput, resolveExercises, toDraft, type ProgramDraft } from "./program";
 
 // The coach is Claude with three tools: remember things you tell it
 // (injuries, goals, preferences), forget them, and propose a reworked
@@ -62,12 +61,24 @@ const TOOLS = [
       required: ["name", "reason", "exercises"],
     },
   },
+  {
+    name: "propose_program",
+    description:
+      "Suggest a whole multi-day training program (one routine per day). The user sees it as a card they can customize and save. Use this when they ask for a plan, a split, or a program.",
+    input_schema: PROGRAM_TOOL.input_schema,
+  },
 ] as const;
 
 const SYSTEM = `You are Coach, the training and nutrition coach inside Calorness, a workout and food tracking app.
 Be warm, direct, and brief: a few sentences, or a short list when listing exercises. No long essays.
 Use the user's actual data below. When they mention an injury, a goal, or a preference, save it with the remember tool.
-When their plan should change (pain, plateau, new goal, missing equipment), use propose_routine instead of only describing changes.
+When their plan should change (pain, plateau, new goal, missing equipment), use propose_routine for one day or propose_program for a whole plan, instead of only describing changes.
+
+How to write:
+- Talk like a good coach texting a client: short paragraphs, plain words, one idea at a time.
+- Use a bulleted list (lines starting with "- ") for exercises or steps, and **bold** only for the one thing that matters most.
+- No tables, no headings, no long preambles. Don't repeat the program's exercises in text when you've proposed it with a tool; just say what it's built around and why.
+- Ask one short question when you genuinely need information (days available, equipment) instead of guessing.
 
 Safety rules:
 - You are not a doctor or physical therapist. For pain, suggest pain-free alternatives and lighter loading, never "push through" sharp pain.
@@ -75,6 +86,7 @@ Safety rules:
 - Don't suggest crash diets or very low calorie targets. If someone describes restricting food, bingeing, purging, or exercising to "make up" for eating, respond with care and encourage talking to a professional instead of giving numbers.`;
 
 export type ProposalExercise = { exerciseId: string; name: string; sets: number; repMin: number; repMax: number; restSeconds: number };
+export type CoachProgramProposal = { kind: "program"; draft: ProgramDraft };
 export type CoachProposal = {
   name: string;
   reason: string;
@@ -174,7 +186,7 @@ export async function runCoach(userId: string, history: { role: "user" | "assist
   const { text: context, routines } = await buildContext(userId);
   const system = `${SYSTEM}\n\n--- The user's data ---\n${context}`;
   const messages: Message[] = [...history.map((m) => ({ role: m.role, content: m.content })), { role: "user", content: userText }];
-  let proposal: CoachProposal | null = null;
+  let proposal: CoachProposal | CoachProgramProposal | null = null;
   const notesChanged: string[] = [];
   let reply = "";
 
@@ -209,6 +221,13 @@ export async function runCoach(userId: string, history: { role: "user" | "assist
             ? `Shown to the user. These exercises weren't found in the library and were left out: ${proposal.unmatched.join(", ")}`
             : "Shown to the user with Replace and Save-as-new buttons.";
         } else output = "invalid routine";
+      } else if (call.name === "propose_program") {
+        const p = programInput.safeParse(call.input);
+        if (p.success) {
+          const draft = await toDraft(userId, p.data);
+          proposal = { kind: "program", draft };
+          output = `Shown to the user as a program card with Customize and Save buttons.${draft.unmatched.length ? ` Left out (not in the library): ${draft.unmatched.join(", ")}` : ""}`;
+        } else output = "invalid program";
       }
       results.push({ type: "tool_result", tool_use_id: call.id, content: output });
     }
@@ -224,25 +243,7 @@ async function resolveProposal(
   input: z.infer<typeof proposalInput>,
   routines: { id: string; name: string }[],
 ): Promise<CoachProposal> {
-  const options = await getExerciseOptions(userId);
-  const exercises: ProposalExercise[] = [];
-  const unmatched: string[] = [];
-  for (const e of input.exercises) {
-    // exact name first, then the same alias-aware search the app uses
-    const match = options.find((o) => o.name.toLowerCase() === e.exercise.toLowerCase()) ?? searchByName(options, e.exercise)[0];
-    if (!match) {
-      unmatched.push(e.exercise);
-      continue;
-    }
-    exercises.push({
-      exerciseId: match.id,
-      name: match.name,
-      sets: e.sets,
-      repMin: Math.min(e.rep_min, e.rep_max),
-      repMax: Math.max(e.rep_min, e.rep_max),
-      restSeconds: e.rest_seconds ?? 90,
-    });
-  }
+  const { exercises, unmatched } = await resolveExercises(userId, input.exercises);
   const replaced = routines.find((r) => r.id === input.replaces_routine_id) ?? null;
   return {
     name: input.name,
