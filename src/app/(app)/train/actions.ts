@@ -53,7 +53,7 @@ export async function saveRoutine(routineId: string | null, input: RoutineInput)
       }),
     ]);
   } else {
-    const count = await db.routine.count({ where: { userId: user.id } });
+    const count = await db.routine.count({ where: { userId: user.id, programId: null } });
     await db.routine.create({
       data: { userId: user.id, name, notes, position: count, exercises: { create: rows } },
     });
@@ -343,7 +343,10 @@ export async function importTemplate(templateId: string) {
   const names = [...new Set(template.routines.flatMap((r) => r.exercises.map(([n]) => n)))];
   const found = await db.exercise.findMany({ where: { createdById: null, name: { in: names } }, select: { id: true, name: true } });
   const idFor = new Map(found.map((e) => [e.name, e.id]));
-  const position = await db.routine.count({ where: { userId: user.id } });
+  // The template becomes a Program holding its routines
+  const program = await db.program.create({
+    data: { userId: user.id, name: template.name, summary: template.description, position: await db.program.count({ where: { userId: user.id } }) },
+  });
 
   await db.$transaction(
     template.routines.map((r, i) =>
@@ -351,8 +354,8 @@ export async function importTemplate(templateId: string) {
         data: {
           userId: user.id,
           name: r.name,
-          notes: `From the ${template.name} program`,
-          position: position + i,
+          programId: program.id,
+          position: i,
           exercises: {
             create: r.exercises
               .filter(([n]) => idFor.has(n))
@@ -371,4 +374,86 @@ export async function importTemplate(templateId: string) {
   );
   revalidatePath("/train");
   return { ok: true, count: template.routines.length };
+}
+
+// ─── Programs: bundles of routines ────────────────────────────────────────
+
+const id = z.string().min(1).max(40);
+
+export async function createProgram(name: string) {
+  const user = await requireUser();
+  const n = z.string().trim().min(1).max(60).parse(name);
+  const p = await db.program.create({ data: { userId: user.id, name: n, position: await db.program.count({ where: { userId: user.id } }) } });
+  revalidatePath("/train");
+  return { id: p.id };
+}
+
+export async function renameProgram(programId: string, name: string) {
+  const user = await requireUser();
+  await db.program.updateMany({ where: { id: id.parse(programId), userId: user.id }, data: { name: z.string().trim().min(1).max(60).parse(name) } });
+  revalidatePath("/train");
+}
+
+/** Delete a program. Its routines are kept as standalone routines unless `withRoutines`. */
+export async function deleteProgram(programId: string, withRoutines: boolean) {
+  const user = await requireUser();
+  const p = await db.program.findFirst({ where: { id: id.parse(programId), userId: user.id } });
+  if (!p) return;
+  if (withRoutines) await db.routine.deleteMany({ where: { programId: p.id, userId: user.id } });
+  else {
+    const base = await db.routine.count({ where: { userId: user.id, programId: null } });
+    const routines = await db.routine.findMany({ where: { programId: p.id }, orderBy: { position: "asc" }, select: { id: true } });
+    await db.$transaction(routines.map((r, i) => db.routine.update({ where: { id: r.id }, data: { programId: null, position: base + i } })));
+  }
+  await db.program.delete({ where: { id: p.id } });
+  revalidatePath("/train");
+}
+
+/** Pin the program you're running now (shown first and open); tap again to unpin. */
+export async function pinProgram(programId: string) {
+  const user = await requireUser();
+  const p = await db.program.findFirst({ where: { id: id.parse(programId), userId: user.id } });
+  if (!p) return;
+  await db.$transaction([
+    db.program.updateMany({ where: { userId: user.id }, data: { pinned: false } }),
+    ...(p.pinned ? [] : [db.program.update({ where: { id: p.id }, data: { pinned: true } })]),
+  ]);
+  revalidatePath("/train");
+}
+
+/** Swap with the neighbor above or below, then renumber so positions stay tidy. */
+async function move<T extends { id: string }>(items: T[], targetId: string, dir: -1 | 1, save: (id: string, position: number) => Promise<unknown>) {
+  const i = items.findIndex((x) => x.id === targetId);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= items.length) return;
+  const next = [...items];
+  [next[i], next[j]] = [next[j], next[i]];
+  await Promise.all(next.map((x, n) => save(x.id, n)));
+}
+
+export async function moveProgram(programId: string, dir: -1 | 1) {
+  const user = await requireUser();
+  const list = await db.program.findMany({ where: { userId: user.id }, orderBy: [{ position: "asc" }, { createdAt: "asc" }], select: { id: true } });
+  await move(list, id.parse(programId), dir, (pid, position) => db.program.update({ where: { id: pid }, data: { position } }));
+  revalidatePath("/train");
+}
+
+export async function moveRoutine(routineId: string, dir: -1 | 1) {
+  const user = await requireUser();
+  const r = await db.routine.findFirst({ where: { id: id.parse(routineId), userId: user.id } });
+  if (!r) return;
+  const list = await db.routine.findMany({ where: { userId: user.id, programId: r.programId }, orderBy: [{ position: "asc" }, { createdAt: "asc" }], select: { id: true } });
+  await move(list, r.id, dir, (rid, position) => db.routine.update({ where: { id: rid }, data: { position } }));
+  revalidatePath("/train");
+}
+
+/** Put a routine in a program (or take it out with null); it goes to the end. */
+export async function setRoutineProgram(routineId: string, programId: string | null) {
+  const user = await requireUser();
+  const r = await db.routine.findFirst({ where: { id: id.parse(routineId), userId: user.id } });
+  if (!r) return;
+  if (programId && !(await db.program.findFirst({ where: { id: programId, userId: user.id } }))) return;
+  const position = await db.routine.count({ where: { userId: user.id, programId } });
+  await db.routine.update({ where: { id: r.id }, data: { programId, position } });
+  revalidatePath("/train");
 }
