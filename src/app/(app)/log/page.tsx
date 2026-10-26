@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ChevronRight, Target } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { QuickLogClient } from "@/components/log/QuickLogClient";
+import { TodayCard } from "@/components/log/TodayCard";
+import { getTodaySummary, nudge } from "@/lib/activitySummary";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { aiConfigured } from "@/lib/ai/foodVision";
@@ -18,7 +20,7 @@ export default async function QuickLogPage({ searchParams }: { searchParams: Pro
   const { mode } = await searchParams;
   const { today, timeZone } = await userToday(user.id);
 
-  const [recent, diary, active, routines, savedMeals] = await Promise.all([
+  const [recent, diary, active, routines, savedMeals, summary] = await Promise.all([
     getRecentFoods(user.id),
     getDiaryDay(user.id, today, timeZone),
     getActiveWorkout(user.id),
@@ -27,6 +29,7 @@ export default async function QuickLogPage({ searchParams }: { searchParams: Pro
       select: { id: true, name: true, workouts: { orderBy: { startedAt: "desc" }, take: 1, select: { startedAt: true } } },
     }),
     getSavedMeals(user.id),
+    getTodaySummary(user.id),
   ]);
 
   // Foods you usually eat, at your usual amount, that fit what's left today
@@ -75,6 +78,10 @@ export default async function QuickLogPage({ searchParams }: { searchParams: Pro
           <ChevronRight className="text-chalk-muted" aria-hidden />
         </Link>
       )}
+      {/* Activity rings, streaks, and a nudge: the reason to open the app every day */}
+      <div className="px-5">
+        <TodayCard s={summary} message={nudge(summary)} />
+      </div>
       <QuickLogClient
         mode={mode}
         aiReady={aiConfigured()}

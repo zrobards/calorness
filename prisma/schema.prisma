@@ -29,6 +29,13 @@ model User {
   birthYear      Int?
   heightCm       Float?
   exerciseCredit Int     @default(75) // % of exercise calories added to the day's calorie goal
+  // Daily activity goals (Apple Health sync or manual)
+  stepGoal         Int     @default(8000)
+  activeCalGoal    Int     @default(500)
+  exerciseMinGoal  Int     @default(30)
+  // When Apple Health sends active calories for a day, use them for the
+  // exercise credit instead of adding up logged cardio (they already include it)
+  useHealthCalories Boolean @default(true)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
@@ -52,6 +59,7 @@ model User {
   searchPicks     SearchPick[]
   activities      ActivityEntry[]
   foodSubmissions FoodSubmission[]
+  dailyActivity   DailyActivity[]
   aiCorrections   AiCorrection[]
   music           MusicLink[]
 }
@@ -608,4 +616,26 @@ model AiCorrection {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([key])
+}
+
+// ─── Daily activity from Apple Health (via an iPhone Shortcut) ───────────
+// One row per day. The Shortcut sends the day's totals; sending again
+// replaces them, so it can run several times a day.
+model DailyActivity {
+  id              String   @id @default(cuid())
+  userId          String
+  date            DateTime @db.Date
+  steps           Int?
+  activeCalories  Int? // Apple's "active energy": above resting, includes workouts
+  exerciseMinutes Int?
+  distanceM       Float? // walking + running
+  walkingSpeedMps Float? // average walking speed
+  flights         Int?
+  restingHr       Int?
+  source          String   @default("apple-health")
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
 }

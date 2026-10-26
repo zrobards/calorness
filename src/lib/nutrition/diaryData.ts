@@ -11,7 +11,13 @@ export type Targets = { calories: number; proteinG: number; carbsG: number; fatG
 export type DiaryData = {
   day: string;
   baseGoal: Targets | null; // before exercise
-  exercise: { items: { id: string; kind: "workout" | "activity"; name: string; minutes: number; total: number; net: number }[]; net: number; credit: number; calories: number };
+  exercise: {
+    items: { id: string; kind: "workout" | "activity" | "health"; name: string; minutes: number; total: number; net: number; included?: boolean }[];
+    net: number;
+    credit: number;
+    calories: number;
+    fromHealth?: boolean; // Apple Health active calories are being used
+  };
   meals: DiaryMeal[];
   waterMl: number;
   imperial: boolean;

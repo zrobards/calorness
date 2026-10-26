@@ -86,6 +86,13 @@ tracking that shares data with training.
 - The player lives in the app layout, so music keeps playing while you switch tabs; it shrinks to a mini player or expands, without restarting
 - Saved music is one tap away from Train and the workout screen
 
+**Activity and motivation**
+- Apple Health sync through an iPhone Shortcut (`POST /api/health`): steps, active calories, exercise minutes, distance, walking speed, resting heart rate; values can arrive with units or as lists of samples, and days can be backfilled
+- Activity page: Move/Steps/Exercise rings, 7- and 30-day averages, walking-speed trend, distance, resting heart rate, goal hits and streaks, 30-day charts with goal lines
+- When Apple Health's active calories are synced, the Diary uses them for exercise (they already include workouts), and marks logged sessions as included instead of double counting
+- Today card on Quick log with rings, logging and active-day streaks, and one line of encouragement; the daily reminder mentions a streak at risk
+- Home-screen widget through the free Scriptable app (`GET /api/widget`): calories left, protein, steps, move, streak; tap to open Quick log
+
 **Progress**
 - Tappable muscle map: pick a muscle (on the body or the list) to see every set that counted toward it, with the main/helper split, for this week, the last 7 days, or last week
 - Muscle map: sets per muscle over the last 7 days, front and back

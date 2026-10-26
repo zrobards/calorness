@@ -190,3 +190,23 @@ export async function deleteAccount(confirmation: string) {
   ]);
   return { ok: true };
 }
+
+/** Daily activity goals and whether Apple Health's active calories drive the exercise credit. */
+export async function setActivityGoals(input: { stepGoal: number; activeCalGoal: number; exerciseMinGoal: number; useHealthCalories: boolean }) {
+  const user = await requireUser();
+  const p = z
+    .object({
+      stepGoal: z.number().int().min(1000).max(50000),
+      activeCalGoal: z.number().int().min(50).max(3000),
+      exerciseMinGoal: z.number().int().min(5).max(300),
+      useHealthCalories: z.boolean(),
+    })
+    .safeParse(input);
+  if (!p.success) return { error: "Check the goals: steps 1,000–50,000, calories 50–3,000, minutes 5–300." };
+  await db.user.update({ where: { id: user.id }, data: p.data });
+  revalidatePath("/profile");
+  revalidatePath("/log");
+  revalidatePath("/diary");
+  revalidatePath("/progress/activity");
+  return { ok: true };
+}
