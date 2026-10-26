@@ -26,7 +26,8 @@ export default async function QuickLogPage({ searchParams }: { searchParams: Pro
     getActiveWorkout(user.id),
     db.routine.findMany({
       where: { userId: user.id },
-      select: { id: true, name: true, workouts: { orderBy: { startedAt: "desc" }, take: 1, select: { startedAt: true } } },
+      orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+      select: { id: true, name: true, program: { select: { pinned: true } }, workouts: { orderBy: { startedAt: "desc" }, take: 1, select: { startedAt: true } } },
     }),
     getSavedMeals(user.id),
     getTodaySummary(user.id),
@@ -58,11 +59,19 @@ export default async function QuickLogPage({ searchParams }: { searchParams: Pro
       )
     : [];
 
-  // The routine you haven't done for the longest time is probably next
-  const nextRoutine =
-    routines
-      .map((r) => ({ id: r.id, name: r.name, last: r.workouts[0]?.startedAt.getTime() ?? 0 }))
-      .sort((a, b) => a.last - b.last)[0] ?? null;
+  // With an active program, next is the routine after the one you did last
+  // (in program order, wrapping around). Otherwise, the one done longest ago.
+  const inProgram = routines.filter((r) => r.program?.pinned);
+  const last = (r: (typeof routines)[number]) => r.workouts[0]?.startedAt.getTime() ?? 0;
+  const nextRoutine = (() => {
+    if (inProgram.length) {
+      const latest = inProgram.reduce((best, r, i) => (last(r) > last(inProgram[best]) ? i : best), 0);
+      const r = last(inProgram[latest]) === 0 ? inProgram[0] : inProgram[(latest + 1) % inProgram.length];
+      return { id: r.id, name: r.name };
+    }
+    const r = [...routines].sort((a, b) => last(a) - last(b))[0];
+    return r ? { id: r.id, name: r.name } : null;
+  })();
 
   return (
     <>

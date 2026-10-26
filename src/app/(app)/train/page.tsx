@@ -3,12 +3,13 @@ import Link from "next/link";
 import { ChevronRight, ClipboardList, Flame, LayoutGrid, Library, Play, Plus, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { requireUser } from "@/lib/auth";
-import { getActiveWorkout, getRecentWorkouts, getRoutines, getThisWeek, getUnitSystem } from "@/lib/training";
+import { getActiveWorkout, getRecentWorkouts, getTrainingPlan, getThisWeek, getUnitSystem } from "@/lib/training";
 import { compactNumber, displayWeight, weightUnit } from "@/lib/fitness/units";
 import { formatDay, formatDuration, isoDay } from "@/lib/fitness/dates";
 import { userToday } from "@/lib/userPrefs";
 import { startWorkout } from "./actions";
 import { MusicButton } from "@/components/music/MusicProvider";
+import { TrainPlan, type PlanRoutine } from "@/components/train/TrainPlan";
 import { db } from "@/lib/db";
 import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
 
@@ -17,9 +18,9 @@ export const metadata: Metadata = { title: "Train" };
 export default async function TrainPage() {
   const user = await requireUser();
   const now = new Date();
-  const [active, routines, recent, week, unitSystem, { today: todayIso }, injuries, activities] = await Promise.all([
+  const [active, plan, recent, week, unitSystem, { today: todayIso }, injuries, activities] = await Promise.all([
     getActiveWorkout(user.id),
-    getRoutines(user.id),
+    getTrainingPlan(user.id),
     getRecentWorkouts(user.id, 5),
     getThisWeek(user.id, now),
     getUnitSystem(user.id),
@@ -135,20 +136,20 @@ export default async function TrainPage() {
 
       <section className="mt-8" aria-labelledby="routines-heading">
         <div className="flex items-center justify-between px-5">
-          <h2 id="routines-heading" className="font-display text-2xl font-semibold">Routines</h2>
+          <h2 id="routines-heading" className="font-display text-2xl font-semibold">{plan.programs.length ? "Plans" : "Routines"}</h2>
           <div className="flex items-center gap-3">
             <Link href="/train/programs/build" className="flex items-center gap-1 text-sm font-medium text-plate-yellow">
               <Sparkles size={16} aria-hidden /> AI program
             </Link>
             <Link href="/train/templates" className="flex items-center gap-1 text-sm font-medium text-plate-blue">
-              <LayoutGrid size={16} aria-hidden /> Programs
+              <LayoutGrid size={16} aria-hidden /> Templates
             </Link>
             <Link href="/train/routines/new" className="flex items-center gap-1 text-sm font-medium text-plate-blue">
               <Plus size={17} aria-hidden /> New
             </Link>
           </div>
         </div>
-        {routines.length === 0 ? (
+        {plan.programs.length === 0 && plan.standalone.length === 0 ? (
           <div className="mx-5 mt-3 grid grid-cols-2 gap-3">
             <Link href="/train/programs/build" className="col-span-2 flex items-center gap-3 rounded-2xl bg-plate-yellow/10 p-4 ring-1 ring-plate-yellow/40">
               <Sparkles className="shrink-0 text-plate-yellow" size={24} aria-hidden />
@@ -169,25 +170,12 @@ export default async function TrainPage() {
             </Link>
           </div>
         ) : (
-          <ul className="mt-3 space-y-3 px-5">
-            {routines.map((r) => (
-              <li key={r.id} className="rounded-2xl bg-rack-raised p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <Link href={`/train/routines/${r.id}`} className="min-w-0">
-                    <h3 className="truncate font-display text-xl font-semibold">{r.name}</h3>
-                    <p className="mt-0.5 line-clamp-2 text-sm text-chalk-muted">
-                      {r.exercises.length ? r.exercises.map((e) => e.exercise.name).join(", ") : r.notes}
-                    </p>
-                  </Link>
-                  <form action={startWorkout.bind(null, r.id)}>
-                    <button className="flex items-center gap-1.5 rounded-xl bg-chalk px-4 py-2 font-display text-lg font-semibold text-rack" aria-label={`Start ${r.name}`}>
-                      <Play size={15} fill="currentColor" aria-hidden /> Start
-                    </button>
-                  </form>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-3">
+            <TrainPlan
+              programs={plan.programs.map((p) => ({ id: p.id, name: p.name, summary: p.summary, pinned: p.pinned, routines: p.routines.map(toPlanRoutine) }))}
+              standalone={plan.standalone.map(toPlanRoutine)}
+            />
+          </div>
         )}
       </section>
 
@@ -234,4 +222,8 @@ export default async function TrainPage() {
       </section>
     </>
   );
+}
+
+function toPlanRoutine(r: { id: string; name: string; notes: string | null; exercises: { exercise: { name: string } }[] }): PlanRoutine {
+  return { id: r.id, name: r.name, subtitle: [r.notes, r.exercises.map((e) => e.exercise.name).join(", ")].filter(Boolean).join(" · ") };
 }

@@ -291,14 +291,24 @@ ${request.prefs.request?.trim() ? `In their words: "${request.prefs.request.trim
 
 /** Save each day of a program as a routine. */
 export async function saveProgram(userId: string, draft: ProgramDraft) {
-  const position = await db.routine.count({ where: { userId } });
+  // A single-day "program" is just a routine; more days become a Program
+  // ...and becomes the active one, since you just made it
+  if (draft.days.length > 1) await db.program.updateMany({ where: { userId }, data: { pinned: false } });
+  const program =
+    draft.days.length > 1
+      ? await db.program.create({
+          data: { userId, name: draft.name, summary: draft.summary || null, pinned: true, position: await db.program.count({ where: { userId } }) },
+        })
+      : null;
+  const position = program ? 0 : await db.routine.count({ where: { userId, programId: null } });
   await db.$transaction(
     draft.days.map((day, i) =>
       db.routine.create({
         data: {
           userId,
+          programId: program?.id ?? null,
           name: draft.days.length > 1 ? `${day.name}` : draft.name,
-          notes: [day.activity, `From your program "${draft.name}"`].filter(Boolean).join(". "),
+          notes: day.activity ?? null,
           position: position + i,
           exercises: {
             create: day.exercises.map((e, order) => ({

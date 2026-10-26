@@ -108,7 +108,7 @@ async function buildContext(userId: string) {
     db.coachNote.findMany({ where: { userId, active: true }, orderBy: { createdAt: "asc" } }),
     db.routine.findMany({
       where: { userId },
-      include: { exercises: { orderBy: { order: "asc" }, include: { exercise: { select: { name: true } } } } },
+      include: { program: { select: { name: true } }, exercises: { orderBy: { order: "asc" }, include: { exercise: { select: { name: true } } } } },
     }),
     db.workout.findMany({
       where: { userId, endedAt: { not: null } },
@@ -133,7 +133,7 @@ async function buildContext(userId: string) {
     "Their routines (routine id: name, then exercises):",
     ...(routines.length
       ? routines.map(
-          (r) => `- ${r.id}: ${r.name}: ${r.exercises.map((e) => `${e.exercise.name} ${e.targetSets}x${e.targetRepsMin ?? "?"}-${e.targetRepsMax ?? "?"}`).join("; ")}`,
+          (r) => `- ${r.id}: ${r.name}${r.program ? ` (in program "${r.program.name}")` : ""}: ${r.exercises.map((e) => `${e.exercise.name} ${e.targetSets}x${e.targetRepsMin ?? "?"}-${e.targetRepsMax ?? "?"}`).join("; ")}`,
         )
       : ["- none yet"]),
     "",
