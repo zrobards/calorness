@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useTransition } from "react";
-import { Dumbbell, Flame, Plus, Trash2 } from "lucide-react";
+import { Dumbbell, Flame, HeartPulse, Plus, Trash2 } from "lucide-react";
 import { deleteActivity } from "@/app/(app)/train/cardio/actions";
 
-type Item = { id: string; kind: "workout" | "activity"; name: string; minutes: number; total: number; net: number };
+type Item = { id: string; kind: "workout" | "activity" | "health"; name: string; minutes: number; total: number; net: number; included?: boolean };
 
 /** Today's exercise in the Diary, with what it adds to the calorie goal. */
-export function ExerciseCard({ day, exercise, onChanged }: { day: string; exercise: { items: Item[]; net: number; credit: number; calories: number }; onChanged?: () => void }) {
+export function ExerciseCard({ day, exercise, onChanged }: { day: string; exercise: { items: Item[]; net: number; credit: number; calories: number; fromHealth?: boolean }; onChanged?: () => void }) {
   const [pending, start] = useTransition();
   return (
     <section className="animate-rise mx-5 mt-4 rounded-2xl bg-rack-raised" aria-label="Exercise">
@@ -20,16 +20,19 @@ export function ExerciseCard({ day, exercise, onChanged }: { day: string; exerci
         <ul className="divide-y divide-rack-line border-y border-rack-line">
           {exercise.items.map((x) => (
             <li key={x.id} className="flex items-center gap-3 px-5 py-3">
-              {x.kind === "workout" ? <Dumbbell size={18} className="shrink-0 text-chalk-muted" aria-hidden /> : <Flame size={18} className="shrink-0 text-plate-red" aria-hidden />}
+              {x.kind === "health" ? <HeartPulse size={18} className="shrink-0 text-plate-red" aria-hidden /> : x.kind === "workout" ? <Dumbbell size={18} className="shrink-0 text-chalk-muted" aria-hidden /> : <Flame size={18} className="shrink-0 text-plate-red" aria-hidden />}
               <span className="min-w-0 flex-1">
                 {x.kind === "workout" ? (
                   <Link href={`/train/history/${x.id}`} className="block truncate font-medium">{x.name}</Link>
                 ) : (
                   <span className="block truncate font-medium">{x.name}</span>
                 )}
-                <span className="text-sm text-chalk-muted">{x.minutes} min, {x.total} cal burned</span>
+                <span className="text-sm text-chalk-muted">
+                  {x.kind === "health" ? `${x.minutes ? `${x.minutes} exercise min, ` : ""}synced from your iPhone` : `${x.minutes} min, ${x.total} cal burned`}
+                  {x.included && ", counted in Apple Health"}
+                </span>
               </span>
-              <span className="text-right font-display text-lg font-semibold tabular-nums">{x.net}</span>
+              <span className={`text-right font-display text-lg font-semibold tabular-nums ${x.included ? "text-chalk-muted line-through decoration-1" : ""}`}>{x.net}</span>
               {x.kind === "activity" && (
                 <button disabled={pending} onClick={() => confirm(`Delete ${x.name}?`) && start(async () => { await deleteActivity(x.id); onChanged?.(); })} className="p-1 text-chalk-muted hover:text-plate-red" aria-label={`Delete ${x.name}`}>
                   <Trash2 size={16} />
@@ -42,7 +45,7 @@ export function ExerciseCard({ day, exercise, onChanged }: { day: string; exerci
       <div className="px-5 py-3">
         {exercise.items.length > 0 && (
           <p className="mb-2 text-xs text-chalk-muted">
-            {exercise.net} cal above resting{exercise.credit < 100 ? `; ${exercise.credit}% is added to your goal (change in Profile), since trackers tend to overestimate` : " is added to your goal"}.
+            {exercise.fromHealth ? "Using Apple Health's active calories (they already include your workouts). " : ""}{exercise.net} cal above resting{exercise.credit < 100 ? `; ${exercise.credit}% is added to your goal (change in Profile), since trackers tend to overestimate` : " is added to your goal"}.
             {exercise.calories > 0 && ` That's about ${Math.round((exercise.calories * 0.7) / 4)} g more carbs and ${Math.round((exercise.calories * 0.3) / 9)} g more fat.`}
           </p>
         )}

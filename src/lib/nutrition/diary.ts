@@ -30,7 +30,7 @@ const add = (a: Totals, b: Totals) => ({
 export async function getDiaryDay(userId: string, day: string, timeZone = "America/New_York") {
   const dayStart = zonedDayStart(day, timeZone);
   const date = dayToDate(day);
-  const [entries, water, goal, workouts, activities, body, prefs] = await Promise.all([
+  const [entries, water, goal, workouts, activities, body, prefs, health] = await Promise.all([
     db.diaryEntry.findMany({ where: { userId, date }, orderBy: { createdAt: "asc" }, include: { food: true } }),
     db.waterEntry.findMany({ where: { userId, date }, orderBy: { createdAt: "asc" } }),
     db.goal.findUnique({ where: { userId } }),
@@ -41,7 +41,8 @@ export async function getDiaryDay(userId: string, day: string, timeZone = "Ameri
     }),
     db.activityEntry.findMany({ where: { userId, date }, orderBy: { createdAt: "asc" } }),
     getBody(userId, date),
-    db.user.findUniqueOrThrow({ where: { id: userId }, select: { exerciseCredit: true } }),
+    db.user.findUniqueOrThrow({ where: { id: userId }, select: { exerciseCredit: true, useHealthCalories: true } }),
+    db.dailyActivity.findUnique({ where: { userId_date: { userId, date } } }),
   ]);
 
   // Exercise for the day: logged cardio, plus an estimate for lifting
@@ -52,7 +53,15 @@ export async function getDiaryDay(userId: string, day: string, timeZone = "Ameri
     return { id: w.id, kind: "workout" as const, name: w.name, minutes, total: burn.total, net: burn.net };
   });
   const cardio = activities.map((a) => ({ id: a.id, kind: "activity" as const, name: a.name, minutes: Math.round(a.durationMin), total: a.caloriesTotal, net: a.caloriesNet, method: a.method }));
-  const exerciseNet = [...lifting, ...cardio].reduce((s, x) => s + x.net, 0);
+  // Apple Health's active calories already include every workout (watch or
+  // not), so when they're synced they replace the logged estimates instead of
+  // adding to them. Logged sessions still show, marked as included.
+  const fromHealth = prefs.useHealthCalories && health?.activeCalories != null ? health.activeCalories : null;
+  const logged = [...cardio, ...lifting].map((x) => ({ ...x, included: fromHealth !== null }));
+  const healthItem = fromHealth !== null
+    ? [{ id: "health", kind: "health" as const, name: "Apple Health active calories", minutes: health?.exerciseMinutes ?? 0, total: fromHealth, net: fromHealth, included: false }]
+    : [];
+  const exerciseNet = fromHealth ?? logged.reduce((s, x) => s + x.net, 0);
   const exerciseCalories = exerciseCreditCalories(exerciseNet, prefs.exerciseCredit);
   // Extra calories mostly fuel training: about 70% carbs, 30% fat; protein stays put
   const adjustedGoal = goal
@@ -80,7 +89,7 @@ export async function getDiaryDay(userId: string, day: string, timeZone = "Ameri
     waterEntries: water.length,
     goal: adjustedGoal,
     baseGoal: goal,
-    exercise: { items: [...cardio, ...lifting], net: exerciseNet, credit: prefs.exerciseCredit, calories: exerciseCalories },
+    exercise: { items: [...healthItem, ...logged], net: exerciseNet, credit: prefs.exerciseCredit, calories: exerciseCalories, fromHealth: fromHealth !== null },
     workouts: workouts.map((w) => ({ id: w.id, name: w.name, volumeKg: totalVolumeKg(w.exercises.flatMap((e) => e.sets)) })),
   };
 }
