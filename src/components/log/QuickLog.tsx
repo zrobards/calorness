@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Barcode, Bookmark, Camera, ChevronRight, Dumbbell, ImageUp, Loader2, Mic, MessageSquareText, Play, Plus, Search } from "lucide-react";
+import { Barcode, Bookmark, Camera, ChevronRight, Dumbbell, ImageUp, Mic, MessageSquareText, Play, Plus, Search } from "lucide-react";
 import type { FoodCandidate } from "@/lib/nutrition/normalize";
 import type { AiFoodItem } from "@/lib/ai/parse";
 import type { GroundedItem } from "@/lib/ai/ground";
@@ -20,6 +20,7 @@ import { BarcodeScanner } from "@/components/diary/BarcodeScanner";
 import { FoodSheet } from "@/components/diary/FoodSheet";
 import { Sheet } from "@/components/diary/Sheet";
 import { AiReviewSheet, type ReviewedItem } from "./AiReviewSheet";
+import { AiProgress, type AiTask } from "./AiProgress";
 import { AddFoodPanel } from "@/components/diary/AddFoodPanel";
 import { LabelScan } from "./LabelScan";
 import { resizeImage } from "./resizeImage";
@@ -60,7 +61,11 @@ export function QuickLog({
   const [describing, setDescribing] = useState(mode === "describe");
   const [text, setText] = useState("");
   const [listening, setListening] = useState(false);
-  const [thinking, setThinking] = useState<string | null>(null);
+  // What the AI is working on, shown full-screen. Set OUTSIDE transitions:
+  // state set inside startTransition only shows once the whole action ends,
+  // which is why the old spinner often never appeared.
+  const [progress, setProgress] = useState<{ task: AiTask; photo?: string | null } | null>(null);
+  const runId = useRef(0); // lets Cancel ignore an answer that arrives later
   const [review, setReview] = useState<{
     items: GroundedItem[];
     note?: string;
@@ -86,30 +91,33 @@ export function QuickLog({
     if (mode === "snap") fileRef.current?.focus();
   }, [mode]);
 
-  const runAi = (input: { imageBase64?: string; mediaType?: string; text?: string }, photo?: string | null) =>
-    start(async () => {
-      setThinking(input.imageBase64 ? "Looking at your meal…" : "Reading that…");
-      const result = await aiEstimate(input);
-      setThinking(null);
-      if ("error" in result) {
-        haptic("warning");
-        setToast({ message: result.error ?? "Something went wrong. Try again." });
-        return;
-      }
-      haptic("success");
-      setReview({ items: result.items, note: result.note, photo, source: input, version: 0 });
-    });
+  const runAi = async (input: { imageBase64?: string; mediaType?: string; text?: string }, photo?: string | null) => {
+    const id = ++runId.current;
+    setProgress({ task: input.imageBase64 ? "photo" : "describe", photo });
+    const result = await aiEstimate(input).catch(() => ({ error: "Couldn't reach the AI. Check your connection and try again." }));
+    if (id !== runId.current) return; // cancelled
+    setProgress(null);
+    if ("error" in result) {
+      haptic("warning");
+      setToast({ message: result.error ?? "Something went wrong. Try again." });
+      return;
+    }
+    haptic("success");
+    setReview({ items: result.items, note: result.note, photo, source: input, version: 0 });
+  };
 
   const onPhoto = async (file: File | undefined) => {
     if (!file) return;
     haptic();
-    setThinking("Getting your photo ready…");
+    // show the photo right away while it's prepared and analyzed
+    const preview = URL.createObjectURL(file);
+    setProgress({ task: "photo", photo: preview });
     // A barcode in the shot means exact label values, so check for one first
     const code = await findBarcode(file);
     if (code) {
       const { food } = await lookupBarcode(code);
       if (food) {
-        setThinking(null);
+        setProgress(null);
         haptic("success");
         setToast({ message: "Found the barcode, using the exact label values." });
         setBarcodeFood(food);
@@ -120,8 +128,10 @@ export function QuickLog({
       const { base64, mediaType } = await resizeImage(file);
       runAi({ imageBase64: base64, mediaType }, `data:${mediaType};base64,${base64}`);
     } catch {
-      setThinking(null);
+      setProgress(null);
       setToast({ message: "Couldn't read that photo. Try another one." });
+    } finally {
+      setTimeout(() => URL.revokeObjectURL(preview), 30_000);
     }
   };
 
@@ -144,7 +154,9 @@ export function QuickLog({
   const refine = async (correction: string, current: AiFoodItem[]) => {
     if (!review) return;
     setRefining(true);
-    const result = await aiEstimate({ ...review.source, previous: current, correction });
+    setProgress({ task: "recheck", photo: review.photo });
+    const result = await aiEstimate({ ...review.source, previous: current, correction }).catch(() => ({ error: "Couldn't reach the AI. Try again." }));
+    setProgress(null);
     setRefining(false);
     if ("error" in result) {
       haptic("warning");
@@ -190,10 +202,9 @@ export function QuickLog({
 
   const onBarcode = useCallback((code: string) => {
     setScanning(false);
-    start(async () => {
-      setThinking("Looking up that barcode…");
-      const { food, barcode } = await lookupBarcode(code);
-      setThinking(null);
+    setProgress({ task: "barcode" });
+    lookupBarcode(code).then(({ food, barcode }) => {
+      setProgress(null);
       if (food) setBarcodeFood(food);
       else setToast({ message: `No match for ${barcode}. Snap a photo of it instead.` });
     });
@@ -348,11 +359,12 @@ export function QuickLog({
         )}
       </section>
 
-      {thinking && (
-        <div className="animate-fade fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-rack/90 backdrop-blur" role="status">
-          <Loader2 size={44} className="animate-spin text-plate-red" aria-hidden />
-          <p className="font-display text-2xl font-semibold">{thinking}</p>
-        </div>
+      {progress && (
+        <AiProgress
+          task={progress.task}
+          photo={progress.photo}
+          onCancel={progress.task === "photo" || progress.task === "describe" ? () => { runId.current++; setProgress(null); } : undefined}
+        />
       )}
 
       {describing && (

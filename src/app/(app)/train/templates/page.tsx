@@ -16,6 +16,10 @@ export default async function TemplatesPage() {
       </Link>
       <h1 className="font-display text-4xl font-bold tracking-tight">Programs</h1>
       <p className="mt-1 text-chalk-muted">Proven plans. Add one and its workouts appear in your routines, ready to start.</p>
+      <Link href="/train/programs/build" className="mt-4 flex items-center justify-between rounded-2xl bg-plate-yellow/10 px-4 py-3 ring-1 ring-plate-yellow/40">
+        <span className="font-semibold">Want one made for you? Build it with AI</span>
+        <span aria-hidden>›</span>
+      </Link>
       <ul className="mt-5 space-y-3">
         {TEMPLATES.map((t, i) => (
           <li key={t.id} className="animate-rise" style={{ "--i": i } as React.CSSProperties}>

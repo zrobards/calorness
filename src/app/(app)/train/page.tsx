@@ -137,6 +137,9 @@ export default async function TrainPage() {
         <div className="flex items-center justify-between px-5">
           <h2 id="routines-heading" className="font-display text-2xl font-semibold">Routines</h2>
           <div className="flex items-center gap-3">
+            <Link href="/train/programs/build" className="flex items-center gap-1 text-sm font-medium text-plate-yellow">
+              <Sparkles size={16} aria-hidden /> AI program
+            </Link>
             <Link href="/train/templates" className="flex items-center gap-1 text-sm font-medium text-plate-blue">
               <LayoutGrid size={16} aria-hidden /> Programs
             </Link>
@@ -147,6 +150,13 @@ export default async function TrainPage() {
         </div>
         {routines.length === 0 ? (
           <div className="mx-5 mt-3 grid grid-cols-2 gap-3">
+            <Link href="/train/programs/build" className="col-span-2 flex items-center gap-3 rounded-2xl bg-plate-yellow/10 p-4 ring-1 ring-plate-yellow/40">
+              <Sparkles className="shrink-0 text-plate-yellow" size={24} aria-hidden />
+              <span>
+                <span className="block font-display text-lg font-semibold">Build one with AI</span>
+                <span className="text-sm text-chalk-muted">Your goal, days, and equipment; edit anything before saving</span>
+              </span>
+            </Link>
             <Link href="/train/templates" className="rounded-2xl bg-plate-blue/15 p-4 ring-1 ring-plate-blue/40">
               <LayoutGrid className="text-plate-blue" size={24} aria-hidden />
               <span className="mt-2 block font-display text-lg font-semibold">Pick a program</span>
