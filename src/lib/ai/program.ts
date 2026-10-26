@@ -162,7 +162,7 @@ ${request.prefs.avoid.trim() ? `Avoid or work around: ${request.prefs.avoid.trim
       60_000,
     )) as { content: { type: string; name?: string; input?: unknown }[] };
     const call = body.content.find((b) => b.type === "tool_use" && b.name === PROGRAM_TOOL.name);
-    const parsed = programInput.safeParse(call?.input);
+    const parsed = programInput.safeParse(stripNullsDeep(call?.input));
     if (!parsed.success) return { error: "The AI's program didn't come out right. Try again." };
     const draft = await toDraft(userId, parsed.data);
     return draft.days.length ? draft : { error: "Couldn't match the program's exercises. Try again." };
@@ -197,4 +197,10 @@ export async function saveProgram(userId: string, draft: ProgramDraft) {
       }),
     ),
   );
+}
+
+function stripNullsDeep(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(stripNullsDeep);
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).filter(([, x]) => x !== null).map(([k, x]) => [k, stripNullsDeep(x)]));
+  return v;
 }

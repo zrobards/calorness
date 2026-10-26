@@ -74,6 +74,11 @@ Be warm, direct, and brief: a few sentences, or a short list when listing exerci
 Use the user's actual data below. When they mention an injury, a goal, or a preference, save it with the remember tool.
 When their plan should change (pain, plateau, new goal, missing equipment), use propose_routine for one day or propose_program for a whole plan, instead of only describing changes.
 
+Honesty about tools:
+- Only say you've made, built, sent, or saved something if your tool call in this turn succeeded (you'll see its result). If a tool returns an error, fix the input and call it again.
+- For two or more days, call propose_program once with all of them. Use propose_routine only for a single routine.
+- Never answer with just "Done." Say what you did in a sentence.
+
 How to write:
 - Talk like a good coach texting a client: short paragraphs, plain words, one idea at a time.
 - Use a bulleted list (lines starting with "- ") for exercises or steps, and **bold** only for the one thing that matters most.
@@ -182,60 +187,113 @@ const proposalInput = z.object({
 });
 
 /** One coach turn: may save notes and produce a routine proposal along the way. */
+/** Models often send null for "not set"; zod's optional() only accepts missing. Drop the nulls. */
+export function stripNulls(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(stripNulls);
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).filter(([, x]) => x !== null).map(([k, x]) => [k, stripNulls(x)]));
+  return v;
+}
+
+const issues = (e: z.ZodError) => e.issues.slice(0, 5).map((i) => `${i.path.join(".") || "input"}: ${i.message}`).join("; ");
+
+// The reply claims something was made or sent ("here they are", "I've built")
+const CLAIMS_DELIVERY = /\b(here (it|they|'s|is|are)|i('ve| have) (made|built|created|put together|sent|saved|updated)|done\b)/i;
+
 export async function runCoach(userId: string, history: { role: "user" | "assistant"; content: string }[], userText: string) {
   const { text: context, routines } = await buildContext(userId);
   const system = `${SYSTEM}\n\n--- The user's data ---\n${context}`;
   const messages: Message[] = [...history.map((m) => ({ role: m.role, content: m.content })), { role: "user", content: userText }];
-  let proposal: CoachProposal | CoachProgramProposal | null = null;
+  const routineProposals: CoachProposal[] = [];
+  let program: CoachProgramProposal | null = null;
   const notesChanged: string[] = [];
   let reply = "";
+  let nudged = false;
 
-  for (let round = 0; round < 4; round++) {
+  for (let round = 0; round < 6; round++) {
     const res = await callClaude(system, messages);
-    reply = res.content.filter((b) => b.type === "text").map((b) => b.text).join("\n").trim() || reply;
+    const text = res.content.filter((b) => b.type === "text").map((b) => b.text).join("\n").trim();
+    if (text) reply = text;
     const calls = res.content.filter((b) => b.type === "tool_use");
-    if (res.stop_reason !== "tool_use" || calls.length === 0) break;
+
+    if (res.stop_reason !== "tool_use" || calls.length === 0) {
+      // Honesty check: it says it made something, but no tool call worked this turn.
+      // Ask it once to actually do it (or to say it couldn't).
+      if (!nudged && !program && routineProposals.length === 0 && CLAIMS_DELIVERY.test(reply)) {
+        nudged = true;
+        messages.push({ role: "assistant", content: res.content });
+        messages.push({
+          role: "user",
+          content: "(App check: your reply says you made or sent something, but no propose_routine or propose_program call succeeded in this turn, so the user sees nothing. Call the tool now. Use propose_program for more than one day. If you can't, say so plainly.)",
+        });
+        continue;
+      }
+      break;
+    }
 
     const results: unknown[] = [];
     for (const call of calls) {
+      const input = stripNulls(call.input);
       let output = "done";
+      let isError = false;
       if (call.name === "remember") {
-        const p = z.object({ kind: z.enum(["injury", "goal", "preference", "other"]), text: z.string().min(2).max(200) }).safeParse(call.input);
+        const p = z.object({ kind: z.enum(["injury", "goal", "preference", "other"]), text: z.string().min(2).max(200) }).safeParse(input);
         if (p.success) {
           const n = await db.coachNote.create({ data: { userId, kind: p.data.kind, text: p.data.text } });
           notesChanged.push(`Remembered: ${p.data.text}`);
           output = `saved as ${n.id}`;
-        } else output = "invalid note";
+        } else [output, isError] = [`Error: ${issues(p.error)}. Fix it and call remember again.`, true];
       } else if (call.name === "forget") {
-        const id = z.object({ note_id: z.string() }).safeParse(call.input);
+        const id = z.object({ note_id: z.string() }).safeParse(input);
         if (id.success) {
           const r = await db.coachNote.updateMany({ where: { id: id.data.note_id, userId }, data: { active: false } });
           output = r.count ? "forgotten" : "no such note";
           if (r.count) notesChanged.push("Forgot a note");
-        }
+        } else [output, isError] = ["Error: note_id is required.", true];
       } else if (call.name === "propose_routine") {
-        const p = proposalInput.safeParse(call.input);
+        const p = proposalInput.safeParse(input);
         if (p.success) {
-          proposal = await resolveProposal(userId, p.data, routines);
-          output = proposal.unmatched.length
-            ? `Shown to the user. These exercises weren't found in the library and were left out: ${proposal.unmatched.join(", ")}`
-            : "Shown to the user with Replace and Save-as-new buttons.";
-        } else output = "invalid routine";
+          const proposal = await resolveProposal(userId, p.data, routines);
+          routineProposals.push(proposal);
+          output = `Shown to the user as a card with Save buttons.${proposal.unmatched.length ? ` Left out (not in the library): ${proposal.unmatched.join(", ")}` : ""}`;
+        } else [output, isError] = [`Error, nothing was shown: ${issues(p.error)}. Fix the input and call propose_routine again.`, true];
       } else if (call.name === "propose_program") {
-        const p = programInput.safeParse(call.input);
+        const p = programInput.safeParse(input);
         if (p.success) {
           const draft = await toDraft(userId, p.data);
-          proposal = { kind: "program", draft };
+          program = { kind: "program", draft };
           output = `Shown to the user as a program card with Customize and Save buttons.${draft.unmatched.length ? ` Left out (not in the library): ${draft.unmatched.join(", ")}` : ""}`;
-        } else output = "invalid program";
+        } else [output, isError] = [`Error, nothing was shown: ${issues(p.error)}. Fix the input and call propose_program again.`, true];
       }
-      results.push({ type: "tool_result", tool_use_id: call.id, content: output });
+      results.push({ type: "tool_result", tool_use_id: call.id, content: output, ...(isError ? { is_error: true } : {}) });
     }
     messages.push({ role: "assistant", content: res.content });
     messages.push({ role: "user", content: results });
   }
 
-  return { reply: reply || "Done.", proposal, notesChanged };
+  // Several single-day routines in one answer become one program card,
+  // so nothing is lost (only one card is shown per message)
+  let proposal: CoachProposal | CoachProgramProposal | null = program;
+  if (!proposal && routineProposals.length > 1) {
+    proposal = {
+      kind: "program",
+      draft: {
+        name: "Your new routines",
+        summary: "",
+        days: routineProposals.map((r) => ({ name: r.name, exercises: r.exercises })),
+        unmatched: routineProposals.flatMap((r) => r.unmatched),
+      },
+    };
+  } else if (!proposal && routineProposals.length === 1) proposal = routineProposals[0];
+
+  // Never answer with an empty or misleading message
+  if (!reply) {
+    reply = proposal
+      ? "Here it is. Tap Customize to change anything, or save it as is."
+      : notesChanged.length
+        ? "Got it, I'll keep that in mind."
+        : "Sorry, I didn't manage to put an answer together. Could you ask that again?";
+  }
+  return { reply, proposal, notesChanged };
 }
 
 async function resolveProposal(
