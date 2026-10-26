@@ -10,6 +10,7 @@ import { ShortcutKeys } from "./ShortcutKeys";
 import { NotificationsCard } from "./NotificationsCard";
 import { InviteCard } from "./InviteCard";
 import { BodyStatsCard } from "./BodyStatsCard";
+import { ActivityGoals, HealthSetup, WidgetSetup } from "./ActivitySetup";
 import { DeleteAccount } from "./DeleteAccount";
 import Link from "next/link";
 import QRCode from "qrcode";
@@ -97,6 +98,21 @@ export default async function ProfilePage() {
           </>
         )}
       </section>
+      <section id="activity-goals" className="animate-rise mx-5 mt-4 rounded-2xl bg-rack-raised p-5">
+        <h2 className="font-display text-2xl font-semibold">Activity goals</h2>
+        <ActivityGoals initial={{ stepGoal: user.stepGoal, activeCalGoal: user.activeCalGoal, exerciseMinGoal: user.exerciseMinGoal, useHealthCalories: user.useHealthCalories }} />
+      </section>
+
+      <section id="health" className="animate-rise mx-5 mt-4 rounded-2xl bg-rack-raised p-5">
+        <h2 className="font-display text-2xl font-semibold">Apple Health</h2>
+        <HealthSetup origin={siteUrl} shortcutUrl={process.env.HEALTH_SHORTCUT_URL ?? null} />
+      </section>
+
+      <section id="widget" className="animate-rise mx-5 mt-4 rounded-2xl bg-rack-raised p-5">
+        <h2 className="font-display text-2xl font-semibold">Home-screen widget</h2>
+        <WidgetSetup origin={siteUrl} />
+      </section>
+
       <section id="body" className="animate-rise mx-5 mt-4 rounded-2xl bg-rack-raised p-5">
         <h2 className="font-display text-2xl font-semibold">Body stats</h2>
         <BodyStatsCard

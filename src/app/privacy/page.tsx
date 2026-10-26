@@ -15,6 +15,10 @@ const SECTIONS = [
     body: "When you snap a meal, describe one, or scan a label, the photo or text is sent to Anthropic's Claude AI to estimate nutrition. Calorness doesn't keep the photo. Anthropic's API doesn't use it to train its models.",
   },
   {
+    title: "Apple Health",
+    body: "Only if you set up the Apple Health Shortcut: the daily totals it sends (steps, active calories, exercise minutes, distance, walking speed, and resting heart rate) are saved to your account to show your activity and streaks. Nothing else is read from Apple Health, it's never shared with other users, and deleting your account deletes it.",
+  },
+  {
     title: "Food databases",
     body: "Food searches and barcodes are looked up in USDA FoodData Central and Open Food Facts. Only the search words or barcode number are sent, never your account details. Foods you add by scanning a Nutrition Facts label are shared with other Calorness users (just the food's name, brand, and numbers, never who scanned it or when you ate it) so everyone's search gets more accurate. Foods you type in by hand stay private, unless several different people enter the same food with matching numbers; then a shared \"community\" version is made from the typical values (again, just the food and its numbers). When you correct an AI estimate, how far off it was for that kind of food is pooled anonymously to make future estimates better for everyone.",
   },
