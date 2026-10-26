@@ -15,6 +15,7 @@ const GOALS = ["Build muscle", "Get stronger", "Lose fat, keep muscle", "Athleti
 const EQUIPMENT = ["Full gym", "Dumbbells and bench", "Machines and cables", "Bodyweight at home"];
 const LEVELS = ["Beginner", "Intermediate", "Advanced"];
 const FOCUS = ["Chest", "Back", "Shoulders", "Arms", "Glutes", "Legs", "Core"];
+const ACTIVITIES = ["Climbing", "Running", "Cycling", "Swimming", "Team sports", "Martial arts"];
 const IDEAS = ["Make sessions shorter", "Add more arm work", "Swap barbell lifts for dumbbells", "Make Day 1 easier", "Add a cardio finisher"];
 
 const chip = (on: boolean) => `rounded-full px-3.5 py-2 text-sm font-medium ${on ? "bg-chalk text-rack" : "bg-rack-raised text-chalk-muted"}`;
@@ -33,6 +34,8 @@ export function ProgramBuilder({ library, initialDraft, avoid: initialAvoid }: {
   const [experience, setExperience] = useState(LEVELS[1]);
   const [focus, setFocus] = useState<string[]>([]);
   const [avoid, setAvoid] = useState(initialAvoid);
+  const [activities, setActivities] = useState<string[]>([]);
+  const [request, setRequest] = useState("");
 
   // editing
   const [day, setDay] = useState(0);
@@ -44,7 +47,7 @@ export function ProgramBuilder({ library, initialDraft, avoid: initialAvoid }: {
     haptic();
     setError(null);
     setBusy("build");
-    const r = await buildProgram({ goal, daysPerWeek: days, minutes, equipment, experience, focus, avoid }).catch(() => ({ error: "Couldn't reach the AI. Try again." }));
+    const r = await buildProgram({ goal, daysPerWeek: days, minutes, equipment, experience, focus, avoid, activities, request }).catch(() => ({ error: "Couldn't reach the AI. Try again." }));
     setBusy(null);
     if ("error" in r && r.error) return setError(r.error);
     if ("draft" in r && r.draft) { haptic("success"); setDraft(r.draft); setDay(0); }
@@ -100,11 +103,23 @@ export function ProgramBuilder({ library, initialDraft, avoid: initialAvoid }: {
           <h1 className="flex items-center gap-2 font-display text-4xl font-bold tracking-tight"><Sparkles className="text-plate-yellow" size={26} aria-hidden /> Build a program</h1>
           <p className="mt-1 text-chalk-muted">Tell the AI what you want. You can change anything before saving.</p>
 
+          <label className="mt-5 block text-sm font-medium text-chalk-muted">
+            Describe your ideal program (optional, but the more you say the better)
+            <textarea value={request} onChange={(e) => setRequest(e.target.value)} rows={3} maxLength={500}
+              placeholder="Built around climbing 2 days a week, with lifting on the other days so every muscle gets worked…"
+              className="mt-1 w-full resize-none rounded-xl border border-rack-line bg-rack-raised px-3 py-2.5 text-base text-chalk focus:border-plate-yellow focus:outline-none" />
+          </label>
+
           <Field label="Goal">{GOALS.map((g) => <button key={g} onClick={() => setGoal(g)} aria-pressed={goal === g} className={chip(goal === g)}>{g}</button>)}</Field>
           <Field label="Days per week">{[2, 3, 4, 5, 6].map((n) => <button key={n} onClick={() => setDays(n)} aria-pressed={days === n} className={`${chip(days === n)} min-w-11`}>{n}</button>)}</Field>
           <Field label="Minutes per session">{[30, 45, 60, 75, 90].map((n) => <button key={n} onClick={() => setMinutes(n)} aria-pressed={minutes === n} className={chip(minutes === n)}>{n}</button>)}</Field>
           <Field label="Equipment">{EQUIPMENT.map((e) => <button key={e} onClick={() => setEquipment(e)} aria-pressed={equipment === e} className={chip(equipment === e)}>{e}</button>)}</Field>
           <Field label="Experience">{LEVELS.map((l) => <button key={l} onClick={() => setExperience(l)} aria-pressed={experience === l} className={chip(experience === l)}>{l}</button>)}</Field>
+          <Field label="Sports or activities to build around (optional)">
+            {ACTIVITIES.map((a) => (
+              <button key={a} onClick={() => setActivities((x) => (x.includes(a) ? x.filter((y) => y !== a) : [...x, a]))} aria-pressed={activities.includes(a)} className={chip(activities.includes(a))}>{a}</button>
+            ))}
+          </Field>
           <Field label="Extra focus (optional)">
             {FOCUS.map((f) => (
               <button key={f} onClick={() => setFocus((x) => (x.includes(f) ? x.filter((y) => y !== f) : [...x, f]))} aria-pressed={focus.includes(f)} className={chip(focus.includes(f))}>{f}</button>
@@ -161,7 +176,14 @@ export function ProgramBuilder({ library, initialDraft, avoid: initialAvoid }: {
                 className="p-1.5 text-chalk-muted hover:text-plate-red" aria-label={`Remove ${current.name}`}><Trash2 size={17} /></button>
             )}
           </div>
-          <p className="text-xs text-chalk-muted">
+          {/* Days built around a sport or climbing session */}
+          <label className="mt-1 block">
+            <span className="sr-only">Activity for this day</span>
+            <textarea value={current.activity ?? ""} placeholder="Activity (optional), e.g. Bouldering, 60–90 min" rows={current.activity && current.activity.length > 40 ? 2 : 1}
+              onChange={(e) => setDraft({ ...draft, days: draft.days.map((x, i) => (i === day ? { ...x, activity: e.target.value || undefined } : x)) })}
+              className={`w-full resize-none rounded-lg px-2 py-1.5 text-sm focus:outline-none ${current.activity ? "bg-plate-green/15 font-semibold text-plate-green" : "bg-rack text-chalk-muted"}`} />
+          </label>
+          <p className="mt-1 text-xs text-chalk-muted">
             {current.exercises.length} exercises, {current.exercises.reduce((s, e) => s + e.sets, 0)} sets, about{" "}
             {Math.round(current.exercises.reduce((s, e) => s + e.sets * (0.75 + e.restSeconds / 60), 0))} min
           </p>

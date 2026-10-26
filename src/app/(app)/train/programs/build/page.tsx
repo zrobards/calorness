@@ -5,6 +5,9 @@ import { getExerciseOptions } from "@/lib/training";
 import type { CoachProgramProposal } from "@/lib/ai/coach";
 import { ProgramBuilder } from "./ProgramBuilder";
 
+// AI answers can take a while; give server actions on this page up to 5 minutes
+export const maxDuration = 300;
+
 export const metadata: Metadata = { title: "Build a program" };
 
 export default async function BuildProgramPage({ searchParams }: { searchParams: Promise<{ from?: string }> }) {

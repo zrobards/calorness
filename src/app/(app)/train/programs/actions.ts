@@ -15,6 +15,8 @@ const prefsSchema = z.object({
   experience: z.string().min(1).max(30),
   focus: z.array(z.string().max(30)).max(8),
   avoid: z.string().max(300),
+  activities: z.array(z.string().max(30)).max(6).default([]),
+  request: z.string().max(500).default(""),
 });
 
 const draftSchema = z.object({
@@ -25,6 +27,7 @@ const draftSchema = z.object({
     .array(
       z.object({
         name: z.string().trim().min(1).max(40),
+        activity: z.string().max(160).optional(),
         exercises: z
           .array(
             z.object({
@@ -37,8 +40,8 @@ const draftSchema = z.object({
               note: z.string().max(120).optional(),
             }),
           )
-          .min(1, "Every day needs at least one exercise."),
-      }),
+          .default([]),
+      }).refine((d) => d.exercises.length > 0 || !!d.activity?.trim(), "Every day needs at least one exercise or an activity."),
     )
     .min(1)
     .max(7),

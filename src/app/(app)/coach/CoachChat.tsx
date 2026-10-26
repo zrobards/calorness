@@ -248,7 +248,8 @@ function ProgramCard({ messageId, draft, saved, onSaved }: { messageId: string; 
         {draft.days.map((d) => (
           <li key={d.name} className="rounded-xl bg-rack px-3 py-2">
             <span className="font-semibold">{d.name}</span>
-            <span className="text-chalk-muted">: {d.exercises.length} exercises, {d.exercises.reduce((s, e) => s + e.sets, 0)} sets</span>
+            <span className="text-chalk-muted">{d.exercises.length ? `: ${d.exercises.length} exercises, ${d.exercises.reduce((s, e) => s + e.sets, 0)} sets` : ""}</span>
+            {d.activity && <span className="block truncate text-xs font-semibold text-plate-green">{d.activity}</span>}
             <span className="block truncate text-xs text-chalk-muted">{d.exercises.map((e) => e.name).join(", ")}</span>
           </li>
         ))}
