@@ -136,7 +136,7 @@ export function CardioForm({ day, imperial, credit, body, recentKeys }: { day: s
               <button key={l} type="button" onClick={() => { haptic(); setIntensity(l); }} aria-pressed={intensity === l}
                 className={`rounded-xl px-2 py-2.5 text-left ${intensity === l ? "bg-plate-red text-white" : "bg-rack-raised"}`}>
                 <span className="block text-sm font-semibold capitalize">{l}</span>
-                {activity.hints?.[l] && <span className={`block text-xs ${intensity === l ? "text-white/85" : "text-chalk-muted"}`}>{activity.hints[l]}</span>}
+                {activity.hints?.[l] && <span className={`block text-xs ${intensity === l ? "text-white" : "text-chalk-muted"}`}>{activity.hints[l]}</span>}
               </button>
             ))}
           </div>

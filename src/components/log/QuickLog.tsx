@@ -271,7 +271,7 @@ export function QuickLog({
           <span className="absolute -top-4 -right-4 size-28 rounded-full border-[10px] border-white/10" aria-hidden />
           <Camera size={36} strokeWidth={2.2} aria-hidden />
           <span className="mt-2 font-display text-3xl leading-none font-bold">Snap your meal</span>
-          <span className="mt-1 text-sm text-white/85">{aiReady ? "AI counts the calories for you" : "Add an AI key to turn this on"}</span>
+          <span className="mt-1 text-sm text-white">{aiReady ? "AI counts the calories for you" : "Add an AI key to turn this on"}</span>
         </label>
         <label htmlFor="snap-library" className="absolute top-4 right-4 flex cursor-pointer items-center gap-1.5 rounded-full bg-black/25 px-3.5 py-2 text-sm font-semibold backdrop-blur">
           <ImageUp size={17} aria-hidden /> Upload

@@ -98,7 +98,7 @@ function MusicDock({ music, mini, setMini, onClose, onLibrary }: {
     : youtube ? { width: "100%", aspectRatio: "16 / 9" } : { width: "100%", height: music.service === "spotify" ? 352 : 175 };
 
   return (
-    <div ref={ref} className="fixed inset-x-0 z-30 px-3" style={{ bottom: "calc(env(safe-area-inset-bottom) + 4.5rem)" }}>
+    <div ref={ref} className="vv-pin fixed inset-x-0 z-30 px-3" style={{ bottom: "calc(env(safe-area-inset-bottom) + 4.5rem)" }}>
       <div className={`overflow-hidden rounded-2xl border border-rack-line bg-rack-raised shadow-2xl ${mini && youtube ? "ml-auto w-[200px]" : "mx-auto max-w-md"}`}>
         <div className="flex items-center gap-1 px-2 py-1.5">
           <span className={`size-2 shrink-0 rounded-full ${SERVICE_COLOR[music.service]}`} aria-hidden />

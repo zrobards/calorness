@@ -56,7 +56,7 @@ export function RestTimer({ endsAt, total, onAdjust, onSkip, onDone }: {
   const circumference = 2 * Math.PI * r;
   const progress = total > 0 ? left / total : 0;
   return (
-    <div className="fixed inset-x-0 z-30 px-3" style={{ bottom: "calc(env(safe-area-inset-bottom) + 4.75rem + var(--music-dock-h, 0px))" }}
+    <div className="vv-pin fixed inset-x-0 z-30 px-3" style={{ bottom: "calc(env(safe-area-inset-bottom) + 4.75rem + var(--music-dock-h, 0px))" }}
       role="timer" aria-live="polite" aria-label={done ? "Rest over" : `Rest ${left} seconds left`}>
       <div className={`mx-auto flex max-w-md items-center gap-4 rounded-2xl border px-4 py-3 shadow-2xl ${done ? "border-plate-green bg-plate-green/20" : "border-rack-line bg-rack-raised"}`}>
         <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden className="-rotate-90">
