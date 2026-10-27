@@ -16,7 +16,7 @@ const prefsSchema = z.object({
   focus: z.array(z.string().max(30)).max(8),
   avoid: z.string().max(300),
   activities: z.array(z.string().max(30)).max(6).default([]),
-  request: z.string().max(500).default(""),
+  request: z.string().max(2000).default(""),
 });
 
 const draftSchema = z.object({
@@ -28,6 +28,7 @@ const draftSchema = z.object({
       z.object({
         name: z.string().trim().min(1).max(40),
         activity: z.string().max(400).optional(),
+        missing: z.array(z.object({ name: z.string(), index: z.number(), sets: z.number(), repMin: z.number(), repMax: z.number(), restSeconds: z.number() })).optional(),
         exercises: z
           .array(
             z.object({
@@ -60,6 +61,17 @@ export async function buildProgram(prefs: z.input<typeof prefsSchema>) {
   const blocked = await guard(user.id);
   if (blocked) return blocked;
   const r = await generateProgram(user.id, { prefs: p.data });
+  return "error" in r ? r : { draft: r };
+}
+
+/** Turn a program you wrote (pasted text) into an editable program, as written. */
+export async function importProgramText(text: string) {
+  const user = await requireUser();
+  const t = z.string().trim().min(10, "Paste your program first.").max(12000, "That's longer than any program needs. Trim it a bit.").safeParse(text);
+  if (!t.success) return { error: t.error.issues[0]?.message ?? "Paste your program first." };
+  const blocked = await guard(user.id);
+  if (blocked) return blocked;
+  const r = await generateProgram(user.id, { paste: t.data });
   return "error" in r ? r : { draft: r };
 }
 

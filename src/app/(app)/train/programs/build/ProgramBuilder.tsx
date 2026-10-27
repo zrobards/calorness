@@ -9,7 +9,7 @@ import type { ProgramDraft, ProgramExercise } from "@/lib/ai/program";
 import { haptic } from "@/lib/haptics";
 import { ExercisePicker } from "@/components/train/ExercisePicker";
 import { AiProgress } from "@/components/log/AiProgress";
-import { buildProgram, reviseProgram, saveProgramDraft } from "../actions";
+import { buildProgram, importProgramText, reviseProgram, saveProgramDraft } from "../actions";
 
 const GOALS = ["Build muscle", "Get stronger", "Lose fat, keep muscle", "Athletic and conditioned", "General fitness"];
 const EQUIPMENT = ["Full gym", "Dumbbells and bench", "Machines and cables", "Bodyweight at home"];
@@ -23,7 +23,9 @@ const chip = (on: boolean) => `rounded-full px-3.5 py-2 text-sm font-medium ${on
 export function ProgramBuilder({ library, initialDraft, avoid: initialAvoid }: { library: ExerciseOption[]; initialDraft: ProgramDraft | null; avoid: string }) {
   const router = useRouter();
   const [draft, setDraft] = useState<ProgramDraft | null>(initialDraft);
-  const [busy, setBusy] = useState<"build" | "revise" | null>(null);
+  const [busy, setBusy] = useState<"build" | "revise" | "paste" | null>(null);
+  const [mode, setMode] = useState<"describe" | "paste">("describe");
+  const [pasted, setPasted] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   // setup
@@ -40,7 +42,7 @@ export function ProgramBuilder({ library, initialDraft, avoid: initialAvoid }: {
   // editing
   const [day, setDay] = useState(0);
   const [ask, setAsk] = useState("");
-  const [picker, setPicker] = useState<{ mode: "add" } | { mode: "swap"; index: number } | null>(null);
+  const [picker, setPicker] = useState<{ mode: "add" } | { mode: "swap"; index: number } | { mode: "missing"; name: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
   const build = async () => {
@@ -48,6 +50,16 @@ export function ProgramBuilder({ library, initialDraft, avoid: initialAvoid }: {
     setError(null);
     setBusy("build");
     const r = await buildProgram({ goal, daysPerWeek: days, minutes, equipment, experience, focus, avoid, activities, request }).catch(() => ({ error: "Couldn't reach the AI. Try again." }));
+    setBusy(null);
+    if ("error" in r && r.error) return setError(r.error);
+    if ("draft" in r && r.draft) { haptic("success"); setDraft(r.draft); setDay(0); }
+  };
+
+  const formatPasted = async () => {
+    haptic();
+    setError(null);
+    setBusy("paste");
+    const r = await importProgramText(pasted).catch(() => ({ error: "Couldn't reach the AI. Try again." }));
     setBusy(null);
     if ("error" in r && r.error) return setError(r.error);
     if ("draft" in r && r.draft) { haptic("success"); setDraft(r.draft); setDay(0); }
@@ -101,11 +113,34 @@ export function ProgramBuilder({ library, initialDraft, avoid: initialAvoid }: {
         {header}
         <div className="px-5">
           <h1 className="flex items-center gap-2 font-display text-4xl font-bold tracking-tight"><Sparkles className="text-plate-yellow" size={26} aria-hidden /> Build a program</h1>
-          <p className="mt-1 text-chalk-muted">Tell the AI what you want. You can change anything before saving.</p>
+          <p className="mt-1 text-chalk-muted">Have the AI build one, or paste a program you already have. You can change anything before saving.</p>
+
+          <div className="mt-4 grid grid-cols-2 gap-1 rounded-xl bg-rack-raised p-1" role="tablist" aria-label="How to start">
+            <button role="tab" aria-selected={mode === "describe"} onClick={() => setMode("describe")} className={`rounded-lg py-2 text-sm font-semibold ${mode === "describe" ? "bg-chalk text-rack" : "text-chalk-muted"}`}>Build it for me</button>
+            <button role="tab" aria-selected={mode === "paste"} onClick={() => setMode("paste")} className={`rounded-lg py-2 text-sm font-semibold ${mode === "paste" ? "bg-chalk text-rack" : "text-chalk-muted"}`}>Paste my program</button>
+          </div>
+        </div>
+
+        {mode === "paste" ? (
+          <div className="px-5">
+            <label className="mt-5 block text-sm font-medium text-chalk-muted">
+              Paste your program: days, exercises, and sets or reps if you have them. It&apos;s set up exactly as written.
+              <textarea value={pasted} onChange={(e) => setPasted(e.target.value)} rows={14} maxLength={12000}
+                placeholder={"MONDAY — UPPER A\n1. Barbell Bench Press\n2. Weighted Pull-Ups\n…\n\nWEDNESDAY — CLIMB A\n1. Warm-Up Climbing\n2. Hard Bouldering"}
+                className="mt-1 w-full rounded-xl border border-rack-line bg-rack-raised px-3 py-2.5 font-mono text-sm text-chalk focus:border-plate-yellow focus:outline-none" />
+            </label>
+            <p className="mt-1 text-right text-xs text-chalk-muted tabular-nums">{pasted.length.toLocaleString("en-US")} / 12,000</p>
+            {error && <p role="alert" className="mt-2 text-sm text-plate-red">{error}</p>}
+            <button onClick={formatPasted} disabled={pasted.trim().length < 10} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-plate-red py-4 font-display text-xl font-semibold text-white disabled:opacity-50">
+              <Sparkles size={20} aria-hidden /> Set up my program
+            </button>
+          </div>
+        ) : (
+        <div className="px-5">
 
           <label className="mt-5 block text-sm font-medium text-chalk-muted">
             Describe your ideal program (optional, but the more you say the better)
-            <textarea value={request} onChange={(e) => setRequest(e.target.value)} rows={3} maxLength={500}
+            <textarea value={request} onChange={(e) => setRequest(e.target.value)} rows={4} maxLength={2000}
               placeholder="Built around climbing 2 days a week, with lifting on the other days so every muscle gets worked…"
               className="mt-1 w-full resize-none rounded-xl border border-rack-line bg-rack-raised px-3 py-2.5 text-base text-chalk focus:border-plate-yellow focus:outline-none" />
           </label>
@@ -137,6 +172,7 @@ export function ProgramBuilder({ library, initialDraft, avoid: initialAvoid }: {
           </button>
           <Link href="/train/templates" className="mt-3 block text-center text-sm text-chalk-muted underline underline-offset-4">Or start from a ready-made program</Link>
         </div>
+        )}
         {busy && <BuildProgress task={busy} />}
       </div>
     );
@@ -150,8 +186,10 @@ export function ProgramBuilder({ library, initialDraft, avoid: initialAvoid }: {
         <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} aria-label="Program name"
           className="w-full bg-transparent font-display text-3xl font-bold tracking-tight focus:outline-none" />
         {draft.summary && <p className="mt-1 text-sm text-chalk-muted">{draft.summary}</p>}
-        {draft.unmatched.length > 0 && (
-          <p className="mt-2 rounded-xl bg-plate-yellow/10 px-3 py-2 text-xs text-plate-yellow">Left out (not in the exercise library): {draft.unmatched.join(", ")}. Add your own with + below.</p>
+        {draft.days.some((d) => d.missing?.length) && (
+          <p className="mt-2 rounded-xl bg-plate-yellow/10 px-3 py-2 text-xs text-plate-yellow">
+            {draft.days.reduce((n, d) => n + (d.missing?.length ?? 0), 0)} exercise(s) need a match from the library. They&apos;re marked on their day.
+          </p>
         )}
       </div>
 
@@ -188,6 +226,21 @@ export function ProgramBuilder({ library, initialDraft, avoid: initialAvoid }: {
             {Math.round(current.exercises.reduce((s, e) => s + e.sets * (0.75 + e.restSeconds / 60), 0))} min
           </p>
 
+          {current.missing && current.missing.length > 0 && (
+            <ul className="mt-3 space-y-2">
+              {current.missing.map((m) => (
+                <li key={m.name} className="flex items-center gap-2 rounded-xl border border-dashed border-plate-yellow/60 px-3 py-2.5">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium">{m.name}</span>
+                    <span className="text-xs text-plate-yellow">Not found in the library</span>
+                  </span>
+                  <button onClick={() => setPicker({ mode: "missing", name: m.name })} className="rounded-lg bg-plate-yellow px-3 py-1.5 text-sm font-semibold text-rack">Pick a match</button>
+                  <button onClick={() => setDraft({ ...draft, days: draft.days.map((x, i) => (i === day ? { ...x, missing: x.missing?.filter((y) => y.name !== m.name) } : x)) })}
+                    className="p-1 text-chalk-muted" aria-label={`Skip ${m.name}`}><Trash2 size={15} /></button>
+                </li>
+              ))}
+            </ul>
+          )}
           <ol className="mt-3 space-y-2">
             {current.exercises.map((e, i) => (
               <li key={`${e.exerciseId}-${i}`} className="rounded-xl bg-rack p-3">
@@ -250,10 +303,24 @@ export function ProgramBuilder({ library, initialDraft, avoid: initialAvoid }: {
       {picker && (
         <ExercisePicker
           exercises={library}
+          initialQuery={picker.mode === "missing" ? picker.name : ""}
           onClose={() => setPicker(null)}
           onAdd={(picked) => {
             const toRow = (o: ExerciseOption): ProgramExercise => ({ exerciseId: o.id, name: o.name, sets: 3, repMin: 8, repMax: 12, restSeconds: 90 });
-            if (picker.mode === "swap" && picked[0]) {
+            if (picker.mode === "missing" && picked[0]) {
+              // put the match where the original was, with its sets and reps
+              const m = current?.missing?.find((x) => x.name === picker.name);
+              setDraft((d) => d && {
+                ...d,
+                days: d.days.map((x, i) => {
+                  if (i !== day) return x;
+                  const row: ProgramExercise = { exerciseId: picked[0].id, name: picked[0].name, sets: m?.sets ?? 3, repMin: m?.repMin ?? 8, repMax: m?.repMax ?? 12, restSeconds: m?.restSeconds ?? 90 };
+                  const exercises = [...x.exercises];
+                  exercises.splice(Math.min(m?.index ?? exercises.length, exercises.length), 0, row);
+                  return { ...x, exercises, missing: x.missing?.filter((y) => y.name !== picker.name) };
+                }),
+              });
+            } else if (picker.mode === "swap" && picked[0]) {
               // keep the sets, reps, and rest; change the movement
               updateExercise(picker.index, { exerciseId: picked[0].id, name: picked[0].name });
             } else updateDay((exs) => [...exs, ...picked.map(toRow)]);
@@ -288,6 +355,6 @@ function Stepper({ label, value, min, max, step = 1, format, onChange }: { label
   );
 }
 
-function BuildProgress({ task }: { task: "build" | "revise" }) {
-  return <AiProgress task={task === "build" ? "program" : "programRevise"} />;
+function BuildProgress({ task }: { task: "build" | "revise" | "paste" }) {
+  return <AiProgress task={task === "build" ? "program" : task === "paste" ? "programPaste" : "programRevise"} />;
 }

@@ -11,12 +11,14 @@ export function ExercisePicker({
   exercises,
   onAdd,
   onClose,
+  initialQuery = "",
 }: {
+  initialQuery?: string;
   exercises: ExerciseOption[];
   onAdd: (selected: ExerciseOption[]) => void;
   onClose: () => void;
 }) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [filter, setFilter] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
   const [mine, setMine] = useState<ExerciseOption[]>([]); // made in this session

@@ -361,3 +361,41 @@ export async function getProgress(userId: string, now: Date) {
 
   return { weeks, muscles, bodyweights, topLifts, totalWorkouts: workouts.length, contributions, windows };
 }
+
+/**
+ * Every exercise you've done, with your best set, estimated max, heaviest
+ * weight, how often you've trained it, and when you last did it. Bodyweight
+ * moves (no weight) report their best reps instead.
+ */
+export async function getAllLifts(userId: string) {
+  const sets = await db.workoutSet.findMany({
+    where: { type: { not: "WARMUP" }, reps: { gt: 0 }, workoutExercise: { workout: { userId, endedAt: { not: null } } } },
+    select: {
+      weightKg: true,
+      reps: true,
+      workoutExercise: {
+        select: {
+          workoutId: true,
+          workout: { select: { startedAt: true } },
+          exercise: { select: { id: true, slug: true, name: true, primaryMuscles: true } },
+        },
+      },
+    },
+  });
+  type Lift = { slug: string; name: string; muscle: string; e1rmKg: number; bestWeightKg: number; bestReps: number; bestSet: { weightKg: number; reps: number } | null; sessions: Set<string>; sets: number; last: Date };
+  const lifts = new Map<string, Lift>();
+  for (const s of sets) {
+    const ex = s.workoutExercise.exercise;
+    const w = s.weightKg ?? 0, reps = s.reps ?? 0, when = s.workoutExercise.workout.startedAt;
+    const l = lifts.get(ex.id) ?? { slug: ex.slug, name: ex.name, muscle: ex.primaryMuscles[0] ?? "other", e1rmKg: 0, bestWeightKg: 0, bestReps: 0, bestSet: null, sessions: new Set<string>(), sets: 0, last: when };
+    const e1rm = w > 0 ? estimateOneRepMax(w, reps) : 0;
+    if (e1rm > l.e1rmKg) { l.e1rmKg = e1rm; l.bestSet = { weightKg: w, reps }; }
+    l.bestWeightKg = Math.max(l.bestWeightKg, w);
+    l.bestReps = Math.max(l.bestReps, reps);
+    l.sessions.add(s.workoutExercise.workoutId);
+    l.sets++;
+    if (when > l.last) l.last = when;
+    lifts.set(ex.id, l);
+  }
+  return [...lifts.values()].map(({ sessions, last, ...l }) => ({ ...l, sessions: sessions.size, last: last.toISOString() }));
+}

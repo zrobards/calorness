@@ -72,7 +72,7 @@ export default async function ProgressPage() {
             />
           </Card>
 
-          <Card title="Best lifts" subtitle="Estimated one-rep max from your best set">
+          <Card title="Best lifts" subtitle="Your strongest by estimated one-rep max. Every lift is one tap away.">
             <ol className="space-y-3">
               {topLifts.map((l, i) => (
                 <li key={l.slug}>
@@ -91,6 +91,9 @@ export default async function ProgressPage() {
                 </li>
               ))}
             </ol>
+            <Link href="/progress/lifts" className="mt-4 flex items-center justify-between rounded-xl bg-rack px-4 py-3 font-medium">
+              See all your lifts <span className="text-sm text-chalk-muted">Search, sort, filter ›</span>
+            </Link>
           </Card>
         </>
       )}

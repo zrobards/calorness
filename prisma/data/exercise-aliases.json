@@ -56,7 +56,10 @@
 ],
 "Dumbbell Bench Press": [
 "db bench",
-"dumbbell press"
+"dumbbell bench",
+"dumbbell press",
+"flat db bench",
+"flat dumbbell bench press"
 ],
 "Barbell Incline Bench Press - Medium Grip": [
 "incline bench",
@@ -67,6 +70,7 @@
 "side raise"
 ],
 "Hammer Curls": [
+"dumbbell hammer curl",
 "hammer curl"
 ],
 "Triceps Pushdown": [
