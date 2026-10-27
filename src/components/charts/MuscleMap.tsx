@@ -71,7 +71,7 @@ function Body({ regions, sets, max, title, className = "h-64 w-auto", caption = 
 }) {
   return (
     <figure className="flex flex-col items-center">
-      <svg viewBox="0 0 120 236" className={className} role="img" aria-label={`${title} muscle map`}>
+      <svg viewBox="0 0 120 236" className={className} role={onSelect ? "group" : "img"} aria-label={`${title} muscle map`}>
         {/* silhouette */}
         <g fill="var(--color-rack-line)">
           <circle cx="60" cy="17" r="12" />

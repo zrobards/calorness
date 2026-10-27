@@ -291,7 +291,7 @@ export function ProgramBuilder({ library, initialDraft, avoid: initialAvoid }: {
       </section>
 
       {error && <p role="alert" className="mx-5 mt-3 text-sm text-plate-red">{error}</p>}
-      <div className="fixed inset-x-0 z-20 px-5" style={{ bottom: "calc(env(safe-area-inset-bottom) + 5rem + var(--music-dock-h, 0px))" }}>
+      <div className="vv-pin fixed inset-x-0 z-20 px-5" style={{ bottom: "calc(env(safe-area-inset-bottom) + 5rem + var(--music-dock-h, 0px))" }}>
         <div className="mx-auto flex max-w-md gap-2">
           <button onClick={() => { if (confirm("Start over? This program won't be saved.")) setDraft(null); }} className="rounded-2xl bg-rack-raised px-4 font-medium text-chalk-muted">Start over</button>
           <button onClick={save} disabled={saving} className="flex-1 rounded-2xl bg-plate-red py-3.5 font-display text-xl font-semibold text-white shadow-xl disabled:opacity-60">
