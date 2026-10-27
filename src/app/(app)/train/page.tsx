@@ -43,7 +43,7 @@ export default async function TrainPage() {
             <Sparkles size={18} aria-hidden /> Coach
           </Link>
           <Link href="/train/exercises" className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-chalk-muted hover:text-chalk">
-            <Library size={18} aria-hidden /> Exercises
+            <Library size={19} aria-hidden /><span className="sr-only">Exercises</span>
           </Link>
         </div>
       </PageHeader>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Collapsible } from "@/components/ui/Collapsible";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { TrendingUp } from "lucide-react";
@@ -131,12 +132,14 @@ export default async function ProgressPage() {
   );
 }
 
+/** Every chart can be folded away; it remembers your choice. */
 function Card({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <section className="animate-rise mx-5 mb-4 rounded-2xl bg-rack-raised p-5">
-      <h2 className="font-display text-2xl font-semibold">{title}</h2>
-      <p className="mb-4 text-sm text-chalk-muted">{subtitle}</p>
-      {children}
-    </section>
+    <div className="mb-1">
+      <Collapsible id={`chart-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`} title={title} summary={subtitle} defaultOpen>
+        <p className="mt-3 mb-3 text-sm text-chalk-muted">{subtitle}</p>
+        {children}
+      </Collapsible>
+    </div>
   );
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Collapsible } from "@/components/ui/Collapsible";
 import Link from "next/link";
 import { ChevronLeft, Footprints, Gauge, HeartPulse, Route, Timer, Trophy } from "lucide-react";
 import { requireUser } from "@/lib/auth";
@@ -107,12 +108,14 @@ function Tile({ icon, label, value, sub }: { icon: React.ReactNode; label: strin
   );
 }
 
+/** Every chart can be folded away; it remembers your choice. */
 function Card({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <section className="mt-4 rounded-2xl bg-rack-raised p-5">
-      <h2 className="font-display text-2xl font-semibold">{title}</h2>
-      <p className="mb-3 text-sm text-chalk-muted">{subtitle}</p>
-      {children}
-    </section>
+    <div className="-mx-5">
+      <Collapsible id={`chart-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`} title={title} summary={subtitle} defaultOpen>
+        <p className="mt-3 mb-3 text-sm text-chalk-muted">{subtitle}</p>
+        {children}
+      </Collapsible>
+    </div>
   );
 }

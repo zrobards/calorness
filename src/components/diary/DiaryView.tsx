@@ -15,6 +15,7 @@ import { AddFoodPanel } from "./AddFoodPanel";
 import { ExerciseCard } from "./ExerciseCard";
 import { dayLabel, shiftDay } from "@/lib/fitness/dates";
 import { Toast, type ToastData } from "@/components/motion/Toast";
+import { SearchButton } from "@/components/GlobalSearch";
 
 // The Diary keeps the last copy of each day on the phone. Opening it shows
 // that copy immediately (no loading screen), then quietly swaps in fresh data
@@ -295,7 +296,7 @@ function mealNow(): DiaryMeal["meal"] {
 function Header({ day, today, goTo, syncing }: { day: string; today: string; goTo: (d: string) => void; syncing: boolean }) {
   return (
     <header className="flex items-end justify-between pb-4" style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.5rem)" }}>
-      <h1 className="font-display text-4xl font-bold tracking-tight">Diary</h1>
+      <h1 className="flex items-center gap-1 font-display text-4xl font-bold tracking-tight">Diary <SearchButton /></h1>
       <nav className="flex items-center gap-1" aria-label="Change day">
         <button onClick={() => goTo(shiftDay(day, -1))} className="rounded-lg p-1.5 text-chalk-muted" aria-label="Previous day"><ChevronLeft size={22} /></button>
         <button onClick={() => goTo(today)} className="relative min-w-24 text-center font-display text-lg font-semibold">

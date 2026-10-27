@@ -19,7 +19,9 @@ export function FoodAdder({
   day,
   recent,
   mine,
+  initialQuery = "",
 }: {
+  initialQuery?: string; // e.g. from the app-wide search
   meal: string;
   mealLabel: string;
   day: string;
@@ -27,8 +29,8 @@ export function FoodAdder({
   mine: FoodCandidate[];
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>(recent.length ? "recent" : "search");
-  const [query, setQuery] = useState("");
+  const [tab, setTab] = useState<Tab>(recent.length && !initialQuery ? "recent" : "search");
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<FoodCandidate[]>([]);
   const [searching, setSearching] = useState(false);
   const [selected, setSelected] = useState<{ food: FoodCandidate; servings: number } | null>(null);

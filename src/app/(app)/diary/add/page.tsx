@@ -9,7 +9,7 @@ import { dayLabel } from "@/lib/fitness/dates";
 
 export const metadata: Metadata = { title: "Add food" };
 
-export default async function AddFoodPage({ searchParams }: { searchParams: Promise<{ meal?: string; day?: string }> }) {
+export default async function AddFoodPage({ searchParams }: { searchParams: Promise<{ meal?: string; day?: string; q?: string }> }) {
   const user = await requireUser();
   const params = await searchParams;
   const { today } = await userToday(user.id);
@@ -24,7 +24,7 @@ export default async function AddFoodPage({ searchParams }: { searchParams: Prom
       </Link>
       <h1 className="px-5 font-display text-4xl font-bold tracking-tight">Add to {MEAL_LABELS[meal]}</h1>
       <p className="mb-4 px-5 text-chalk-muted">{dayLabel(day, today)}</p>
-      <FoodAdder meal={meal} mealLabel={MEAL_LABELS[meal]} day={day} recent={recent} mine={mine} />
+      <FoodAdder meal={meal} mealLabel={MEAL_LABELS[meal]} day={day} recent={recent} mine={mine} initialQuery={params.q?.slice(0, 80) ?? ""} />
     </div>
   );
 }
