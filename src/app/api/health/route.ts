@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { plainText, userFromApiKey } from "@/lib/apiAuth";
 import { dayInZone } from "@/lib/time";
+import { fromHealthAutoExport, isHealthAutoExport } from "@/lib/fitness/healthExport";
 import { distanceToMeters, healthNumber, metersToDisplay, mpsToDisplay, speedToMps } from "@/lib/fitness/activity";
 
 /*
@@ -18,6 +19,8 @@ import { distanceToMeters, healthNumber, metersToDisplay, mpsToDisplay, speedToM
   Values can include units ("3.1 mph") or be lists of samples (they're added
   up, or averaged for speed and heart rate).
   To backfill, send { "days": [ { "day": "...", "steps": ... }, ... ] }.
+  The Health Auto Export app's REST format ({ data: { metrics: [...] } }) is
+  also accepted, so that app can be pointed straight at this address.
 */
 type Raw = Record<string, unknown>;
 
@@ -34,7 +37,8 @@ export async function POST(req: Request) {
   }
 
   const imperial = user.unitSystem === "IMPERIAL";
-  const days = (Array.isArray(body.days) ? body.days : [body]).slice(0, 62) as Raw[];
+  // The Health Auto Export app sends its own format; turn it into days
+  const days = (isHealthAutoExport(body) ? fromHealthAutoExport(body) : Array.isArray(body.days) ? body.days : [body]).slice(-62) as Raw[];
   const saved: string[] = [];
 
   for (const d of days) {

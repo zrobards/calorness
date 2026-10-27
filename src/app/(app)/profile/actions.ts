@@ -210,3 +210,10 @@ export async function setActivityGoals(input: { stepGoal: number; activeCalGoal:
   revalidatePath("/progress/activity");
   return { ok: true };
 }
+
+/** When Apple Health last sent data, for the connection status in Profile. */
+export async function healthStatus() {
+  const user = await requireUser();
+  const last = await db.dailyActivity.findFirst({ where: { userId: user.id }, orderBy: { updatedAt: "desc" }, select: { updatedAt: true, steps: true, date: true } });
+  return last ? { lastSync: last.updatedAt.toISOString(), steps: last.steps, day: last.date.toISOString().slice(0, 10) } : null;
+}
