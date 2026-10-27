@@ -12,7 +12,13 @@ import { claudeMessages, coachModel, DEFAULTS } from "./claude";
 export type ProgramExercise = { exerciseId: string; name: string; sets: number; repMin: number; repMax: number; restSeconds: number; note?: string };
 // A day can be built around a sport or climbing session ("Bouldering, 60–90 min"),
 // with supporting exercises, or none at all.
-export type ProgramDay = { name: string; activity?: string; exercises: ProgramExercise[] };
+export type ProgramDay = {
+  name: string;
+  activity?: string;
+  exercises: ProgramExercise[];
+  /** Exercises that weren't found in the library, with where they belonged, so you can pick a match */
+  missing?: { name: string; index: number; sets: number; repMin: number; repMax: number; restSeconds: number }[];
+};
 export type ProgramDraft = { name: string; summary: string; days: ProgramDay[]; unmatched: string[] };
 
 export const PROGRAM_TOOL = {
@@ -216,7 +222,11 @@ export async function toDraft(userId: string, input: z.infer<typeof programInput
   for (const d of input.days) {
     const r = await resolveExercises(userId, d.exercises);
     unmatched.push(...r.unmatched);
-    if (r.exercises.length || d.activity) days.push({ name: d.name, ...(d.activity ? { activity: d.activity } : {}), exercises: r.exercises });
+    const missing = d.exercises
+      .map((e, index) => ({ name: e.exercise, index, sets: e.sets, repMin: Math.min(e.rep_min, e.rep_max), repMax: Math.max(e.rep_min, e.rep_max), restSeconds: e.rest_seconds ?? 90 }))
+      .filter((e) => r.unmatched.includes(e.name));
+    if (r.exercises.length || d.activity || missing.length)
+      days.push({ name: d.name, ...(d.activity ? { activity: d.activity } : {}), exercises: r.exercises, ...(missing.length ? { missing } : {}) });
   }
   return { name: input.name, summary: input.summary, days, unmatched };
 }
@@ -230,13 +240,26 @@ function describeDraft(d: ProgramDraft) {
 /** Build a new program from preferences, or revise an existing draft with an instruction. */
 export async function generateProgram(
   userId: string,
-  request: { prefs: ProgramPrefs } | { draft: ProgramDraft; instruction: string },
+  request: { prefs: ProgramPrefs } | { draft: ProgramDraft; instruction: string } | { paste: string },
 ): Promise<ProgramDraft | { error: string }> {
   const injuries = await db.coachNote.findMany({ where: { userId, active: true, kind: { in: ["injury", "preference"] } }, select: { text: true } });
   const notes = injuries.length ? `\nThings to keep in mind about this person:\n${injuries.map((n) => `- ${n.text}`).join("\n")}` : "";
 
   const ask =
-    "prefs" in request
+    "paste" in request
+      ? `Here is a program the person wrote themselves. Turn it into the create_program format EXACTLY as written:
+- Keep every day, in order, with its name (e.g. "Upper A"; you can drop the weekday).
+- Keep every exercise on its day, in order, using the names they wrote. Don't add, remove, swap, or rename exercises.
+- Lines that are climbing, sports, or other non-gym work (e.g. "Warm-Up Climbing", "Hard Bouldering / Routes") are not exercises: describe them together as that day's activity, in order. A day made only of those has no exercises.
+- Leave out rest days.
+- Where they gave sets, reps, or rest, use them. Where they didn't, choose sensible ones for each exercise (compounds 3-4 sets of 5-10 with 2-3 min rest; isolation 2-3 sets of 10-15 with 60-90 s).
+- Name the program from their title if they gave one.
+
+Their program:
+"""
+${request.paste}
+"""${notes}`
+      : "prefs" in request
       ? `Build a program.
 Goal: ${request.prefs.goal}
 Days per week: ${request.prefs.daysPerWeek}

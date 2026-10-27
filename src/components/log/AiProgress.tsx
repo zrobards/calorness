@@ -13,6 +13,7 @@ const STEPS = {
   recheck: ["Taking your note into account", "Re-estimating", "Adding it up"],
   barcode: ["Looking up the barcode"],
   program: ["Reading your goals", "Choosing exercises", "Setting sets, reps, and rest", "Balancing the week", "Matching to the exercise library"],
+  programPaste: ["Reading your program", "Matching exercises to the library", "Filling in sets, reps, and rest"],
   programRevise: ["Reading your change", "Rewriting the program", "Matching to the exercise library"],
 } as const;
 export type AiTask = keyof typeof STEPS;

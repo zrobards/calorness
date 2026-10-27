@@ -163,7 +163,7 @@ export function CoachChat({ chat, initialMessages, notes }: { chat: { id: string
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(text); } }}
           rows={1}
-          maxLength={1000}
+          maxLength={6000}
           placeholder="Ask Coach anything"
           aria-label="Message Coach"
           className="max-h-32 flex-1 resize-none rounded-2xl border border-rack-line bg-rack-raised px-4 py-2.5 text-base focus:border-plate-yellow focus:outline-none"

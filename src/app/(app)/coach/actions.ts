@@ -27,7 +27,7 @@ export async function listChats(): Promise<ChatSummary[]> {
 /** Send a message in a chat (or start a new chat when there's no id yet). */
 export async function sendCoachMessage(text: string, conversationId?: string | null) {
   const user = await requireUser();
-  const message = z.string().trim().min(1).max(1000).safeParse(text);
+  const message = z.string().trim().min(1).max(6000).safeParse(text);
   if (!message.success) return { error: "Type a message first." };
   if (!aiConfigured()) return { error: "Coach needs the AI key set up in Vercel." };
 

@@ -275,6 +275,8 @@
 "mechanic": null,
 "aliases": [
 "cable chest fly",
+"cable fly",
+"chest fly cable",
 "standing cable fly"
 ]
 },
@@ -852,8 +854,12 @@
 "level": null,
 "mechanic": null,
 "aliases": [
-"pullup",
-"pull up"
+"hammer grip pull up",
+"neutral grip pull up",
+"neutral grip pullups",
+"neutral-grip pull-ups",
+"pull up",
+"pullup"
 ]
 },
 {
@@ -879,7 +885,11 @@
 ],
 "level": null,
 "mechanic": null,
-"aliases": []
+"aliases": [
+"weighted pull ups",
+"weighted pull-ups",
+"weighted pullups"
+]
 },
 {
 "slug": "x-assisted-pull-up",
@@ -1069,6 +1079,8 @@
 "level": null,
 "mechanic": null,
 "aliases": [
+"machine shoulder press",
+"seated machine press",
 "shoulder press machine"
 ]
 },
@@ -1276,7 +1288,11 @@
 "level": null,
 "mechanic": null,
 "aliases": [
-"bent over rear delt raise"
+"bent over rear delt raise",
+"rear delt fly",
+"rear delt flyes",
+"rear-delt fly",
+"reverse fly"
 ]
 },
 {
@@ -1506,6 +1522,7 @@
 "level": null,
 "mechanic": null,
 "aliases": [
+"rope pressdown",
 "rope pushdown",
 "tricep rope"
 ]
@@ -1533,7 +1550,10 @@
 "level": null,
 "mechanic": null,
 "aliases": [
-"bar pushdown"
+"bar pushdown",
+"pressdown",
+"tricep pressdown",
+"triceps pressdown"
 ]
 },
 {
@@ -1559,7 +1579,10 @@
 "level": null,
 "mechanic": null,
 "aliases": [
-"overhead rope extension"
+"cable overhead extension",
+"overhead rope extension",
+"overhead tricep extension",
+"overhead triceps extension"
 ]
 },
 {
@@ -2299,6 +2322,10 @@
 "level": null,
 "mechanic": null,
 "aliases": [
+"abductor machine",
+"abductors",
+"hip abductor",
+"hip abductors",
 "outer thigh machine"
 ]
 },
@@ -2324,6 +2351,10 @@
 "level": null,
 "mechanic": null,
 "aliases": [
+"adductor machine",
+"adductors",
+"hip adductor",
+"hip adductors",
 "inner thigh machine"
 ]
 },
@@ -2350,6 +2381,7 @@
 "level": null,
 "mechanic": null,
 "aliases": [
+"calf raise machine",
 "standing calf raise"
 ]
 },
