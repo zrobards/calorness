@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { deleteExercise } from "../../actions";
+import { deleteExercise } from "@/lib/clientActions";
 
 export function DeleteExerciseButton({ id }: { id: string }) {
   const [error, setError] = useState<string | null>(null);

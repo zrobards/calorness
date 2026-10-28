@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import type { ExerciseOption } from "@/lib/training";
-import { createExercise } from "@/app/(app)/train/actions";
+import { createExercise } from "@/lib/clientActions";
 import { Sheet } from "@/components/diary/Sheet";
 import { haptic } from "@/lib/haptics";
 import { titleCase } from "./muscleFilters";

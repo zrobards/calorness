@@ -4,16 +4,8 @@ import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { ArrowDown, ArrowUp, ChevronDown, FolderPlus, Pencil, Play, Trash2 } from "lucide-react";
 import { haptic } from "@/lib/haptics";
-import {
-  createProgram,
-  deleteProgram,
-  moveProgram,
-  moveRoutine,
-  renameProgram,
-  setActiveProgram,
-  setRoutineProgram,
-  startWorkout,
-} from "@/app/(app)/train/actions";
+import { startWorkout } from "@/app/(app)/train/actions";
+import { createProgram, deleteProgram, moveProgram, moveRoutine, renameProgram, setActiveProgram, setRoutineProgram } from "@/lib/clientActions";
 
 export type PlanRoutine = { id: string; name: string; subtitle: string };
 export type PlanProgram = { id: string; name: string; summary: string | null; pinned: boolean; routines: PlanRoutine[] };
@@ -46,8 +38,9 @@ export function TrainPlan({ programs, standalone, savedId }: { programs: PlanPro
       if (value === "__new") {
         const name = window.prompt("Name the new program");
         if (!name?.trim()) return;
-        const { id } = await createProgram(name);
-        await setRoutineProgram(routineId, id);
+        const created = await createProgram(name);
+        if ("error" in created) return alert(created.error);
+        await setRoutineProgram(routineId, created.id);
       } else await setRoutineProgram(routineId, value || null);
     });
 

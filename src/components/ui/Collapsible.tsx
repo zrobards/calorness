@@ -51,7 +51,23 @@ export function Collapsible({
         document.getElementById(id)?.scrollIntoView({ block: "start" });
       } else if (saved !== undefined) setOpen(saved);
     }, 0);
-    return () => clearTimeout(t);
+    // Links to #this-section from the same page (search results, "Change
+    // activity goals") change the hash without reloading: open then too.
+    // Next.js updates the address with pushState, which fires no event, so
+    // also check after any in-app navigation.
+    const onHash = () => {
+      if (window.location.hash === `#${id}`) {
+        setOpen(true);
+        setTimeout(() => document.getElementById(id)?.scrollIntoView({ block: "start", behavior: "smooth" }), 50);
+      }
+    };
+    window.addEventListener("hashchange", onHash);
+    window.addEventListener("calorness:navigated", onHash);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("hashchange", onHash);
+      window.removeEventListener("calorness:navigated", onHash);
+    };
   }, [id]);
 
   const matches = !query || `${title} ${summary ?? ""} ${keywords}`.toLowerCase().includes(query);

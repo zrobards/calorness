@@ -9,9 +9,11 @@ import type { AiFoodItem } from "@/lib/ai/parse";
 import type { GroundedItem } from "@/lib/ai/ground";
 import { localDay, mealForTime, type MealName } from "@/lib/nutrition/meals";
 import { haptic } from "@/lib/haptics";
-import { addDiaryEntry, deleteDiaryEntry, lookupBarcode } from "@/app/(app)/diary/actions";
-import { aiEstimate, logAiItems, quickRelog } from "@/app/(app)/log/actions";
-import { deleteDiaryEntries, deleteSavedMeal, logSavedMeal } from "@/app/(app)/diary/actions";
+import { lookupBarcode } from "@/app/(app)/diary/actions";
+import { addDiaryEntry, deleteDiaryEntry } from "@/lib/clientActions";
+import { aiEstimate } from "@/app/(app)/log/actions";
+import { logAiItems, quickRelog } from "@/lib/clientActions";
+import { deleteDiaryEntries, deleteSavedMeal, logSavedMeal } from "@/lib/clientActions";
 import { startWorkout } from "@/app/(app)/train/actions";
 import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
 import { Toast, type ToastData } from "@/components/motion/Toast";
@@ -203,11 +205,16 @@ export function QuickLog({
   const onBarcode = useCallback((code: string) => {
     setScanning(false);
     setProgress({ task: "barcode" });
-    lookupBarcode(code).then(({ food, barcode }) => {
-      setProgress(null);
-      if (food) setBarcodeFood(food);
-      else setToast({ message: `No match for ${barcode}. Snap a photo of it instead.` });
-    });
+    lookupBarcode(code)
+      .then(({ food, barcode }) => {
+        setProgress(null);
+        if (food) setBarcodeFood(food);
+        else setToast({ message: `No match for ${barcode}. Snap a photo of it instead.` });
+      })
+      .catch(() => {
+        setProgress(null);
+        setToast({ message: "Couldn't look that up: no connection. Try again when you have signal." });
+      });
   }, []);
 
   const caloriesLeft = today.goal ? Math.round(today.goal - today.calories) : null;

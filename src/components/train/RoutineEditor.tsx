@@ -3,7 +3,9 @@
 import { useRef, useState, useTransition } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import type { ExerciseOption } from "@/lib/training";
-import { saveRoutine, deleteRoutine, type RoutineInput } from "@/app/(app)/train/actions";
+import { saveRoutine, type RoutineInput } from "@/app/(app)/train/actions";
+import { deleteRoutine } from "@/lib/clientActions";
+import { failed, safe } from "@/lib/safeAction";
 import { ExercisePicker } from "./ExercisePicker";
 import { ExerciseThumb } from "./ExerciseThumb";
 import { titleCase } from "./muscleFilters";
@@ -29,6 +31,7 @@ export function RoutineEditor({
   const [programId, setProgramId] = useState<string>(initialProgramId ?? (routine ? "" : programs.find((p) => p.pinned)?.id ?? ""));
   const nameRef = useRef<HTMLInputElement>(null);
   const errorRef = useRef<HTMLParagraphElement>(null);
+  const newId = useRef<string | null>(null); // chosen once, so retries can't create copies
   const [notes, setNotes] = useState(routine?.notes ?? "");
   const [rows, setRows] = useState<Row[]>(
     () => routine?.exercises.map((e, i) => ({ ...e, key: `${e.exerciseId}-${i}` })) ?? [],
@@ -70,9 +73,10 @@ export function RoutineEditor({
       return;
     }
     (document.activeElement as HTMLElement | null)?.blur?.(); // close the keyboard first
+    if (!routine && !newId.current) newId.current = crypto.randomUUID().replace(/-/g, "");
     startTransition(async () => {
       setError(null);
-      const result = await saveRoutine(routine?.id ?? null, {
+      const result = await safe(() => saveRoutine(routine?.id ?? null, {
         name,
         notes: notes || undefined,
         programId: programId || null,
@@ -83,8 +87,8 @@ export function RoutineEditor({
           targetRepsMax,
           restSeconds,
         })),
-      });
-      if (result?.error) {
+      }, newId.current ?? undefined), { retries: 2 });
+      if (failed(result)) {
         setError(result.error);
         setTimeout(() => errorRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }), 0);
       }
@@ -190,7 +194,7 @@ export function RoutineEditor({
       <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+5rem+var(--music-dock-h,0px))] z-10 -mx-5 mt-6 flex gap-3 bg-rack/95 px-5 py-3 backdrop-blur">
         {routine && (
           <button
-            onClick={() => { if (confirm("Delete this routine? Past workouts stay in your history.")) startTransition(() => deleteRoutine(routine.id)); }}
+            onClick={() => { if (confirm("Delete this routine? Past workouts stay in your history.")) startTransition(async () => { const r = await safe(() => deleteRoutine(routine.id)); if (failed(r)) setError(r.error); }); }}
             className="rounded-xl border border-rack-line px-4 py-3.5 font-medium text-chalk-muted hover:text-plate-red"
           >
             Delete

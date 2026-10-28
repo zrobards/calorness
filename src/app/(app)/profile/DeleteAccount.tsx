@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { signOut } from "next-auth/react";
-import { deleteAccount } from "./actions";
+import { deleteAccount } from "@/lib/clientActions";
 
 /** Permanently delete the account and everything in it. */
 export function DeleteAccount() {

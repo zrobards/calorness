@@ -34,7 +34,7 @@ const routineSchema = z.object({
 
 export type RoutineInput = z.infer<typeof routineSchema>;
 
-export async function saveRoutine(routineId: string | null, input: RoutineInput) {
+export async function saveRoutine(routineId: string | null, input: RoutineInput, newId?: string) {
   const user = await requireUser();
   const parsed = routineSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the routine." };
@@ -67,12 +67,18 @@ export async function saveRoutine(routineId: string | null, input: RoutineInput)
       }),
     ]);
   } else {
-    const target = programId ?? null;
-    const count = await db.routine.count({ where: { userId: user.id, programId: target } });
-    const created = await db.routine.create({
-      data: { userId: user.id, name, notes, programId: target, position: count, exercises: { create: rows } },
-    });
-    savedId = created.id;
+    // The phone picks the new routine's id, so if a save is retried after a
+    // dropped connection (and the first one actually arrived), no copy is made
+    const already = newId ? await db.routine.findFirst({ where: { id: newId, userId: user.id }, select: { id: true } }) : null;
+    if (already) savedId = already.id;
+    else {
+      const target = programId ?? null;
+      const count = await db.routine.count({ where: { userId: user.id, programId: target } });
+      const created = await db.routine.create({
+        data: { ...(newId ? { id: newId } : {}), userId: user.id, name, notes, programId: target, position: count, exercises: { create: rows } },
+      });
+      savedId = created.id;
+    }
   }
 
   revalidatePath("/train");

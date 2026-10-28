@@ -8,7 +8,8 @@ import type { CoachProgramProposal, CoachProposal } from "@/lib/ai/coach";
 import { haptic } from "@/lib/haptics";
 import { Markdown } from "@/components/Markdown";
 import { Sheet } from "@/components/diary/Sheet";
-import { applyProposal, deleteChat, forgetNote, listChats, saveCoachProgram, sendCoachMessage, type ChatSummary } from "./actions";
+import { listChats, sendCoachMessage, type ChatSummary } from "./actions";
+import { applyProposal, deleteChat, forgetNote, saveCoachProgram } from "@/lib/clientActions";
 
 type Proposal = CoachProposal | CoachProgramProposal;
 type Msg = { id: string; role: "user" | "assistant"; content: string; proposal: Proposal | null };
@@ -87,7 +88,7 @@ export function CoachChat({ chat, initialMessages, notes }: { chat: { id: string
             {notes.map((n) => (
               <span key={n.id} className={`flex shrink-0 items-center gap-1 rounded-full py-1 pr-1 pl-3 text-xs font-medium ${NOTE_COLOR[n.kind] ?? "bg-rack-raised text-chalk-muted"}`}>
                 {n.text}
-                <button onClick={() => start(() => forgetNote(n.id))} disabled={pending} className="rounded-full p-0.5 opacity-70 hover:opacity-100" aria-label={`Forget: ${n.text}`}>
+                <button onClick={() => start(async () => { await forgetNote(n.id); })} disabled={pending} className="rounded-full p-0.5 opacity-70 hover:opacity-100" aria-label={`Forget: ${n.text}`}>
                   <X size={13} />
                 </button>
               </span>
@@ -130,7 +131,7 @@ export function CoachChat({ chat, initialMessages, notes }: { chat: { id: string
                     pending={pending}
                     onApply={(mode) => start(async () => {
                       const r = await applyProposal(m.id, mode);
-                      if (r.ok) {
+                      if ("ok" in r && r.ok) {
                         haptic("success");
                         const p = m.proposal as CoachProposal;
                         setApplied((a) => ({ ...a, [m.id]: mode === "replace" ? `Updated ${p.replacesRoutineName}` : `Saved "${p.name}" to your routines` }));
@@ -259,7 +260,7 @@ function ProgramCard({ messageId, draft, saved, onSaved }: { messageId: string; 
       ) : (
         <div className="mt-3 grid grid-cols-2 gap-2">
           <Link href={`/train/programs/build?from=${messageId}`} className="rounded-xl bg-plate-red py-2.5 text-center font-semibold text-white">Customize</Link>
-          <button disabled={pending} onClick={() => start(async () => { const r = await saveCoachProgram(messageId); if (r.ok) { haptic("success"); onSaved(`Saved ${draft.days.length} routines`); } })}
+          <button disabled={pending} onClick={() => start(async () => { const r = await saveCoachProgram(messageId); if ("ok" in r && r.ok) { haptic("success"); onSaved(`Saved ${draft.days.length} routines`); } })}
             className="rounded-xl bg-rack py-2.5 font-semibold disabled:opacity-60">
             {pending ? "Saving…" : "Save as is"}
           </button>

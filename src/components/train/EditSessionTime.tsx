@@ -3,8 +3,8 @@
 import { useState, useTransition } from "react";
 import { Check } from "lucide-react";
 import { haptic } from "@/lib/haptics";
-import { updateWorkoutTime } from "@/app/(app)/train/actions";
-import { updateActivity } from "@/app/(app)/train/cardio/actions";
+import { updateWorkoutTime } from "@/lib/clientActions";
+import { updateActivity } from "@/lib/clientActions";
 
 type Effort = "light" | "moderate" | "vigorous";
 const EFFORT_LABEL: Record<Effort, { title: string; hint: string }> = {

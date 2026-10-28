@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { saveGoals, type GoalFormState } from "./actions";
+import { type GoalFormState } from "./actions";
+import { saveGoals } from "@/lib/clientActions";
 
 const field =
   "mt-1 w-full rounded-xl border border-rack-line bg-rack px-3 py-2.5 text-chalk focus:border-plate-yellow focus:outline-none";

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import type { FoodCandidate } from "@/lib/nutrition/normalize";
-import { createCustomFood, updateCustomFood } from "@/app/(app)/diary/actions";
+import { createCustomFood, updateCustomFood } from "@/lib/clientActions";
 import { Sheet } from "./Sheet";
 
 const field = "mt-1 w-full rounded-xl border border-rack-line bg-rack px-3 py-2.5 text-chalk focus:border-plate-yellow focus:outline-none";

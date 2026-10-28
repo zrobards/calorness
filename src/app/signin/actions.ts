@@ -5,7 +5,8 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { DEMO_EMAIL, requireUser } from "@/lib/auth";
 import { displayCode, handoffStatus, HANDOFF_TTL_MS } from "@/lib/handoff";
-import { emailSchema, hashPassword, passwordSchema } from "@/lib/password";
+import { emailSchema, hashPassword, passwordSchema, verifyPassword } from "@/lib/password";
+import { isLocked, recordFailure } from "@/lib/throttle";
 
 const idSchema = z.string().min(30).max(64);
 
@@ -63,11 +64,21 @@ export async function signUp(input: { name: string; email: string; password: str
 }
 
 /** Signed-in users (e.g. from GitHub) can add or change a password. */
-export async function setPassword(password: string) {
+export async function setPassword(password: string, current?: string) {
   const user = await requireUser();
   const parsed = passwordSchema.safeParse(password);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Choose another password." };
-  const row = await db.user.findUniqueOrThrow({ where: { id: user.id }, select: { email: true } });
+  const row = await db.user.findUniqueOrThrow({ where: { id: user.id }, select: { email: true, passwordHash: true } });
+  // Changing an existing password needs the current one, so someone holding
+  // your unlocked phone can't lock you out (wrong guesses are rate limited)
+  if (row.passwordHash) {
+    const key = `pw:${row.email}`;
+    if (await isLocked(key)) return { error: "Too many wrong passwords. Try again in 15 minutes." };
+    if (!current || !(await verifyPassword(current, row.passwordHash))) {
+      await recordFailure(key);
+      return { error: "Your current password isn't right." };
+    }
+  }
   if (!row.email) return { error: "Your account has no email address, so a password can't be added." };
   if (row.email === DEMO_EMAIL) return { error: "The shared demo account can't have a password." };
   await db.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(parsed.data) } });

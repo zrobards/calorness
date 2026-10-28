@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import type { ProgramTemplate } from "@/lib/templates";
-import { importTemplate } from "../actions";
+import { importTemplate } from "@/lib/clientActions";
 import { haptic } from "@/lib/haptics";
 
 const LEVEL_COLOR = { Beginner: "text-plate-green", Intermediate: "text-plate-yellow", Any: "text-plate-blue" } as const;
@@ -49,7 +49,7 @@ export function TemplateCard({ template }: { template: ProgramTemplate }) {
         disabled={pending}
         onClick={() => start(async () => {
           const r = await importTemplate(template.id);
-          if (r.ok) { haptic("success"); router.push("/train"); }
+          if ("ok" in r && r.ok) { haptic("success"); router.push("/train"); } else if ("error" in r && r.error) alert(r.error);
         })}
         className="mt-3 w-full rounded-xl bg-chalk py-3 font-display text-lg font-semibold text-rack disabled:opacity-60"
       >

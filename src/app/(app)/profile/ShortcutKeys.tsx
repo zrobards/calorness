@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { Check, Copy, KeyRound, Trash2 } from "lucide-react";
 import { haptic } from "@/lib/haptics";
-import { createApiKey, deleteApiKey } from "./actions";
+import { createApiKey, deleteApiKey } from "@/lib/clientActions";
 
 type Key = { id: string; name: string; prefix: string; createdAt: string; lastUsedAt: string | null };
 
@@ -73,7 +73,7 @@ export function ShortcutKeys({ keys }: { keys: Key[] }) {
                 </span>
               </span>
               <button
-                onClick={() => confirm("Delete this key? Shortcuts using it will stop working.") && start(() => deleteApiKey(k.id))}
+                onClick={() => confirm("Delete this key? Shortcuts using it will stop working.") && start(async () => { await deleteApiKey(k.id); })}
                 className="p-1.5 text-chalk-muted hover:text-plate-red"
                 aria-label={`Delete key ${k.prefix}`}
               >

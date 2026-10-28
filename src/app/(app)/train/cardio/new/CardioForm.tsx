@@ -6,7 +6,7 @@ import { ACTIVITIES, estimateBurn, exerciseCreditCalories, metFor, type Activity
 import { lbToKg } from "@/lib/fitness/units";
 import { searchByName } from "@/components/train/muscleFilters";
 import { haptic } from "@/lib/haptics";
-import { logActivity } from "../actions";
+import { logActivity } from "@/lib/clientActions";
 
 type BodyProps = { weight: number | null; weightKg: number | null; heightCm: number | null; age: number | null; sex: "male" | "female" | null };
 const CATEGORIES = [...new Set(ACTIVITIES.map((a) => a.category))];
