@@ -48,11 +48,13 @@ export async function getDiaryDay(userId: string, day: string, timeZone = "Ameri
   // Exercise for the day: logged cardio, plus an estimate for lifting
   // sessions from their length (weight training averages ~5 METs including rest)
   const lifting = workouts.map((w) => {
-    const minutes = Math.min(180, Math.max(1, Math.round(((w.endedAt?.getTime() ?? w.startedAt.getTime()) - w.startedAt.getTime()) / 60000)));
-    const burn = body.weightKg ? estimateBurn({ ...body, weightKg: body.weightKg, minutes, met: 5.0 }) : { total: 0, net: 0 };
-    return { id: w.id, kind: "workout" as const, name: w.name, minutes, total: burn.total, net: burn.net };
+    const minutes = Math.min(360, Math.max(1, Math.round(((w.endedAt?.getTime() ?? w.startedAt.getTime()) - w.startedAt.getTime()) / 60000)));
+    const effort = (w.effort === "light" || w.effort === "vigorous" ? w.effort : "moderate") as "light" | "moderate" | "vigorous";
+    const met = { light: 3.5, moderate: 5.0, vigorous: 6.0 }[effort]; // weightlifting METs, including rest between sets
+    const burn = body.weightKg ? estimateBurn({ ...body, weightKg: body.weightKg, minutes, met }) : { total: 0, net: 0 };
+    return { id: w.id, kind: "workout" as const, name: w.name, minutes, effort, total: burn.total, net: burn.net };
   });
-  const cardio = activities.map((a) => ({ id: a.id, kind: "activity" as const, name: a.name, minutes: Math.round(a.durationMin), total: a.caloriesTotal, net: a.caloriesNet, method: a.method }));
+  const cardio = activities.map((a) => ({ id: a.id, kind: "activity" as const, name: a.name, minutes: Math.round(a.durationMin), effort: a.intensity, total: a.caloriesTotal, net: a.caloriesNet, method: a.method }));
   // Apple Health's active calories already include every workout (watch or
   // not), so when they're synced they replace the logged estimates instead of
   // adding to them. Logged sessions still show, marked as included.

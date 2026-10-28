@@ -12,7 +12,7 @@ export type DiaryData = {
   day: string;
   baseGoal: Targets | null; // before exercise
   exercise: {
-    items: { id: string; kind: "workout" | "activity" | "health"; name: string; minutes: number; total: number; net: number; included?: boolean }[];
+    items: { id: string; kind: "workout" | "activity" | "health"; name: string; minutes: number; effort?: string; total: number; net: number; included?: boolean }[];
     net: number;
     credit: number;
     calories: number;
