@@ -458,3 +458,24 @@ export async function setRoutineProgram(routineId: string, programId: string | n
   await db.routine.update({ where: { id: r.id }, data: { programId, position } });
   revalidatePath("/train");
 }
+
+// ─── Fixing a workout's length (for calories burned) ──────────────────────
+
+/** Set how long a finished workout lasted and how hard it was; calories are re-estimated from this. */
+export async function updateWorkoutTime(workoutId: string, minutes: number, effort?: "light" | "moderate" | "vigorous") {
+  const user = await requireUser();
+  const p = z
+    .object({ id: z.string().min(1), minutes: z.number().int().min(1, "At least 1 minute.").max(600, "Up to 10 hours."), effort: z.enum(["light", "moderate", "vigorous"]).optional() })
+    .safeParse({ id: workoutId, minutes, effort });
+  if (!p.success) return { error: p.error.issues[0]?.message ?? "Check the minutes." };
+  const w = await db.workout.findFirst({ where: { id: p.data.id, userId: user.id, endedAt: { not: null } }, select: { startedAt: true } });
+  if (!w) return { error: "Finish the workout first, then you can change how long it took." };
+  await db.workout.update({
+    where: { id: p.data.id },
+    data: { endedAt: new Date(w.startedAt.getTime() + p.data.minutes * 60_000), ...(p.data.effort ? { effort: p.data.effort } : {}) },
+  });
+  revalidatePath("/diary");
+  revalidatePath("/train");
+  revalidatePath(`/train/history/${p.data.id}`);
+  return { ok: true };
+}

@@ -207,6 +207,8 @@ model Workout {
   name      String
   notes     String?
   startedAt DateTime  @default(now())
+  // How hard the session felt, for the calorie estimate (light, moderate, vigorous)
+  effort    String?
   endedAt   DateTime? // null while the workout is in progress
   updatedAt DateTime  @default(now()) @updatedAt // last autosave, to pick the newest copy across devices
 

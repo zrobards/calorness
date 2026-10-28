@@ -7,6 +7,7 @@ import { getFinishedWorkout, getUnitSystem } from "@/lib/training";
 import { bestSet, findNewRecords, type PersonalRecords } from "@/lib/fitness/strength";
 import { displayWeight, weightUnit } from "@/lib/fitness/units";
 import { formatDay, formatDuration } from "@/lib/fitness/dates";
+import { WorkoutTimeEditor } from "./WorkoutTimeEditor";
 import { DeleteWorkoutButton } from "./DeleteWorkoutButton";
 import { PlateBurst } from "@/components/motion/PlateBurst";
 import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
@@ -71,6 +72,7 @@ export default async function WorkoutDetailPage({
           </div>
         ))}
       </dl>
+      {workout.endedAt && <WorkoutTimeEditor id={workout.id} minutes={Math.max(1, Math.round(workout.durationMs / 60000))} effort={workout.effort ?? null} />}
 
       {prs.length > 0 && (
         <section className="animate-rise mt-6 overflow-hidden rounded-2xl border border-plate-yellow/40 bg-plate-yellow/10 p-5" style={{ "--i": 3 } as React.CSSProperties} aria-label="Personal records">

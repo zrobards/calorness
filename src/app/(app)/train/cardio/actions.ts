@@ -116,3 +116,31 @@ export async function setExerciseCredit(percent: number) {
   revalidatePath("/diary");
   revalidatePath("/profile");
 }
+
+/** Change how long (and how hard) an activity was; calories are recalculated the same way as when it was logged. */
+export async function updateActivity(id: string, minutes: number, intensity?: Intensity) {
+  const user = await requireUser();
+  const p = z
+    .object({ minutes: z.number().min(1, "At least 1 minute.").max(24 * 60), intensity: z.enum(["light", "moderate", "vigorous"]).optional() })
+    .safeParse({ minutes, intensity });
+  if (!p.success) return { error: p.error.issues[0]?.message ?? "Check the minutes." };
+  const a = await db.activityEntry.findFirst({ where: { id, userId: user.id } });
+  if (!a) return { error: "That activity is gone." };
+  const body = await getBody(user.id, a.date);
+  if (!body.weightKg) return { error: "Add your weight on Progress so calories can be estimated." };
+  const level = (p.data.intensity ?? a.intensity) as Intensity;
+  const catalog = findActivity(a.activity);
+  // Custom activities stored their effort as light/moderate/vigorous only
+  const met = catalog ? metFor(catalog, level) : { light: 3, moderate: 5, vigorous: 8 }[level];
+  const burn = estimateBurn({
+    weightKg: body.weightKg, heightCm: body.heightCm, age: body.age, sex: body.sex,
+    minutes: p.data.minutes, met, avgHeartRate: a.avgHeartRate, distanceM: a.distanceM, inclinePct: a.inclinePct, speedModel: catalog?.speedModel,
+  });
+  await db.activityEntry.update({
+    where: { id },
+    data: { durationMin: p.data.minutes, intensity: level, caloriesTotal: burn.total, caloriesNet: burn.net, method: burn.method },
+  });
+  revalidatePath("/diary");
+  revalidatePath("/train");
+  return { ok: true, total: burn.total, net: burn.net };
+}
