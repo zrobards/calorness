@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { ArrowDown, ArrowUp, ChevronDown, FolderPlus, Pencil, Play, Trash2 } from "lucide-react";
 import { haptic } from "@/lib/haptics";
 import {
@@ -23,9 +23,20 @@ export type PlanProgram = { id: string; name: string; summary: string | null; pi
  * (and any single routines) is kept below in "Your programs", each with an
  * on/off switch. Turning one on turns the others off.
  */
-export function TrainPlan({ programs, standalone }: { programs: PlanProgram[]; standalone: PlanRoutine[] }) {
+export function TrainPlan({ programs, standalone, savedId }: { programs: PlanProgram[]; standalone: PlanRoutine[]; savedId?: string }) {
   const [organizing, setOrganizing] = useState(false);
-  const [expanded, setExpanded] = useState<string | null>(null);
+  // Just saved a routine? Open the place it lives and point it out.
+  const savedIn = savedId ? programs.find((p) => p.routines.some((r) => r.id === savedId)) ?? (standalone.some((r) => r.id === savedId) ? "single" : null) : null;
+  const savedName = savedId ? [...programs.flatMap((p) => p.routines), ...standalone].find((r) => r.id === savedId)?.name : undefined;
+  const [expanded, setExpanded] = useState<string | null>(savedIn && savedIn !== "single" && !savedIn.pinned ? savedIn.id : savedIn === "single" ? "single" : null);
+  const [showSaved, setShowSaved] = useState(!!savedName);
+  useEffect(() => {
+    if (!savedId) return;
+    window.history.replaceState(null, "", "/train"); // so a refresh doesn't show it again
+    const t1 = setTimeout(() => document.getElementById(`routine-${savedId}`)?.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
+    const t2 = setTimeout(() => setShowSaved(false), 6000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [savedId]);
   const [pending, start] = useTransition();
   const active = programs.find((p) => p.pinned) ?? null;
 
@@ -43,7 +54,7 @@ export function TrainPlan({ programs, standalone }: { programs: PlanProgram[]; s
   const routineList = (list: PlanRoutine[]) => (
     <ul className="divide-y divide-rack-line">
       {list.map((r, index) => (
-        <li key={r.id} className="flex items-start justify-between gap-3 py-3">
+        <li key={r.id} id={`routine-${r.id}`} className={`flex items-start justify-between gap-3 py-3 ${r.id === savedId && showSaved ? "-mx-2 rounded-xl bg-plate-green/15 px-2" : ""}`}>
           <Link href={`/train/routines/${r.id}`} className="min-w-0 flex-1">
             <h4 className="truncate font-display text-lg font-semibold">{r.name}</h4>
             <p className="line-clamp-2 text-sm text-chalk-muted">{r.subtitle}</p>
@@ -73,6 +84,11 @@ export function TrainPlan({ programs, standalone }: { programs: PlanProgram[]; s
 
   return (
     <div className={pending ? "opacity-70 transition-opacity" : ""}>
+      {showSaved && savedName && (
+        <p role="status" className="animate-rise mx-5 mb-3 rounded-xl bg-plate-green/15 px-4 py-2.5 text-sm">
+          Saved <b>{savedName}</b>{savedIn && savedIn !== "single" ? <> in {savedIn.name}</> : " as a single routine"}.
+        </p>
+      )}
       {/* The program you're running */}
       <section className="mx-5" aria-label="Active program">
         {active ? (

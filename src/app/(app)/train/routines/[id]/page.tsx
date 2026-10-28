@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
 import { RoutineEditor } from "@/components/train/RoutineEditor";
 import { requireUser } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { exerciseImageUrl, getExerciseOptions, getRoutine } from "@/lib/training";
 
 export const metadata: Metadata = { title: "Edit routine" };
@@ -11,7 +12,11 @@ export const metadata: Metadata = { title: "Edit routine" };
 export default async function EditRoutinePage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const { id } = await params;
-  const [routine, library] = await Promise.all([getRoutine(user.id, id), getExerciseOptions(user.id)]);
+  const [routine, library, programs] = await Promise.all([
+    getRoutine(user.id, id),
+    getExerciseOptions(user.id),
+    db.program.findMany({ where: { userId: user.id }, orderBy: [{ position: "asc" }], select: { id: true, name: true, pinned: true } }),
+  ]);
   if (!routine) notFound();
 
   return (
@@ -20,6 +25,8 @@ export default async function EditRoutinePage({ params }: { params: Promise<{ id
         <Link href="/train" className="text-sm font-medium text-chalk-muted">Cancel</Link>
       </PageHeader>
       <RoutineEditor
+        programs={programs}
+        initialProgramId={routine.programId}
         library={library}
         routine={{
           id: routine.id,
