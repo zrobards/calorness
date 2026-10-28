@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import type { ExerciseOption } from "@/lib/training";
 import { saveRoutine, deleteRoutine, type RoutineInput } from "@/app/(app)/train/actions";
@@ -15,11 +15,20 @@ const REST_OPTIONS = [0, 30, 60, 90, 120, 150, 180, 240, 300];
 export function RoutineEditor({
   library,
   routine,
+  programs = [],
+  initialProgramId = null,
 }: {
   library: ExerciseOption[];
   routine?: { id: string; name: string; notes: string | null; exercises: Omit<Row, "key">[] };
+  /** Your programs, so a routine can be saved into one */
+  programs?: { id: string; name: string; pinned: boolean }[];
+  initialProgramId?: string | null;
 }) {
   const [name, setName] = useState(routine?.name ?? "");
+  // New routines go into the program you're running, so they show up on Train right away
+  const [programId, setProgramId] = useState<string>(initialProgramId ?? (routine ? "" : programs.find((p) => p.pinned)?.id ?? ""));
+  const nameRef = useRef<HTMLInputElement>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
   const [notes, setNotes] = useState(routine?.notes ?? "");
   const [rows, setRows] = useState<Row[]>(
     () => routine?.exercises.map((e, i) => ({ ...e, key: `${e.exerciseId}-${i}` })) ?? [],
@@ -40,12 +49,33 @@ export function RoutineEditor({
       return next;
     });
 
-  const save = () =>
+  // Check the obvious things here first, with a clear message right where you're looking
+  const problem = (): string | null => {
+    if (!name.trim()) return "Give the routine a name.";
+    if (rows.length === 0) return "Add at least one exercise.";
+    const bad = rows.find((r) => !(r.targetSets >= 1 && r.targetSets <= 20));
+    if (bad) return `${bad.name}: sets must be between 1 and 20.`;
+    const badReps = rows.find((r) => (r.targetRepsMin !== null && !(r.targetRepsMin >= 1 && r.targetRepsMin <= 100)) || (r.targetRepsMax !== null && !(r.targetRepsMax >= 1 && r.targetRepsMax <= 100)));
+    if (badReps) return `${badReps.name}: reps must be between 1 and 100.`;
+    return null;
+  };
+
+  const save = () => {
+    if (pending) return; // one save at a time, so a double tap can't make two copies
+    const p = problem();
+    if (p) {
+      setError(p);
+      if (!name.trim()) nameRef.current?.focus();
+      else setTimeout(() => errorRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }), 0);
+      return;
+    }
+    (document.activeElement as HTMLElement | null)?.blur?.(); // close the keyboard first
     startTransition(async () => {
       setError(null);
       const result = await saveRoutine(routine?.id ?? null, {
         name,
         notes: notes || undefined,
+        programId: programId || null,
         exercises: rows.map(({ exerciseId, targetSets, targetRepsMin, targetRepsMax, restSeconds }) => ({
           exerciseId,
           targetSets,
@@ -54,8 +84,12 @@ export function RoutineEditor({
           restSeconds,
         })),
       });
-      if (result?.error) setError(result.error);
+      if (result?.error) {
+        setError(result.error);
+        setTimeout(() => errorRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }), 0);
+      }
     });
+  };
 
   const numberField =
     "w-full rounded-lg border border-rack-line bg-rack px-2 py-2 text-center tabular-nums focus:border-plate-yellow focus:outline-none";
@@ -65,10 +99,21 @@ export function RoutineEditor({
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
+        ref={nameRef}
         placeholder="Routine name, like Push A"
         aria-label="Routine name"
         className="w-full border-b-2 border-rack-line bg-transparent pb-2 font-display text-3xl font-bold placeholder:text-chalk-muted/60 focus:border-plate-red focus:outline-none"
       />
+      {programs.length > 0 && (
+        <label className="mt-4 flex items-center justify-between gap-3 text-sm text-chalk-muted">
+          Part of program
+          <select value={programId} onChange={(e) => setProgramId(e.target.value)} aria-label="Program"
+            className="max-w-[60%] rounded-xl border border-rack-line bg-rack-raised px-3 py-2 text-base text-chalk">
+            <option value="">None (single routine)</option>
+            {programs.map((p) => <option key={p.id} value={p.id}>{p.name}{p.pinned ? " (running)" : ""}</option>)}
+          </select>
+        </label>
+      )}
       <textarea
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
@@ -139,9 +184,10 @@ export function RoutineEditor({
         <Plus size={20} aria-hidden /> Add exercises
       </button>
 
-      {error && <p role="alert" className="mt-4 text-sm text-plate-red">{error}</p>}
+      {error && <p ref={errorRef} role="alert" className="mt-4 rounded-xl border border-plate-red/50 bg-plate-red/10 px-3 py-2 text-sm">{error}</p>}
 
-      <div className="mt-6 flex gap-3">
+      {/* Save stays in reach at the bottom of the screen */}
+      <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+5rem+var(--music-dock-h,0px))] z-10 -mx-5 mt-6 flex gap-3 bg-rack/95 px-5 py-3 backdrop-blur">
         {routine && (
           <button
             onClick={() => { if (confirm("Delete this routine? Past workouts stay in your history.")) startTransition(() => deleteRoutine(routine.id)); }}
@@ -153,6 +199,7 @@ export function RoutineEditor({
         <button
           onClick={save}
           disabled={pending}
+          aria-busy={pending}
           className="flex-1 rounded-xl bg-plate-red py-3.5 font-display text-xl font-semibold text-white disabled:opacity-60"
         >
           {pending ? "Saving…" : "Save routine"}

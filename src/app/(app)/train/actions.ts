@@ -14,20 +14,22 @@ import { toDisplayPrevious } from "@/lib/training-display";
 // ─── Routines ─────────────────────────────────────────────────────────────
 
 const routineSchema = z.object({
-  name: z.string().trim().min(1, "Give the routine a name.").max(60),
-  notes: z.string().trim().max(500).optional(),
+  name: z.string().trim().min(1, "Give the routine a name.").max(60, "Keep the name under 60 characters."),
+  notes: z.string().trim().max(500, "Keep notes under 500 characters.").optional(),
+  // undefined = leave it where it is; null = not in a program
+  programId: z.string().min(1).nullable().optional(),
   exercises: z
     .array(
       z.object({
         exerciseId: z.string().min(1),
-        targetSets: z.number().int().min(1).max(20),
-        targetRepsMin: z.number().int().min(1).max(100).nullable(),
-        targetRepsMax: z.number().int().min(1).max(100).nullable(),
+        targetSets: z.number().int().min(1, "Sets must be at least 1.").max(20, "Up to 20 sets."),
+        targetRepsMin: z.number().int().min(1, "Reps must be at least 1.").max(100, "Up to 100 reps.").nullable(),
+        targetRepsMax: z.number().int().min(1, "Reps must be at least 1.").max(100, "Up to 100 reps.").nullable(),
         restSeconds: z.number().int().min(0).max(600),
       }),
     )
     .min(1, "Add at least one exercise.")
-    .max(30),
+    .max(30, "Up to 30 exercises in a routine."),
 });
 
 export type RoutineInput = z.infer<typeof routineSchema>;
@@ -36,31 +38,47 @@ export async function saveRoutine(routineId: string | null, input: RoutineInput)
   const user = await requireUser();
   const parsed = routineSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the routine." };
-  const { name, notes, exercises } = parsed.data;
+  const { name, notes, exercises, programId } = parsed.data;
+  if (programId && !(await db.program.findFirst({ where: { id: programId, userId: user.id } }))) return { error: "That program no longer exists." };
 
-  const rows = exercises.map((e, order) => ({ ...e, order }));
+  // A rep range typed backwards (12–8) is saved the right way round
+  const rows = exercises.map((e, order) => {
+    const [lo, hi] = e.targetRepsMin && e.targetRepsMax && e.targetRepsMin > e.targetRepsMax ? [e.targetRepsMax, e.targetRepsMin] : [e.targetRepsMin, e.targetRepsMax];
+    return { ...e, targetRepsMin: lo, targetRepsMax: hi, order };
+  });
 
+  let savedId = routineId;
   if (routineId) {
     // Make sure the routine belongs to this user before changing it
     const existing = await db.routine.findFirst({ where: { id: routineId, userId: user.id } });
     if (!existing) return { error: "That routine no longer exists." };
+    const moving = programId !== undefined && programId !== existing.programId;
     // Replace the exercise list in one transaction so a failure can't leave it half-saved
     await db.$transaction([
       db.routineExercise.deleteMany({ where: { routineId } }),
       db.routine.update({
         where: { id: routineId },
-        data: { name, notes, exercises: { create: rows } },
+        data: {
+          name,
+          notes,
+          exercises: { create: rows },
+          ...(moving ? { programId, position: await db.routine.count({ where: { userId: user.id, programId } }) } : {}),
+        },
       }),
     ]);
   } else {
-    const count = await db.routine.count({ where: { userId: user.id, programId: null } });
-    await db.routine.create({
-      data: { userId: user.id, name, notes, position: count, exercises: { create: rows } },
+    const target = programId ?? null;
+    const count = await db.routine.count({ where: { userId: user.id, programId: target } });
+    const created = await db.routine.create({
+      data: { userId: user.id, name, notes, programId: target, position: count, exercises: { create: rows } },
     });
+    savedId = created.id;
   }
 
   revalidatePath("/train");
-  redirect("/train");
+  revalidatePath("/log");
+  // Back to Train, which shows where it was saved
+  redirect(`/train?saved=${savedId}`);
 }
 
 export async function deleteRoutine(routineId: string) {

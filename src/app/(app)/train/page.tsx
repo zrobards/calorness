@@ -15,8 +15,9 @@ import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
 
 export const metadata: Metadata = { title: "Train" };
 
-export default async function TrainPage() {
+export default async function TrainPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
   const user = await requireUser();
+  const { saved } = await searchParams;
   const now = new Date();
   const [active, plan, recent, week, unitSystem, { today: todayIso }, injuries, activities] = await Promise.all([
     getActiveWorkout(user.id),
@@ -172,6 +173,7 @@ export default async function TrainPage() {
         ) : (
           <div className="mt-3">
             <TrainPlan
+              savedId={saved}
               programs={plan.programs.map((p) => ({ id: p.id, name: p.name, summary: p.summary, pinned: p.pinned, routines: p.routines.map(toPlanRoutine) }))}
               standalone={plan.standalone.map(toPlanRoutine)}
             />
