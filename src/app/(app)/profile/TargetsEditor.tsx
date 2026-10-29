@@ -3,7 +3,8 @@
 import { useActionState, useState } from "react";
 import { caloriesFromMacros } from "@/lib/fitness/nutrition";
 import { haptic } from "@/lib/haptics";
-import { updateTargets, type TargetsState } from "./actions";
+import { type TargetsState } from "./actions";
+import { updateTargets } from "@/lib/clientActions";
 
 type Targets = { calories: number; proteinG: number; carbsG: number; fatG: number; water: number };
 
@@ -22,7 +23,7 @@ export function TargetsEditor({ initial, waterUnit }: { initial: Targets; waterU
   const [baseline, setBaseline] = useState(initial); // what's saved on the server
   const [state, action, pending] = useActionState<TargetsState, FormData>(async (prev, fd) => {
     const r = await updateTargets(prev, fd);
-    if (r.saved) {
+    if ("saved" in r && r.saved) {
       haptic("success");
       // read back from the submitted form, so this never uses stale values
       const n = (k: string) => Number(fd.get(k)) || 0;

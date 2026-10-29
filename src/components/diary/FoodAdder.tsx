@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { Barcode, Loader2, PenLine, Search } from "lucide-react";
 import type { FoodCandidate } from "@/lib/nutrition/normalize";
 import { macroCheck } from "@/lib/nutrition/quality";
-import { addDiaryEntry, lookupBarcode, searchFoods } from "@/app/(app)/diary/actions";
+import { lookupBarcode, searchFoods } from "@/app/(app)/diary/actions";
+import { addDiaryEntry } from "@/lib/clientActions";
 import { FoodSheet } from "./FoodSheet";
 import { BarcodeScanner } from "./BarcodeScanner";
 import { CustomFoodForm, type FoodPrefill } from "./CustomFoodForm";
@@ -50,10 +51,10 @@ export function FoodAdder({
     const t = setTimeout(async () => {
       setSearching(true);
       // Your foods and saved foods show instantly; the big databases fill in after
-      searchFoods(q, "local").then(({ foods }) => {
+      searchFoods(q, "local").catch(() => ({ foods: [] })).then(({ foods }) => {
         if (!cancelled && !fullArrived && foods.length) setResults(foods);
       });
-      const { foods } = await searchFoods(q, "all");
+      const { foods } = await searchFoods(q, "all").catch(() => ({ foods: [] as FoodCandidate[] }));
       fullArrived = true;
       if (!cancelled) {
         setResults(foods);

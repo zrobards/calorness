@@ -98,7 +98,7 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
             <ul className="mt-1.5 divide-y divide-rack-line overflow-hidden rounded-2xl bg-rack-raised">
               {all.filter((h) => h.group === g).map((h, i) => (
                 <li key={`${h.href}-${i}`}>
-                  <Link href={h.href} onClick={onClose} className="block px-4 py-3 active:bg-rack-line/40">
+                  <Link href={h.href} onClick={() => { onClose(); setTimeout(() => window.dispatchEvent(new Event("calorness:navigated")), 120); }} className="block px-4 py-3 active:bg-rack-line/40">
                     <span className="block truncate font-medium">{h.title}</span>
                     {h.detail && <span className="block truncate text-sm text-chalk-muted">{h.detail}</span>}
                   </Link>

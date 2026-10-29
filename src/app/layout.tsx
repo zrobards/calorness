@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Barlow, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
 import { ViewportGuard } from "@/components/ViewportGuard";
+import { OfflineBanner } from "@/components/OfflineBanner";
 
 const barlow = Barlow({
   variable: "--font-barlow",
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${barlow.variable} ${barlowCondensed.variable} antialiased`}>
       <body>
         <ViewportGuard />
+        <OfflineBanner />
         {children}
       </body>
     </html>

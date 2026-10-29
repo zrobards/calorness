@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { saveBodyStats, setExerciseCredit } from "@/app/(app)/train/cardio/actions";
+import { saveBodyStats, setExerciseCredit } from "@/lib/clientActions";
 import { haptic } from "@/lib/haptics";
 
 const field = "mt-1 w-full rounded-xl border border-rack-line bg-rack px-3 py-2.5 text-base text-chalk tabular-nums focus:border-plate-yellow focus:outline-none";
@@ -67,7 +67,7 @@ export function BodyStatsCard({ imperial, initial, credit }: {
         <div className="mt-2 grid grid-cols-4 gap-2">
           {CREDITS.map((c) => (
             <button key={c.value} type="button" aria-pressed={creditNow === c.value}
-              onClick={() => { haptic(); setCreditNow(c.value); start(() => setExerciseCredit(c.value)); }}
+              onClick={() => { haptic(); setCreditNow(c.value); start(async () => { await setExerciseCredit(c.value); }); }}
               className={`rounded-xl py-2 text-sm font-semibold ${creditNow === c.value ? "bg-chalk text-rack" : "bg-rack text-chalk-muted"}`}>
               {c.label}
             </button>

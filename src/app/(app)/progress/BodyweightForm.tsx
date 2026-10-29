@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { logBodyweight } from "@/app/(app)/train/actions";
+import { logBodyweight } from "@/lib/clientActions";
 
 export function BodyweightForm({ unit }: { unit: string }) {
   const [state, action, pending] = useActionState<{ error?: string; ok?: boolean }, FormData>(logBodyweight, {});

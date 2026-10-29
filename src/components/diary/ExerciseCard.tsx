@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Dumbbell, Flame, HeartPulse, Pencil, Plus, Trash2 } from "lucide-react";
 import { EditSessionTime } from "@/components/train/EditSessionTime";
-import { deleteActivity } from "@/app/(app)/train/cardio/actions";
+import { deleteActivity } from "@/lib/clientActions";
 
 type Item = { id: string; kind: "workout" | "activity" | "health"; name: string; minutes: number; effort?: string; total: number; net: number; included?: boolean };
 

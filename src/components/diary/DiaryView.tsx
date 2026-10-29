@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
 import { Bookmark, ChevronLeft, ChevronRight, Copy, Droplet, Plus, Search, ShieldCheck, Target, Undo2 } from "lucide-react";
 import type { FoodCandidate } from "@/lib/nutrition/normalize";
 import { dayTargets, itemNutrients, sumTotals, verifiedShare, type DiaryData, type DiaryItem, type DiaryMeal } from "@/lib/nutrition/diaryData";
-import { addWater, copyMealFromDay, copyWholeDay, deleteDiaryEntry, getDiary, saveMealFromDay, updateDiaryEntry } from "@/app/(app)/diary/actions";
-import { quickRelog } from "@/app/(app)/log/actions";
+import { getDiary } from "@/app/(app)/diary/actions";
+import { addWater, copyMealFromDay, copyWholeDay, deleteDiaryEntry, saveMealFromDay, updateDiaryEntry } from "@/lib/clientActions";
+import { quickRelog } from "@/lib/clientActions";
 import { haptic } from "@/lib/haptics";
+import { failed } from "@/lib/safeAction";
 import { CalorieRing } from "./CalorieRing";
 import { MacroBars } from "@/components/MacroBars";
 import { FoodSheet } from "./FoodSheet";
@@ -39,7 +41,13 @@ const fmt = (n: number) => Math.round(n).toLocaleString("en-US");
 
 export function DiaryView({ initialDay, today }: { initialDay: string; today: string }) {
   const [day, setDay] = useState(initialDay);
-  const [data, setData] = useState<DiaryData | null>(() => readCache(initialDay));
+  const [data, setData] = useState<DiaryData | null>(null);
+  // The saved copy is read right after the first render (reading it during
+  // the first render made the page differ from the server's version)
+  useLayoutEffect(() => {
+    const cached = readCache(initialDay);
+    if (cached) setData((d) => d ?? cached); // eslint-disable-line react-hooks/set-state-in-effect
+  }, [initialDay]);
   const [syncing, setSyncing] = useState(false);
   const [adding, setAdding] = useState<DiaryMeal | null>(null);
   const [editing, setEditing] = useState<{ meal: DiaryMeal["meal"]; item: DiaryItem } | null>(null);
@@ -62,6 +70,8 @@ export function DiaryView({ initialDay, today }: { initialDay: string; today: st
       setSyncing(true);
       try {
         save(await getDiary(forDay));
+      } catch {
+        // No connection: keep showing what we have; it refreshes when you're back
       } finally {
         setSyncing(false);
       }
@@ -96,13 +106,17 @@ export function DiaryView({ initialDay, today }: { initialDay: string; today: st
 
   /** Apply a change to the screen right away, then run the server action and refresh. */
   const change = (apply: (d: DiaryData) => DiaryData, action: () => Promise<unknown>) => {
+    const before = data;
     setData((d) => (d ? apply(d) : d));
     start(async () => {
-      try {
-        await action();
-      } finally {
-        await refresh();
+      const r = await action();
+      if (failed(r)) {
+        // It didn't save: put the screen back the way it was and say so
+        setData(before);
+        setToast({ message: r.error });
+        return;
       }
+      await refresh();
     });
   };
   const setMealItems = (d: DiaryData, meal: DiaryMeal["meal"], fn: (items: DiaryItem[]) => DiaryItem[]) => ({
@@ -116,6 +130,11 @@ export function DiaryView({ initialDay, today }: { initialDay: string; today: st
     setData((d) => (d ? setMealItems(d, meal.meal, (items) => [...items, { id: tempId, servings, food }]) : d));
     start(async () => {
       const r = await quickRelog({ foodId: food.id!, servings, day, meal: meal.meal });
+      if (failed(r)) {
+        setData((d) => (d ? setMealItems(d, meal.meal, (items) => items.filter((i) => i.id !== tempId)) : d));
+        setToast({ message: r.error });
+        return;
+      }
       await refresh();
       if ("entryId" in r && r.entryId) {
         setToast({

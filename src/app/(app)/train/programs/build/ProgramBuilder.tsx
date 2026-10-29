@@ -9,7 +9,8 @@ import type { ProgramDraft, ProgramExercise } from "@/lib/ai/program";
 import { haptic } from "@/lib/haptics";
 import { ExercisePicker } from "@/components/train/ExercisePicker";
 import { AiProgress } from "@/components/log/AiProgress";
-import { buildProgram, importProgramText, reviseProgram, saveProgramDraft } from "../actions";
+import { buildProgram, importProgramText, reviseProgram } from "../actions";
+import { saveProgramDraft } from "@/lib/clientActions";
 
 const GOALS = ["Build muscle", "Get stronger", "Lose fat, keep muscle", "Athletic and conditioned", "General fitness"];
 const EQUIPMENT = ["Full gym", "Dumbbells and bench", "Machines and cables", "Bodyweight at home"];

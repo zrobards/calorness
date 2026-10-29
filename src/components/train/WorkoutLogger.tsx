@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { CloudCheck, CloudUpload, Plus } from "lucide-react";
 import type { ExerciseOption } from "@/lib/training";
 import { compactNumber } from "@/lib/fitness/units";
-import { discardWorkout, finishWorkout, previousSetsFor, saveWorkoutEdits, syncWorkoutDraft } from "@/app/(app)/train/actions";
+import { previousSetsFor, syncWorkoutDraft } from "@/app/(app)/train/actions";
+import { discardWorkout, finishWorkout, saveWorkoutEdits } from "@/lib/clientActions";
 import { haptic } from "@/lib/haptics";
 import { ExercisePicker } from "./ExercisePicker";
 import { MusicButton } from "@/components/music/MusicProvider";
@@ -230,7 +231,10 @@ export function WorkoutLogger({
   const discard = () => {
     if (!confirm("Discard this workout? Nothing from it will be saved.")) return;
     localStorage.removeItem(storageKey(workout.id, mode));
-    startTransition(() => discardWorkout(workout.id));
+    startTransition(async () => {
+      const r = await discardWorkout(workout.id);
+      if (r && "error" in r && r.error) setError(r.error);
+    });
   };
 
   return (

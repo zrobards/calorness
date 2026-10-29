@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { Check, Copy } from "lucide-react";
 import { haptic } from "@/lib/haptics";
-import { createApiKey, healthStatus, setActivityGoals } from "./actions";
+import { healthStatus } from "./actions";
+import { createApiKey, setActivityGoals } from "@/lib/clientActions";
 
 const field = "mt-1 w-full rounded-xl border border-rack-line bg-rack px-3 py-2.5 text-base text-chalk tabular-nums focus:border-plate-yellow focus:outline-none";
 

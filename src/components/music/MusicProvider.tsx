@@ -3,7 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, useTransition } from "react";
 import { ChevronDown, ChevronUp, ListMusic, Music2, Plus, Trash2, X } from "lucide-react";
 import { SERVICE_LABEL, type MusicService } from "@/lib/music";
-import { addMusic, listMusic, markPlayed, removeMusic, type SavedMusic } from "@/app/(app)/music/actions";
+import { listMusic, markPlayed, type SavedMusic } from "@/app/(app)/music/actions";
+import { addMusic, removeMusic } from "@/lib/clientActions";
 import { haptic } from "@/lib/haptics";
 import { Sheet } from "@/components/diary/Sheet";
 

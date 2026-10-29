@@ -18,7 +18,7 @@ export function AddFoodPanel({ meal, mealLabel, day, onClose }: { meal: string; 
 
   useEffect(() => {
     let alive = true;
-    loadFoodAdder().then((d) => alive && setData(d));
+    loadFoodAdder().then((d) => alive && setData(d)).catch(() => alive && setData({ recent: [], mine: [] }));
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden"; // stop the page behind from scrolling
