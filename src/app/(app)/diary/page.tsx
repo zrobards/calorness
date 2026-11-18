@@ -3,6 +3,9 @@ import { requireUser } from "@/lib/auth";
 import { userToday } from "@/lib/userPrefs";
 import { DiaryView } from "@/components/diary/DiaryView";
 
+// AI photo and description estimates can take a while
+export const maxDuration = 300;
+
 export const metadata: Metadata = { title: "Diary" };
 
 // The page itself only works out which day to show. DiaryView paints the

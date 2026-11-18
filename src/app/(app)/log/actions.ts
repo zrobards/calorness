@@ -51,7 +51,12 @@ export async function aiEstimate(input: {
     correction,
     myFoods: mine.map((m) => m.prompt),
   });
-  if ("error" in result) return result;
+  if ("error" in result) {
+    // A failed try shouldn't use up the daily allowance
+    const last = await db.aiCall.findFirst({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, select: { id: true } });
+    if (last) await db.aiCall.delete({ where: { id: last.id } }).catch(() => {});
+    return result;
+  }
   // Packaged foods: swap the guess for the real label values when we can find the product
   const grounded = await groundItems(user.id, result.items);
   // Items the AI recognized as one of your foods use that food, exactly

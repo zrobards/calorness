@@ -399,3 +399,32 @@ export async function getAllLifts(userId: string) {
   }
   return [...lifts.values()].map(({ sessions, last, ...l }) => ({ ...l, sessions: sessions.size, last: last.toISOString() }));
 }
+
+/** Everything the instant feedback on a finished workout needs. */
+export async function getWorkoutFeedbackData(userId: string, workoutId: string) {
+  const workout = await db.workout.findFirst({
+    where: { id: workoutId, userId, endedAt: { not: null } },
+    include: {
+      routine: { select: { exercises: { select: { exerciseId: true, targetRepsMax: true } } } },
+      exercises: { include: { exercise: { select: { id: true, name: true, primaryMuscles: true } }, sets: true } },
+    },
+  });
+  if (!workout) return null;
+  const ids = workout.exercises.map((e) => e.exerciseId);
+  const weekAgo = new Date(workout.startedAt.getTime() - 7 * 86_400_000);
+  const [earlier, weekSets, climbs, goal] = await Promise.all([
+    db.workoutExercise.findMany({
+      where: { exerciseId: { in: ids }, workout: { userId, endedAt: { not: null }, startedAt: { lt: workout.startedAt } } },
+      orderBy: { workout: { startedAt: "desc" } },
+      take: 200,
+      select: { exerciseId: true, sets: { select: { weightKg: true, reps: true, completed: true, type: true } } },
+    }),
+    db.workoutSet.findMany({
+      where: { type: { not: "WARMUP" }, completed: true, workoutExercise: { workout: { userId, endedAt: { not: null }, startedAt: { gte: weekAgo, lte: workout.startedAt } } } },
+      select: { workoutExercise: { select: { exercise: { select: { primaryMuscles: true } } } } },
+    }),
+    db.activityEntry.findMany({ where: { userId, date: { gte: weekAgo }, activity: { contains: "climb" } }, select: { durationMin: true } }),
+    db.goal.findUnique({ where: { userId }, select: { goalType: true, calories: true } }),
+  ]);
+  return { workout, earlier, weekSets, climbingMinutes: climbs.reduce((s, c) => s + c.durationMin, 0), goal };
+}

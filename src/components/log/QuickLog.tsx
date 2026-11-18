@@ -21,6 +21,7 @@ import { PlateBurst } from "@/components/motion/PlateBurst";
 import { BarcodeScanner } from "@/components/diary/BarcodeScanner";
 import { FoodSheet } from "@/components/diary/FoodSheet";
 import { Sheet } from "@/components/diary/Sheet";
+import { LogAnywaySheet } from "./LogAnywaySheet";
 import { AiReviewSheet, type ReviewedItem } from "./AiReviewSheet";
 import { AiProgress, type AiTask } from "./AiProgress";
 import { AddFoodPanel } from "@/components/diary/AddFoodPanel";
@@ -68,6 +69,7 @@ export function QuickLog({
   // which is why the old spinner often never appeared.
   const [progress, setProgress] = useState<{ task: AiTask; photo?: string | null } | null>(null);
   const runId = useRef(0); // lets Cancel ignore an answer that arrives later
+  const [fallback, setFallback] = useState<{ input: { imageBase64?: string; mediaType?: string; text?: string }; photo: string | null; reason: string } | null>(null);
   const [review, setReview] = useState<{
     items: GroundedItem[];
     note?: string;
@@ -100,8 +102,9 @@ export function QuickLog({
     if (id !== runId.current) return; // cancelled
     setProgress(null);
     if ("error" in result) {
+      // Never a dead end: offer the quickest other ways to log it
       haptic("warning");
-      setToast({ message: result.error ?? "Something went wrong. Try again." });
+      setFallback({ input, photo: photo ?? null, reason: result.error ?? "The AI couldn't work that out." });
       return;
     }
     haptic("success");
@@ -366,6 +369,19 @@ export function QuickLog({
         )}
       </section>
 
+      {fallback && (
+        <LogAnywaySheet
+          text={fallback.input.text}
+          photo={fallback.photo}
+          day={day}
+          meal={meal}
+          mealLabel={MEAL_LABELS[meal]}
+          reason={fallback.reason}
+          onRetry={() => { const f = fallback; setFallback(null); void runAi(f.input, f.photo); }}
+          onLogged={(message) => { setFallback(null); setCelebrate((c) => c + 1); setToast({ message }); router.refresh(); }}
+          onClose={() => setFallback(null)}
+        />
+      )}
       {progress && (
         <AiProgress
           task={progress.task}

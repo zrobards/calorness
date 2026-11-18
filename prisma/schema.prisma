@@ -62,7 +62,6 @@ model User {
   dailyActivity   DailyActivity[]
   programs        Program[]
   aiCorrections   AiCorrection[]
-  music           MusicLink[]
 }
 
 model Account {
@@ -580,22 +579,6 @@ model AuthThrottle {
   lockedUntil DateTime?
 }
 
-// Playlists, albums, or songs saved from YouTube Music, Spotify, Apple Music,
-// or SoundCloud, played in each service's own embedded player.
-model MusicLink {
-  id           String   @id @default(cuid())
-  userId       String
-  service      String // youtube, spotify, apple, soundcloud
-  url          String
-  embedUrl     String
-  title        String
-  lastPlayedAt DateTime?
-  createdAt    DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
 
 // ─── Learning from everyone's entries ─────────────────────────────────────
 // A food someone typed in by hand. Private on its own; when enough different

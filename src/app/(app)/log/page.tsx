@@ -13,6 +13,9 @@ import { suggestFits } from "@/lib/nutrition/fits";
 import { getActiveWorkout } from "@/lib/training";
 import { userToday } from "@/lib/userPrefs";
 
+// AI photo and description estimates can take a while
+export const maxDuration = 300;
+
 export const metadata: Metadata = { title: "Quick log" };
 
 export default async function QuickLogPage({ searchParams }: { searchParams: Promise<{ mode?: string }> }) {

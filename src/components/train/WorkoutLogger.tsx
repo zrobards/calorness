@@ -8,7 +8,6 @@ import { previousSetsFor, syncWorkoutDraft } from "@/app/(app)/train/actions";
 import { discardWorkout, finishWorkout, saveWorkoutEdits } from "@/lib/clientActions";
 import { haptic } from "@/lib/haptics";
 import { ExercisePicker } from "./ExercisePicker";
-import { MusicButton } from "@/components/music/MusicProvider";
 import { ElapsedClock, nowMs, RestTimer } from "./logger/clock";
 import { ExerciseBlock, type ExerciseHandlers } from "./logger/ExerciseBlock";
 import type { LoggerExercise, LoggerSet, PreviousSet } from "./logger/types";
@@ -251,7 +250,6 @@ export function WorkoutLogger({
             aria-label="Workout name"
             className="min-w-0 flex-1 bg-transparent font-display text-2xl font-bold focus:outline-none"
           />
-          <MusicButton className="px-1" />
           <button
             onClick={finish}
             disabled={pending}

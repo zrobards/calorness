@@ -8,7 +8,6 @@ import { compactNumber, displayWeight, weightUnit } from "@/lib/fitness/units";
 import { formatDay, formatDuration, isoDay } from "@/lib/fitness/dates";
 import { userToday } from "@/lib/userPrefs";
 import { startWorkout } from "./actions";
-import { MusicButton } from "@/components/music/MusicProvider";
 import { TrainPlan, type PlanRoutine } from "@/components/train/TrainPlan";
 import { db } from "@/lib/db";
 import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
@@ -39,7 +38,6 @@ export default async function TrainPage({ searchParams }: { searchParams: Promis
     <>
       <PageHeader title="Train">
         <div className="flex items-center gap-1">
-          <MusicButton />
           <Link href="/coach" className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-plate-yellow">
             <Sparkles size={18} aria-hidden /> Coach
           </Link>

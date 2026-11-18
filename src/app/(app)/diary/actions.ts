@@ -273,3 +273,32 @@ export async function getDiary(day: string): Promise<DiaryData> {
     quick,
   };
 }
+
+/**
+ * The no-AI way to log a meal: a name and calories (protein, carbs, fat if you
+ * know them). Used when the AI can't work out a photo or description, so a
+ * meal always gets logged. These stay private (not shared with the community).
+ */
+export async function quickAddCalories(input: { name: string; calories: number; proteinG?: number; carbsG?: number; fatG?: number; day: string; meal: string }) {
+  const user = await requireUser();
+  const p = z
+    .object({
+      name: z.string().trim().min(1).max(80),
+      calories: z.number().min(1, "Enter the calories.").max(5000, "That's more than 5,000 calories."),
+      proteinG: z.number().min(0).max(500).default(0),
+      carbsG: z.number().min(0).max(1000).default(0),
+      fatG: z.number().min(0).max(500).default(0),
+      day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      meal: z.enum(["BREAKFAST", "LUNCH", "DINNER", "SNACKS"]),
+    })
+    .safeParse(input);
+  if (!p.success) return { error: p.error.issues[0]?.message ?? "Check the numbers." };
+  const d = p.data;
+  const food = await db.food.create({
+    data: { source: "CUSTOM", name: d.name, servingLabel: "1 meal", servingSize: 1, servingUnit: "serving", calories: d.calories, proteinG: d.proteinG, carbsG: d.carbsG, fatG: d.fatG, createdById: user.id, shared: false },
+  });
+  const entry = await db.diaryEntry.create({ data: { userId: user.id, foodId: food.id, date: new Date(`${d.day}T00:00:00Z`), meal: d.meal, servings: 1 } });
+  revalidatePath("/diary");
+  revalidatePath("/log");
+  return { ok: true as const, entryId: entry.id };
+}

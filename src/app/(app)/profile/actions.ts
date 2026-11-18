@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { DEMO_EMAIL, requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { dayInZone } from "@/lib/time";
+import { getUserPrefs } from "@/lib/userPrefs";
 import { bmrMifflinStJeor, macroTargets, tdee } from "@/lib/fitness/nutrition";
 import { inToCm, lbToKg } from "@/lib/fitness/units";
 import { newApiKey } from "@/lib/apiKeys";
@@ -216,4 +218,22 @@ export async function healthStatus() {
   const user = await requireUser();
   const last = await db.dailyActivity.findFirst({ where: { userId: user.id }, orderBy: { updatedAt: "desc" }, select: { updatedAt: true, steps: true, date: true } });
   return last ? { lastSync: last.updatedAt.toISOString(), steps: last.steps, day: last.date.toISOString().slice(0, 10) } : null;
+}
+
+/** Today's steps and active calories typed in by hand (until Apple Health can sync). */
+export async function logTodayActivity(input: { steps?: number; activeCalories?: number }) {
+  const user = await requireUser();
+  const p = z
+    .object({ steps: z.number().int().min(0).max(150_000).optional(), activeCalories: z.number().int().min(0).max(10_000).optional() })
+    .safeParse({ steps: input.steps === undefined ? undefined : Math.round(input.steps), activeCalories: input.activeCalories === undefined ? undefined : Math.round(input.activeCalories) });
+  if (!p.success) return { error: "Check the numbers." };
+  if (p.data.steps === undefined && p.data.activeCalories === undefined) return { error: "Enter steps or active calories." };
+  const prefs = await getUserPrefs(user.id);
+  const date = new Date(`${dayInZone(new Date(), prefs.timeZone)}T00:00:00Z`);
+  const data = { ...(p.data.steps !== undefined ? { steps: p.data.steps } : {}), ...(p.data.activeCalories !== undefined ? { activeCalories: p.data.activeCalories } : {}), source: "manual" };
+  await db.dailyActivity.upsert({ where: { userId_date: { userId: user.id, date } }, update: data, create: { userId: user.id, date, ...data } });
+  revalidatePath("/log");
+  revalidatePath("/diary");
+  revalidatePath("/progress/activity");
+  return { ok: true as const };
 }
