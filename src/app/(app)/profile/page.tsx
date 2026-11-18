@@ -12,7 +12,8 @@ import { InviteCard } from "./InviteCard";
 import { BodyStatsCard } from "./BodyStatsCard";
 import { ActivityGoals, HealthSetup, InstallApp } from "./ActivitySetup";
 import { DeleteAccount } from "./DeleteAccount";
-import { Collapsible, SearchableSections } from "@/components/ui/Collapsible";
+import { Collapsible, SearchableSections, SectionGroup } from "@/components/ui/Collapsible";
+import { getTodaySummary } from "@/lib/activitySummary";
 import { Bell, HeartPulse, KeyRound, LayoutGrid, Ruler, Shield, Target, UserRound, Users } from "lucide-react";
 import Link from "next/link";
 import QRCode from "qrcode";
@@ -32,11 +33,13 @@ export default async function ProfilePage() {
   });
 
   const siteUrl = (process.env.NEXTAUTH_URL ?? "https://calorness.vercel.app").replace(/\/$/, "");
-  const [qrSvg, aiUsed, aiLimit, lastHealth] = await Promise.all([
+  const [qrSvg, aiUsed, aiLimit, lastHealth, summary, workoutCount] = await Promise.all([
     QRCode.toString(siteUrl, { type: "svg", margin: 0, color: { dark: "#17212b", light: "#ffffff" } }),
     aiUsedToday(user.id),
     aiLimitFor(user.id),
     db.dailyActivity.findFirst({ where: { userId: user.id }, orderBy: { updatedAt: "desc" }, select: { updatedAt: true, steps: true, date: true } }),
+    getTodaySummary(user.id),
+    db.workout.count({ where: { userId: user.id, endedAt: { not: null } } }),
   ]);
   const imperial = user.unitSystem === "IMPERIAL";
   const age = user.birthYear ? new Date().getFullYear() - user.birthYear : null;
@@ -50,12 +53,33 @@ export default async function ProfilePage() {
         <SignOutButton />
       </PageHeader>
 
-      <div className="mx-5 mb-3">
-        <p className="font-display text-2xl font-semibold">{user.name ?? "Lifter"}</p>
-        {user.email && <p className="text-sm text-chalk-muted">{user.email}</p>}
-      </div>
+      {/* Who you are at a glance */}
+      <section className="mx-5 mb-4 rounded-2xl bg-rack-raised p-5" aria-label="Your profile">
+        <div className="flex items-center gap-4">
+          <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-plate-blue font-display text-2xl font-bold text-white" aria-hidden>
+            {(user.name ?? user.email ?? "?").trim().charAt(0).toUpperCase()}
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate font-display text-2xl font-semibold">{user.name ?? "Lifter"}</span>
+            {user.email && <span className="block truncate text-sm text-chalk-muted">{user.email}</span>}
+          </span>
+        </div>
+        <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
+          {[
+            { label: "Day streak", value: summary.logStreak },
+            { label: "Workouts", value: workoutCount },
+            { label: "Goal", value: user.goal ? { LOSE: "Lose", MAINTAIN: "Maintain", GAIN: "Gain" }[user.goal.goalType] : "—" },
+          ].map((x) => (
+            <div key={x.label} className="rounded-xl bg-rack py-2.5">
+              <dd className="font-display text-xl font-bold tabular-nums">{x.value}</dd>
+              <dt className="text-[11px] text-chalk-muted">{x.label}</dt>
+            </div>
+          ))}
+        </dl>
+      </section>
 
       <SearchableSections placeholder="Search settings">
+        <SectionGroup title="Your goals" />
         <Collapsible id="goals" title="Daily targets" icon={<Target size={20} />} defaultOpen={!user.goal}
           summary={user.goal ? `${user.goal.calories.toLocaleString("en-US")} cal, ${user.goal.proteinG} g protein, ${user.goal.carbsG} g carbs, ${user.goal.fatG} g fat` : "Not set yet"}
           keywords="calories macros protein carbs fat water goal calculator tdee bmr">
@@ -84,41 +108,31 @@ export default async function ProfilePage() {
             </>
           )}
         </Collapsible>
-
         <Collapsible id="body" title="Body stats" icon={<Ruler size={20} />}
           summary={[user.sex ? (user.sex === "male" ? "Male" : "Female") : null, age ? `${age} years` : null, height].filter(Boolean).join(", ") || "Add for accurate calorie burn"}
           keywords="sex age height weight exercise credit calories burned">
           <BodyStatsCard imperial={imperial} initial={{ sex: user.sex, age, heightCm: user.heightCm }} credit={user.exerciseCredit} />
         </Collapsible>
-
         <Collapsible id="activity-goals" title="Activity goals" icon={<LayoutGrid size={20} />}
           summary={`${user.stepGoal.toLocaleString("en-US")} steps, ${user.activeCalGoal} move cal, ${user.exerciseMinGoal} exercise min`}
           keywords="steps move active calories exercise minutes rings">
           <ActivityGoals initial={{ stepGoal: user.stepGoal, activeCalGoal: user.activeCalGoal, exerciseMinGoal: user.exerciseMinGoal, useHealthCalories: user.useHealthCalories }} />
         </Collapsible>
-
+        <SectionGroup title="Connect" />
         <Collapsible id="health" title="Apple Health" icon={<HeartPulse size={20} />}
           summary={lastHealth ? `Updated ${lastHealth.updatedAt.toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "Add steps and active calories"}
           keywords="apple health watch steps active energy sync connect shortcut health auto export walking speed">
           <HealthSetup shortcutUrl={process.env.HEALTH_SHORTCUT_URL ?? null}
             initialStatus={lastHealth ? { lastSync: lastHealth.updatedAt.toISOString(), steps: lastHealth.steps, day: lastHealth.date.toISOString().slice(0, 10) } : null} />
         </Collapsible>
-
         <Collapsible id="install" title="Add to Home Screen" icon={<LayoutGrid size={20} />} summary="Open Calorness like an app"
           keywords="install home screen app icon widget share">
           <InstallApp />
         </Collapsible>
-
         <Collapsible id="notifications" title="Notifications" icon={<Bell size={20} />} summary="Rest timer and daily reminders" keywords="push alerts reminders rest timer">
           <NotificationsCard />
         </Collapsible>
-
-        <Collapsible id="shortcut" title="Phone shortcut keys" icon={<KeyRound size={20} />}
-          summary={user.apiKeys.length ? `${user.apiKeys.length} key${user.apiKeys.length === 1 ? "" : "s"}` : "Log food from an iPhone shortcut or Siri"}
-          keywords="api key siri shortcut back tap quick log photo">
-          <ShortcutKeys keys={user.apiKeys.map((k) => ({ ...k, createdAt: k.createdAt.toISOString(), lastUsedAt: k.lastUsedAt?.toISOString() ?? null }))} />
-        </Collapsible>
-
+        <SectionGroup title="Account" />
         <Collapsible id="account" title="Units and sign-in" icon={<UserRound size={20} />}
           summary={`${imperial ? "Pounds and feet" : "Kilograms and centimeters"}${user.passwordHash ? ", password set" : ""}`}
           keywords="units pounds kilograms metric imperial password email sign in">
@@ -132,11 +146,9 @@ export default async function ProfilePage() {
           </form>
           <SetPasswordForm hasPassword={!!user.passwordHash} email={user.email} />
         </Collapsible>
-
         <Collapsible id="invite" title="Invite friends" icon={<Users size={20} />} summary="Share a link or QR code" keywords="share qr friends invite">
           <InviteCard url={siteUrl} qrSvg={qrSvg} />
         </Collapsible>
-
         <Collapsible id="privacy" title="Privacy and account" icon={<Shield size={20} />}
           summary={`AI requests today: ${aiUsed}${Number.isFinite(aiLimit) ? ` of ${aiLimit}` : ""}`}
           keywords="privacy delete account data ai usage limit">
@@ -145,6 +157,12 @@ export default async function ProfilePage() {
           </p>
           <p className="mt-3 text-sm"><Link href="/privacy" className="underline underline-offset-4">What Calorness stores and shares</Link></p>
           <div className="mt-4"><DeleteAccount /></div>
+        </Collapsible>
+        <SectionGroup title="Advanced" />
+        <Collapsible id="shortcut" title="Phone shortcut keys" icon={<KeyRound size={20} />}
+          summary={user.apiKeys.length ? `${user.apiKeys.length} key${user.apiKeys.length === 1 ? "" : "s"}` : "Log food from an iPhone shortcut or Siri"}
+          keywords="api key siri shortcut back tap quick log photo">
+          <ShortcutKeys keys={user.apiKeys.map((k) => ({ ...k, createdAt: k.createdAt.toISOString(), lastUsedAt: k.lastUsedAt?.toISOString() ?? null }))} />
         </Collapsible>
       </SearchableSections>
       <div className="h-8" />

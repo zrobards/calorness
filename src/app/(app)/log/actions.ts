@@ -57,6 +57,8 @@ export async function aiEstimate(input: {
     if (last) await db.aiCall.delete({ where: { id: last.id } }).catch(() => {});
     return result;
   }
+  // A photo of a Nutrition Facts label: hand back the exact printed numbers
+  if ("label" in result) return { label: result.label };
   // Packaged foods: swap the guess for the real label values when we can find the product
   const grounded = await groundItems(user.id, result.items);
   // Items the AI recognized as one of your foods use that food, exactly

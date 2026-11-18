@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, ClipboardList, Flame, LayoutGrid, Library, Play, Plus, Sparkles } from "lucide-react";
+import { ChevronRight, ClipboardList, Flame, LayoutGrid, Library, Play, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { requireUser } from "@/lib/auth";
 import { getActiveWorkout, getRecentWorkouts, getTrainingPlan, getThisWeek, getUnitSystem } from "@/lib/training";
@@ -8,6 +8,7 @@ import { compactNumber, displayWeight, weightUnit } from "@/lib/fitness/units";
 import { formatDay, formatDuration, isoDay } from "@/lib/fitness/dates";
 import { userToday } from "@/lib/userPrefs";
 import { startWorkout } from "./actions";
+import { NewPlanButton } from "@/components/train/NewPlanButton";
 import { TrainPlan, type PlanRoutine } from "@/components/train/TrainPlan";
 import { db } from "@/lib/db";
 import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
@@ -136,17 +137,7 @@ export default async function TrainPage({ searchParams }: { searchParams: Promis
       <section className="mt-8" aria-labelledby="routines-heading">
         <div className="flex items-center justify-between px-5">
           <h2 id="routines-heading" className="font-display text-2xl font-semibold">{plan.programs.length ? "Plans" : "Routines"}</h2>
-          <div className="flex items-center gap-3">
-            <Link href="/train/programs/build" className="flex items-center gap-1 text-sm font-medium text-plate-yellow">
-              <Sparkles size={16} aria-hidden /> AI program
-            </Link>
-            <Link href="/train/templates" className="flex items-center gap-1 text-sm font-medium text-plate-blue">
-              <LayoutGrid size={16} aria-hidden /> Templates
-            </Link>
-            <Link href="/train/routines/new" className="flex items-center gap-1 text-sm font-medium text-plate-blue">
-              <Plus size={17} aria-hidden /> New
-            </Link>
-          </div>
+          <NewPlanButton />
         </div>
         {plan.programs.length === 0 && plan.standalone.length === 0 ? (
           <div className="mx-5 mt-3 grid grid-cols-2 gap-3">

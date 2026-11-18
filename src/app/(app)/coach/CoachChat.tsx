@@ -83,17 +83,23 @@ export function CoachChat({ chat, initialMessages, notes, draft = "" }: { chat: 
             <PenLine size={16} aria-hidden /> New
           </Link>
         </div>
+        {/* What Coach remembers: a small chip that opens the list, not a banner every visit */}
         {notes.length > 0 && (
-          <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1" aria-label="What Coach remembers">
-            {notes.map((n) => (
-              <span key={n.id} className={`flex shrink-0 items-center gap-1 rounded-full py-1 pr-1 pl-3 text-xs font-medium ${NOTE_COLOR[n.kind] ?? "bg-rack-raised text-chalk-muted"}`}>
-                {n.text}
-                <button onClick={() => start(async () => { await forgetNote(n.id); })} disabled={pending} className="rounded-full p-0.5 opacity-70 hover:opacity-100" aria-label={`Forget: ${n.text}`}>
-                  <X size={13} />
-                </button>
-              </span>
-            ))}
-          </div>
+          <details className="mt-2">
+            <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-full bg-rack-raised px-3 py-1 text-xs font-medium text-chalk-muted">
+              Coach remembers {notes.length} {notes.length === 1 ? "thing" : "things"}
+            </summary>
+            <ul className="mt-2 space-y-1.5">
+              {notes.map((n) => (
+                <li key={n.id} className={`flex items-start gap-2 rounded-xl py-2 pr-2 pl-3 text-sm ${NOTE_COLOR[n.kind] ?? "bg-rack-raised text-chalk-muted"}`}>
+                  <span className="flex-1">{n.text}</span>
+                  <button onClick={() => start(async () => { await forgetNote(n.id); })} disabled={pending} className="shrink-0 rounded-full p-0.5 opacity-70 hover:opacity-100" aria-label={`Forget: ${n.text}`}>
+                    <X size={14} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </details>
         )}
       </header>
 

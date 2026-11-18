@@ -90,10 +90,6 @@ export default async function QuickLogPage({ searchParams }: { searchParams: Pro
           <ChevronRight className="text-chalk-muted" aria-hidden />
         </Link>
       )}
-      {/* Activity rings, streaks, and a nudge: the reason to open the app every day */}
-      <div className="px-5">
-        <TodayCard s={summary} message={nudge(summary)} />
-      </div>
       <QuickLogClient
         mode={mode}
         aiReady={aiConfigured()}
@@ -110,6 +106,10 @@ export default async function QuickLogPage({ searchParams }: { searchParams: Pro
           proteinGoal: diary.goal?.proteinG ?? null,
         }}
       />
+      {/* Logging comes first; activity rings and streaks sit underneath */}
+      <div className="px-5 pb-6">
+        <TodayCard s={summary} message={nudge(summary)} />
+      </div>
     </>
   );
 }

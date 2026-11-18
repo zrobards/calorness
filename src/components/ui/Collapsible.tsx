@@ -115,3 +115,10 @@ export function SearchableSections({ placeholder, children }: { placeholder: str
     </CollapsibleSearch>
   );
 }
+
+/** A small heading over a group of sections (hidden while searching). */
+export function SectionGroup({ title }: { title: string }) {
+  const query = useContext(SearchContext).trim();
+  if (query) return null;
+  return <h2 className="mx-5 mt-7 mb-1 text-xs font-semibold tracking-wider text-chalk-muted uppercase">{title}</h2>;
+}
