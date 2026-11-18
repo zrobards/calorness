@@ -58,6 +58,8 @@ model User {
   savedMeals      SavedMeal[]
   pushSubscriptions PushSubscription[]
   aiCalls         AiCall[]
+  aiUsage         AiUsage[]
+  aiAnswers       AiAnswer[]
   coachNotes      CoachNote[]
   coachMessages   CoachMessage[]
   coachChats      CoachConversation[]
@@ -296,6 +298,9 @@ model Food {
   // Copied from a printed Nutrition Facts label, so it's shared with everyone
   // (name and numbers only) to grow the food database
   shared      Boolean    @default(false)
+  // Owner tool: hidden foods stop showing up in other people's searches
+  // (diaries that already have it are unchanged)
+  hidden      Boolean    @default(false)
   // brand + name squashed to letters and digits, maintained by a database
   // trigger (see the search_cache_and_index migration) for fast fuzzy search
   searchKey   String     @default("") @map("search_key")
@@ -482,6 +487,46 @@ model AiCall {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+// One row per call to the Claude API (retries included), with the tokens the
+// API reported and what that cost, so the owner can see the real AI bill.
+model AiUsage {
+  id               String   @id @default(cuid())
+  userId           String?
+  kind             String // same kinds as AiCall, plus "program" and "other"
+  model            String
+  inputTokens      Int      @default(0)
+  outputTokens     Int      @default(0)
+  cacheReadTokens  Int      @default(0)
+  cacheWriteTokens Int      @default(0)
+  costUsd          Float    @default(0)
+  // what cache reads saved compared with sending those tokens at full price
+  savedUsd         Float    @default(0)
+  ms               Int      @default(0)
+  status           Int      @default(200) // HTTP status; 0 = no answer (timeout)
+  createdAt        DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+}
+
+// A person's own typed meal descriptions and what the AI answered, so typing
+// the exact same words again ("2 eggs and toast") reuses that answer instead
+// of asking again. Never shared between people, never used for photos, and
+// dropped as soon as they correct it.
+model AiAnswer {
+  id        String   @id @default(cuid())
+  userId    String
+  key       String // the description, lowercased with spacing and end punctuation tidied
+  result    Json
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
 }
 
 // ─── Coach ────────────────────────────────────────────────────────────────

@@ -77,6 +77,8 @@ function applyServings(i: ReviewItem): ReviewedItem {
 export function AiReviewSheet({
   items: initial,
   note,
+  reused,
+  onFresh,
   photo,
   mealLabel,
   pending,
@@ -87,6 +89,8 @@ export function AiReviewSheet({
 }: {
   items: GroundedItem[];
   note?: string;
+  reused?: boolean;
+  onFresh?: () => void;
   photo?: string | null;
   mealLabel: string;
   pending: boolean;
@@ -138,6 +142,16 @@ export function AiReviewSheet({
       <p className="mt-1 flex items-center gap-1.5 text-sm text-chalk-muted">
         <Sparkles size={15} className="text-plate-yellow" aria-hidden /> AI estimate. Tap any item to adjust it. Best results: shoot from above with a fork in frame.
       </p>
+      {reused && (
+        <div role="status" className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-plate-blue/10 px-3 py-2.5 text-sm">
+          <span>Same answer as last time you typed exactly this.</span>
+          {onFresh && (
+            <button type="button" onClick={() => { haptic(); onFresh(); }} className="shrink-0 font-semibold text-plate-blue">
+              Fresh estimate
+            </button>
+          )}
+        </div>
+      )}
       {photo && (
         // eslint-disable-next-line @next/next/no-img-element -- a local preview of the user's own photo
         <img src={photo} alt="Your meal" className="mt-4 h-36 w-full rounded-2xl object-cover" />
