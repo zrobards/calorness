@@ -1,29 +1,30 @@
 import { z } from "zod";
+import { clip, clipRequired } from "./clip";
 
 // What we ask Claude to return for a photo or description of a meal.
 export const aiFoodItemSchema = z.object({
-  name: z.string().min(1).max(120),
-  portion: z.string().max(80), // e.g. "1 cup", "2 large eggs"
+  name: clipRequired(120),
+  portion: clip(80), // e.g. "1 cup", "2 large eggs"
   grams: z.number().min(0).max(5000),
   calories: z.number().min(0).max(5000),
   protein_g: z.number().min(0).max(500),
   carbs_g: z.number().min(0).max(500),
   fat_g: z.number().min(0).max(500),
-  confidence: z.enum(["high", "medium", "low"]),
+  confidence: z.enum(["high", "medium", "low"]).catch("medium"),
   // For packaged foods, so we can look up the real label values
   packaged: z.boolean().optional(),
-  brand: z.string().max(80).nullable().optional(),
-  product: z.string().max(160).nullable().optional(),
+  brand: clip(80).nullable().optional(),
+  product: clip(160).nullable().optional(),
   // Set when this item is really part of another listed dish (tortillas in tacos)
-  included_in: z.string().max(120).nullable().optional(),
+  included_in: clip(120).nullable().optional(),
   // When the item is one of the user's own foods listed in the prompt
-  my_food: z.string().max(40).nullable().optional(),
+  my_food: z.string().trim().max(40).nullable().optional().catch(null),
   my_food_servings: z.number().positive().max(50).nullable().optional(),
 });
 
 export const aiFoodResultSchema = z.object({
-  items: z.array(aiFoodItemSchema).max(15),
-  note: z.string().max(300).optional(),
+  items: z.array(aiFoodItemSchema).transform((items) => items.slice(0, 15)),
+  note: clip(300).optional(),
 });
 
 export type AiFoodItem = z.infer<typeof aiFoodItemSchema>;
@@ -42,7 +43,7 @@ export const LOG_FOODS_TOOL = {
           type: "object",
           properties: {
             name: { type: "string", description: "Plain food name, like 'Scrambled eggs' or 'Chipotle chicken burrito bowl'" },
-            portion: { type: "string", description: "Human-friendly portion, like '2 large eggs' or '1 bowl'" },
+            portion: { type: "string", description: "Short human-friendly portion, under 60 characters, like '2 large eggs' or '1 bowl'. Put assumptions in the note, not here." },
             grams: { type: "number", description: "Estimated weight of the portion in grams" },
             calories: { type: "number" },
             protein_g: { type: "number" },
@@ -99,9 +100,9 @@ export function parseLogFoodsResponse(body: { content?: ContentBlock[] }): AiFoo
 
 export const labelSchema = z.object({
   readable: z.boolean(),
-  name: z.string().max(120).default(""),
-  brand: z.string().max(120).nullable().optional(),
-  serving_label: z.string().max(80).default("1 serving"),
+  name: clip(120).default(""),
+  brand: clip(120).nullable().optional(),
+  serving_label: clip(80).default("1 serving"),
   serving_grams: z.number().min(0).max(5000).nullable().optional(),
   calories: z.number().min(0).max(5000).default(0),
   protein_g: z.number().min(0).max(500).default(0),

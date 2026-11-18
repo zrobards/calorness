@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { clip, clipRequired } from "./clip";
 import { db } from "@/lib/db";
 import { getExerciseOptions } from "@/lib/training";
 import { searchByName } from "@/components/train/muscleFilters";
@@ -61,22 +62,22 @@ export const PROGRAM_TOOL = {
 } as const;
 
 export const programInput = z.object({
-  name: z.string().min(1).max(60),
-  summary: z.string().max(600).default(""),
+  name: clipRequired(60),
+  summary: clip(600).default(""),
   days: z
     .array(
       z.object({
-        name: z.string().min(1).max(40),
-        activity: z.string().max(400).optional(),
+        name: clipRequired(40),
+        activity: clip(400).optional(),
         exercises: z
           .array(
             z.object({
-              exercise: z.string().min(1).max(100),
+              exercise: clipRequired(100),
               sets: z.number().int().min(1).max(10),
               rep_min: z.number().int().min(1).max(100),
               rep_max: z.number().int().min(1).max(100),
               rest_seconds: z.number().int().min(0).max(600).default(90),
-              note: z.string().max(120).optional(),
+              note: clip(120).optional(),
             }),
           )
           .max(15)

@@ -43,3 +43,21 @@ describe("double counting", () => {
     expect(parseLogFoodsResponse({ content: [{ type: "tool_use", name: "log_foods", input: { items: [salsa] } }] })?.items).toHaveLength(1);
   });
 });
+
+describe("long AI text is shortened, not rejected", () => {
+  const call = (input: unknown) => ({ content: [{ type: "tool_use", name: "log_foods", input }] });
+  it("keeps the answer when the portion description runs long (real Haiku output)", () => {
+    const r = parseLogFoodsResponse(call({
+      items: [{ name: "Chipotle chicken burrito bowl", portion: "1 bowl with white rice, black beans, chicken, fresh tomato salsa, cheese, lettuce", grams: 610, calories: 760, protein_g: 41, carbs_g: 83, fat_g: 27, confidence: "medium", packaged: false }],
+      note: "x".repeat(400),
+    }) as never);
+    expect(r?.items).toHaveLength(1);
+    expect(r!.items[0].portion.length).toBeLessThanOrEqual(80);
+    expect(r!.items[0].portion.endsWith("…")).toBe(true);
+    expect(r!.note!.length).toBeLessThanOrEqual(300);
+  });
+  it("keeps the answer when confidence is an unexpected word", () => {
+    const r = parseLogFoodsResponse(call({ items: [{ name: "Apple", portion: "1 medium", grams: 182, calories: 95, protein_g: 0.5, carbs_g: 25, fat_g: 0.3, confidence: "very high" }] }) as never);
+    expect(r?.items[0].confidence).toBe("medium");
+  });
+});

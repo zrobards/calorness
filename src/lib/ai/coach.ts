@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { clip, clipRequired, shorten } from "./clip";
 import { db } from "@/lib/db";
 import { bestSet } from "@/lib/fitness/strength";
 import { displayWeight, weightUnit } from "@/lib/fitness/units";
@@ -176,12 +177,12 @@ async function callClaude(system: System, messages: Message[]) {
 
 const proposalInput = z.object({
   replaces_routine_id: z.string().optional(),
-  name: z.string().min(1).max(60),
-  reason: z.string().max(300).default(""),
+  name: clipRequired(60),
+  reason: clip(300).default(""),
   exercises: z
     .array(
       z.object({
-        exercise: z.string().min(1).max(100),
+        exercise: clipRequired(100),
         sets: z.number().int().min(1).max(10),
         rep_min: z.number().int().min(1).max(100),
         rep_max: z.number().int().min(1).max(100),
@@ -261,7 +262,7 @@ export async function runCoach(userId: string, history: { role: "user" | "assist
       let output = "done";
       let isError = false;
       if (call.name === "remember") {
-        const p = z.object({ kind: z.enum(["injury", "goal", "preference", "other"]), text: z.string().min(2).max(200) }).safeParse(input);
+        const p = z.object({ kind: z.enum(["injury", "goal", "preference", "other"]), text: z.string().trim().min(2).transform((s) => shorten(s, 200)) }).safeParse(input);
         if (p.success) {
           const n = await db.coachNote.create({ data: { userId, kind: p.data.kind, text: p.data.text } });
           notesChanged.push(`Remembered: ${p.data.text}`);
