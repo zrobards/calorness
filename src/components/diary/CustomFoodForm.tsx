@@ -64,7 +64,7 @@ export function CustomFoodForm({
           <label className={label}>Fat (g)<input defaultValue={prefill?.fatG ?? undefined} name="fatG" type="number" inputMode="decimal" step="any" required className={field} /></label>
         </div>
         {error && <p role="alert" className="text-sm text-plate-red">{error}</p>}
-        <button disabled={pending} className="w-full rounded-xl bg-plate-red py-3.5 font-display text-xl font-semibold text-white disabled:opacity-60">
+        <button disabled={pending} className="w-full rounded-xl bg-plate-blue py-3.5 font-display text-xl font-semibold text-rack disabled:opacity-60">
           {pending ? "Saving…" : "Save food"}
         </button>
       </form>

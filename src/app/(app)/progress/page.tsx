@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Collapsible } from "@/components/ui/Collapsible";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Settings, Sparkles } from "lucide-react";
 import { TrendingUp } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -18,18 +18,20 @@ import { userToday } from "@/lib/userPrefs";
 import { BodyweightForm } from "./BodyweightForm";
 import { getTodaySummary } from "@/lib/activitySummary";
 
-export const metadata: Metadata = { title: "Progress" };
+export const metadata: Metadata = { title: "You" };
 
 export default async function ProgressPage() {
   const user = await requireUser();
   const now = new Date();
   const { today } = await userToday(user.id, now);
-  const [progress, unitSystem, calorieWeek, goal, summary] = await Promise.all([
+  const [progress, unitSystem, calorieWeek, goal, summary, me, workoutCount] = await Promise.all([
     getProgress(user.id, now),
     getUnitSystem(user.id),
     getCalorieWeek(user.id, today),
     db.goal.findUnique({ where: { userId: user.id }, select: { calories: true } }),
     getTodaySummary(user.id),
+    db.user.findUniqueOrThrow({ where: { id: user.id }, select: { name: true, email: true } }),
+    db.workout.count({ where: { userId: user.id, endedAt: { not: null } } }),
   ]);
   const loggedDays = calorieWeek.filter((d) => d.calories > 0);
   const unit = weightUnit(unitSystem);
@@ -50,7 +52,23 @@ export default async function ProgressPage() {
 
   return (
     <>
-      <PageHeader title="Progress" />
+      <PageHeader title="You">
+        <Link href="/profile" className="rounded-xl bg-rack-raised p-2.5 text-chalk-muted" aria-label="Settings"><Settings size={20} /></Link>
+      </PageHeader>
+
+      {/* Who you are, then how the week is going */}
+      <section aria-label="Your profile" className="mx-5 mb-4 flex items-center gap-4">
+        <span className="flex size-16 shrink-0 items-center justify-center rounded-full bg-plate-yellow text-2xl font-extrabold text-rack" aria-hidden>
+          {(me.name ?? me.email ?? "?").trim().charAt(0).toUpperCase()}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-xl font-bold">{me.name ?? "Lifter"}</span>
+          <span className="mt-1 flex gap-4 text-sm text-chalk-muted">
+            <span><b className="text-chalk">{workoutCount}</b> workouts</span>
+            <span><b className="text-chalk">{summary.logStreak}</b>-day streak</span>
+          </span>
+        </span>
+      </section>
 
       {/* The week at a glance; everything else opens on tap */}
       <section aria-label="This week" className="mx-5 grid grid-cols-2 gap-3">
@@ -66,6 +84,10 @@ export default async function ProgressPage() {
       <nav aria-label="More progress" className="mx-5 mt-3 grid grid-cols-2 gap-3">
         <Link href="/progress/lifts" className="flex items-center justify-between rounded-2xl bg-rack-raised px-4 py-3.5 font-semibold">All lifts <ChevronRight size={18} className="text-chalk-muted" aria-hidden /></Link>
         <Link href="/progress/activity" className="flex items-center justify-between rounded-2xl bg-rack-raised px-4 py-3.5 font-semibold">Activity <ChevronRight size={18} className="text-chalk-muted" aria-hidden /></Link>
+        <Link href="/coach" className="col-span-2 flex items-center justify-between rounded-2xl bg-rack-raised px-4 py-3.5 font-semibold">
+          <span className="flex items-center gap-2"><Sparkles size={18} className="text-plate-yellow" aria-hidden /> Ask Coach</span>
+          <ChevronRight size={18} className="text-chalk-muted" aria-hidden />
+        </Link>
       </nav>
       <div className="mb-1" />
 
@@ -100,7 +122,7 @@ export default async function ProgressPage() {
               {topLifts.map((l, i) => (
                 <li key={l.slug}>
                   <Link href={`/train/exercises/${l.slug}`} className="flex items-center gap-3">
-                    <span className={`flex size-9 shrink-0 items-center justify-center rounded-full border-4 border-rack font-display font-bold text-white ${["bg-plate-red", "bg-plate-blue", "bg-plate-yellow", "bg-plate-green", "bg-chalk-muted"][i]}`}>
+                    <span className={`flex size-9 shrink-0 items-center justify-center rounded-full border-4 border-rack font-display font-bold text-rack ${["bg-plate-blue", "bg-plate-blue", "bg-plate-yellow", "bg-plate-green", "bg-chalk-muted"][i]}`}>
                       {i + 1}
                     </span>
                     <span className="min-w-0 flex-1">

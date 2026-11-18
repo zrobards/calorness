@@ -78,7 +78,7 @@ export default async function QuickLogPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageHeader title="Quick log" />
+      <PageHeader title="Today" />
       {/* New here? One step makes everything else work */}
       {!diary.goal && (
         <Link href="/profile#goals" className="animate-rise mx-5 mb-5 flex items-center gap-3 rounded-2xl border border-plate-yellow/50 bg-plate-yellow/10 p-4">

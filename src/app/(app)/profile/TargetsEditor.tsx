@@ -85,7 +85,7 @@ export function TargetsEditor({ initial, waterUnit }: { initial: Targets; waterU
 
       {state.error && <p role="alert" className="text-sm text-plate-red">{state.error}</p>}
       <button disabled={pending || (!changed && !state.error)}
-        className="w-full rounded-xl bg-plate-red py-3 font-display text-lg font-semibold text-white disabled:opacity-40">
+        className="w-full rounded-xl bg-plate-blue py-3 font-display text-lg font-semibold text-rack disabled:opacity-40">
         {pending ? "Saving…" : state.saved && !changed ? "Saved" : "Save targets"}
       </button>
     </form>

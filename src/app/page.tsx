@@ -53,7 +53,7 @@ export default function LandingPage() {
       <div className="mt-auto space-y-3 pt-12">
         <Link
           href="/signin"
-          className="block rounded-xl bg-plate-red py-3.5 text-center font-display text-xl font-semibold text-white"
+          className="block rounded-xl bg-plate-blue py-3.5 text-center font-display text-xl font-semibold text-rack"
         >
           Get started
         </Link>

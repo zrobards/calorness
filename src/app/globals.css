@@ -1,29 +1,28 @@
 @import "tailwindcss";
 
 /*
-  Calorness design tokens
-  Base: steel blue, like a squat rack. Text: chalk.
-  Accents: the four Olympic bumper-plate colors, each mapped to one number
-  the app tracks everywhere:
-    red    (25 kg plate) → calories, and primary actions
-    blue   (20 kg plate) → protein
-    yellow (15 kg plate) → carbs
-    green  (10 kg plate) → fat
+  Calorness design tokens: dark navy, yellow brand, blue actions.
+    yellow → the brand and highlights: calories, rings, streaks, records, Snap it
+    blue   → actions (Start, Finish, Save, Add) and protein
+    red    → warnings and destructive actions only
+    green  → done / success
+  (Token names are kept from the original "rack and plates" theme so every
+  screen picks up the new look.)
 */
 @theme {
-  --color-rack: #17212b;
-  --color-rack-raised: #1f2c39;
-  --color-rack-line: #2f3f4f;
-  --color-chalk: #eceee8;
-  --color-chalk-muted: #97a4b0;
+  --color-rack: #0e141d;
+  --color-rack-raised: #17202c;
+  --color-rack-line: #263241;
+  --color-chalk: #f1f4f8;
+  --color-chalk-muted: #a3aebd;
 
-  --color-plate-red: #d8453e;
-  --color-plate-blue: #4a86dc;
-  --color-plate-yellow: #e8b931;
-  --color-plate-green: #41a86d;
+  --color-plate-red: #e5534b;
+  --color-plate-blue: #4c8dff;
+  --color-plate-yellow: #f5c518;
+  --color-plate-green: #3fb27f;
 
-  --font-sans: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-barlow-condensed), var(--font-barlow), sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 html {
@@ -147,12 +146,10 @@ button:not(:disabled):active, a:active { transform: scale(0.97); }
   }
 }
 
-/* Readable color text and buttons (WCAG AA, 4.5:1). These sit outside
-   Tailwind's layers so they win over the matching utilities; the brand
-   colors stay the same for rings, charts, and plates. */
-.text-plate-red { color: #f2726a; }
-.text-plate-blue { color: #7cadf2; }
-.bg-plate-red { background-color: #c73a33; }
-.bg-plate-blue { background-color: #3570c4; }
+/* Readable colored text on the dark ground (WCAG AA, 4.5:1) */
+.text-plate-red { color: #f07a73; }
+.bg-plate-red { background-color: #c8423b; }
 .text-plate-green { color: #5cc98a; }
-.bg-plate-green { background-color: #2a7a4c; }
+
+/* Headings: bold, tight, with even-width numbers */
+.font-display { letter-spacing: -0.02em; font-feature-settings: "tnum"; }

@@ -12,7 +12,7 @@ export function MacroBars({
   goal: { calories: number; proteinG: number; carbsG: number; fatG: number };
 }) {
   const macros: Macro[] = [
-    { label: "Calories", eaten: eaten.calories, goal: goal.calories, unit: "", color: "bg-plate-red" },
+    { label: "Calories", eaten: eaten.calories, goal: goal.calories, unit: "", color: "bg-plate-yellow" },
     { label: "Protein", eaten: eaten.proteinG, goal: goal.proteinG, unit: "g", color: "bg-plate-blue" },
     { label: "Carbs", eaten: eaten.carbsG, goal: goal.carbsG, unit: "g", color: "bg-plate-yellow" },
     { label: "Fat", eaten: eaten.fatG, goal: goal.fatG, unit: "g", color: "bg-plate-green" },

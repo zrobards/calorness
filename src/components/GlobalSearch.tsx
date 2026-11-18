@@ -9,7 +9,7 @@ import { searchEverything, type SearchHit } from "@/app/(app)/search/actions";
 // One search for the whole app: places and actions, every setting, and your
 // own programs, routines, exercises, foods, and Coach chats.
 const PLACES: SearchHit[] = [
-  { group: "Go to", title: "Quick log", detail: "Snap, describe, or scan food", href: "/log" },
+  { group: "Go to", title: "Home", detail: "Snap or type what you ate", href: "/log" },
   { group: "Go to", title: "Diary", detail: "Today's food and water", href: "/diary" },
   { group: "Go to", title: "Add food", detail: "Search the food database", href: "/diary/add" },
   { group: "Go to", title: "Train", detail: "Your running program", href: "/train" },
@@ -18,7 +18,7 @@ const PLACES: SearchHit[] = [
   { group: "Go to", title: "Program templates", detail: "Push/Pull/Legs, 5×5, and more", href: "/train/templates" },
   { group: "Go to", title: "Exercise library", href: "/train/exercises" },
   { group: "Go to", title: "Coach", detail: "Ask about training or food", href: "/coach" },
-  { group: "Go to", title: "Progress", detail: "Muscles, volume, lifts, weight", href: "/progress" },
+  { group: "Go to", title: "You", detail: "Your progress: lifts, muscles, weight", href: "/progress" },
   { group: "Go to", title: "Activity", detail: "Steps, active calories, walking speed", href: "/progress/activity" },
   { group: "Settings", title: "Daily targets", detail: "Calories, protein, carbs, fat, water", href: "/profile#goals" },
   { group: "Settings", title: "Body stats", detail: "Sex, age, height, exercise credit", href: "/profile#body" },

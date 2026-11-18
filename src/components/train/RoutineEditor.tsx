@@ -204,7 +204,7 @@ export function RoutineEditor({
           onClick={save}
           disabled={pending}
           aria-busy={pending}
-          className="flex-1 rounded-xl bg-plate-red py-3.5 font-display text-xl font-semibold text-white disabled:opacity-60"
+          className="flex-1 rounded-xl bg-plate-blue py-3.5 font-display text-xl font-semibold text-rack disabled:opacity-60"
         >
           {pending ? "Saving…" : "Save routine"}
         </button>

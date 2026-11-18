@@ -308,14 +308,14 @@ export function QuickLog({
       <div className="animate-rise mt-4 overflow-hidden rounded-3xl bg-rack-raised" style={{ "--i": 2 } as React.CSSProperties}>
         <input ref={fileRef} id="snap-camera" type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => { onPhoto(e.target.files?.[0]); e.target.value = ""; }} disabled={!aiReady} />
         <input ref={libraryRef} id="snap-library" type="file" accept="image/*" className="sr-only" onChange={(e) => { onPhoto(e.target.files?.[0]); e.target.value = ""; }} disabled={!aiReady} />
-        <div className={`relative h-36 bg-plate-red text-white ${mode === "snap" || mode === "scan" ? "ring-4 ring-plate-yellow ring-inset" : ""}`}>
+        <div className={`relative h-36 bg-plate-yellow text-rack ${mode === "snap" || mode === "scan" ? "ring-4 ring-plate-blue ring-inset" : ""}`}>
           <label htmlFor="snap-camera" className="absolute inset-0 flex cursor-pointer flex-col justify-end p-5">
-            <span className="absolute -top-16 -right-16 size-56 rounded-full border-[18px] border-white/10" aria-hidden />
+            <span className="absolute -top-16 -right-16 size-56 rounded-full border-[18px] border-rack/10" aria-hidden />
             <Camera size={34} strokeWidth={2.2} aria-hidden />
             <span className="mt-2 font-display text-3xl leading-none font-bold">Snap it</span>
-            <span className="mt-1 text-sm text-white">{aiReady ? "A meal, a nutrition label, or a barcode" : "Add an AI key to turn this on"}</span>
+            <span className="mt-1 text-sm font-medium">{aiReady ? "A meal, a nutrition label, or a barcode" : "Add an AI key to turn this on"}</span>
           </label>
-          <label htmlFor="snap-library" className="absolute top-4 right-4 flex cursor-pointer items-center gap-1.5 rounded-full bg-black/25 px-3.5 py-2 text-sm font-semibold backdrop-blur">
+          <label htmlFor="snap-library" className="absolute top-4 right-4 flex cursor-pointer items-center gap-1.5 rounded-full bg-rack/15 px-3.5 py-2 text-sm font-semibold">
             <ImageUp size={17} aria-hidden /> Upload
           </label>
         </div>
@@ -325,7 +325,7 @@ export function QuickLog({
             className="min-w-0 flex-1 rounded-xl border border-rack-line bg-rack px-3.5 py-3 text-base focus:border-plate-yellow focus:outline-none" />
           {speechSupported && (
             <button type="button" onClick={listen} aria-pressed={listening} aria-label={listening ? "Stop listening" : "Say it instead"}
-              className={`rounded-xl p-3 ${listening ? "animate-pulse bg-plate-red text-white" : "bg-rack text-chalk-muted"}`}><Mic size={20} /></button>
+              className={`rounded-xl p-3 ${listening ? "animate-pulse bg-plate-blue text-rack" : "bg-rack text-chalk-muted"}`}><Mic size={20} /></button>
           )}
         </form>
         {text.trim().length >= 2 && (
@@ -399,7 +399,7 @@ export function QuickLog({
       {/* Training, one tap away */}
       <section className="animate-rise mt-7" style={{ "--i": 5 } as React.CSSProperties}>
         {active ? (
-          <Link href={`/train/workout/${active.id}`} className="flex items-center gap-4 rounded-3xl bg-plate-green p-5 text-white">
+          <Link href={`/train/workout/${active.id}`} className="flex items-center gap-4 rounded-3xl bg-plate-blue p-5 text-rack">
             <Dumbbell size={28} aria-hidden />
             <span className="flex-1"><span className="block font-display text-2xl font-bold">Back to {active.name}</span><span className="text-sm opacity-90">Workout in progress</span></span>
             <ChevronRight aria-hidden />
@@ -407,7 +407,7 @@ export function QuickLog({
         ) : (
           <form action={startWorkout.bind(null, nextRoutine?.id ?? null)}>
             <button className="flex w-full items-center gap-4 rounded-3xl bg-rack-raised p-5 text-left">
-              <span className="flex size-12 items-center justify-center rounded-full bg-plate-green text-white"><Play size={22} fill="currentColor" aria-hidden /></span>
+              <span className="flex size-12 items-center justify-center rounded-full bg-plate-blue text-rack"><Play size={22} fill="currentColor" aria-hidden /></span>
               <span className="flex-1">
                 <span className="block font-display text-2xl font-bold">{nextRoutine ? `Start ${nextRoutine.name}` : "Start a workout"}</span>
                 <span className="text-sm text-chalk-muted">{nextRoutine ? "Your next routine in rotation" : "Empty workout, add exercises as you go"}</span>

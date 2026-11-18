@@ -69,7 +69,7 @@ export default async function WorkoutDetailPage({
           { label: "Sets", value: <AnimatedNumber value={workout.setCount} duration={600} /> },
         ].map((s, i) => (
           <div key={s.label} className="animate-rise rounded-2xl bg-rack-raised px-3 py-4 text-center" style={{ "--i": i } as React.CSSProperties}>
-            <dd className="font-display text-3xl font-bold tabular-nums">{s.value}</dd>
+            <dd className="font-display text-2xl font-bold whitespace-nowrap tabular-nums">{s.value}</dd>
             <dt className="mt-1 text-xs text-chalk-muted">{s.label}</dt>
           </div>
         ))}

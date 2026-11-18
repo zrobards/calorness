@@ -24,7 +24,7 @@ export function ApproveButton({ id }: { id: string }) {
       <button
         disabled={pending}
         onClick={() => start(async () => setResult(await approveHandoff(id)))}
-        className="w-full rounded-xl bg-plate-red py-3.5 font-display text-xl font-semibold text-white disabled:opacity-60"
+        className="w-full rounded-xl bg-plate-blue py-3.5 font-display text-xl font-semibold text-rack disabled:opacity-60"
       >
         {pending ? "Confirming…" : "Yes, sign in the app"}
       </button>

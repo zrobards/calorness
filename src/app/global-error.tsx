@@ -5,7 +5,7 @@
 export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, minHeight: "100dvh", display: "grid", placeItems: "center", background: "#17212b", color: "#eceee8", fontFamily: "system-ui, sans-serif", textAlign: "center" }}>
+      <body style={{ margin: 0, minHeight: "100dvh", display: "grid", placeItems: "center", background: "#0e141d", color: "#eceee8", fontFamily: "system-ui, sans-serif", textAlign: "center" }}>
         <div style={{ padding: 24 }}>
           <h1 style={{ fontSize: 28, margin: 0 }}>Calorness hit a snag</h1>
           <p style={{ opacity: 0.75 }}>Your data is safe. Reload to keep going.</p>

@@ -101,7 +101,7 @@ export function LogAnywaySheet({ text, photo, day, meal, mealLabel, reason, onRe
             <input value={calories} onChange={(e) => setCalories(e.target.value)} type="number" inputMode="numeric" placeholder="Calories" aria-label="Calories" className={field} />
             <input value={protein} onChange={(e) => setProtein(e.target.value)} type="number" inputMode="numeric" placeholder="Protein g (optional)" aria-label="Protein grams" className={field} />
           </div>
-          <button onClick={quickAdd} disabled={pending} className="w-full rounded-xl bg-plate-red py-3 font-semibold text-white disabled:opacity-60">
+          <button onClick={quickAdd} disabled={pending} className="w-full rounded-xl bg-plate-blue py-3 font-semibold text-rack disabled:opacity-60">
             {pending ? "Logging…" : `Log to ${mealLabel}`}
           </button>
         </div>

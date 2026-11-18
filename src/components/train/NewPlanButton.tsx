@@ -18,7 +18,7 @@ export function NewPlanButton() {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button onClick={() => { haptic(); setOpen(true); }} className="flex items-center gap-1 rounded-full bg-plate-blue px-3.5 py-1.5 text-sm font-semibold text-white">
+      <button onClick={() => { haptic(); setOpen(true); }} className="flex items-center gap-1 rounded-full bg-plate-blue px-3.5 py-1.5 text-sm font-semibold text-rack">
         <Plus size={16} aria-hidden /> New plan
       </button>
       {open && (

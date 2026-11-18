@@ -120,7 +120,7 @@ export function CoachChat({ chat, initialMessages, notes, draft = "" }: { chat: 
         {messages.map((m) => (
           <div key={m.id} className={`animate-rise flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
             {m.role === "user" ? (
-              <div className="max-w-[85%] rounded-2xl rounded-br-md bg-plate-blue px-4 py-2.5 whitespace-pre-wrap text-white">{m.content}</div>
+              <div className="max-w-[85%] rounded-2xl rounded-br-md bg-plate-blue px-4 py-2.5 whitespace-pre-wrap text-rack">{m.content}</div>
             ) : (
               <div className="max-w-[90%] space-y-3">
                 <div className="rounded-2xl rounded-bl-md bg-rack-raised px-4 py-3 leading-relaxed">
@@ -175,14 +175,14 @@ export function CoachChat({ chat, initialMessages, notes, draft = "" }: { chat: 
           aria-label="Message Coach"
           className="max-h-32 flex-1 resize-none rounded-2xl border border-rack-line bg-rack-raised px-4 py-2.5 text-base focus:border-plate-yellow focus:outline-none"
         />
-        <button disabled={sending || !text.trim()} className="flex size-11 shrink-0 items-center justify-center rounded-full bg-plate-red text-white disabled:opacity-40" aria-label="Send">
+        <button disabled={sending || !text.trim()} className="flex size-11 shrink-0 items-center justify-center rounded-full bg-plate-blue text-rack disabled:opacity-40" aria-label="Send">
           <ArrowUp size={20} strokeWidth={2.5} />
         </button>
       </form>
 
       {showChats && (
         <Sheet title="Your chats" onClose={() => setShowChats(false)}>
-          <Link href="/coach?new=1" onClick={() => setShowChats(false)} className="mt-3 flex items-center gap-2 rounded-xl bg-plate-red px-4 py-3 font-semibold text-white">
+          <Link href="/coach?new=1" onClick={() => setShowChats(false)} className="mt-3 flex items-center gap-2 rounded-xl bg-plate-blue px-4 py-3 font-semibold text-rack">
             <Plus size={18} aria-hidden /> New chat
           </Link>
           <ul className="mt-3 divide-y divide-rack-line overflow-hidden rounded-2xl bg-rack">
@@ -232,11 +232,11 @@ function RoutineCard({ messageId, proposal, applied, pending, onApply }: { messa
       ) : (
         <div className="mt-3 grid gap-2">
           {proposal.replacesRoutineId && (
-            <button disabled={pending} onClick={() => onApply("replace")} className="rounded-xl bg-plate-red py-2.5 font-semibold text-white disabled:opacity-60">
+            <button disabled={pending} onClick={() => onApply("replace")} className="rounded-xl bg-plate-blue py-2.5 font-semibold text-rack disabled:opacity-60">
               Replace my {proposal.replacesRoutineName}
             </button>
           )}
-          <button disabled={pending} onClick={() => onApply("new")} className={`rounded-xl py-2.5 font-semibold disabled:opacity-60 ${proposal.replacesRoutineId ? "bg-rack" : "bg-plate-red text-white"}`}>
+          <button disabled={pending} onClick={() => onApply("new")} className={`rounded-xl py-2.5 font-semibold disabled:opacity-60 ${proposal.replacesRoutineId ? "bg-rack" : "bg-plate-blue text-rack"}`}>
             Save as a new routine
           </button>
         </div>
@@ -265,7 +265,7 @@ function ProgramCard({ messageId, draft, saved, onSaved }: { messageId: string; 
         <p className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-plate-green"><Check size={16} aria-hidden /> {saved}</p>
       ) : (
         <div className="mt-3 grid grid-cols-2 gap-2">
-          <Link href={`/train/programs/build?from=${messageId}`} className="rounded-xl bg-plate-red py-2.5 text-center font-semibold text-white">Customize</Link>
+          <Link href={`/train/programs/build?from=${messageId}`} className="rounded-xl bg-plate-blue py-2.5 text-center font-semibold text-rack">Customize</Link>
           <button disabled={pending} onClick={() => start(async () => { const r = await saveCoachProgram(messageId); if ("ok" in r && r.ok) { haptic("success"); onSaved(`Saved ${draft.days.length} routines`); } })}
             className="rounded-xl bg-rack py-2.5 font-semibold disabled:opacity-60">
             {pending ? "Saving…" : "Save as is"}

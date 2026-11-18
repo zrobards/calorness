@@ -13,14 +13,13 @@ import { BodyStatsCard } from "./BodyStatsCard";
 import { ActivityGoals, HealthSetup, InstallApp } from "./ActivitySetup";
 import { DeleteAccount } from "./DeleteAccount";
 import { Collapsible, SearchableSections, SectionGroup } from "@/components/ui/Collapsible";
-import { getTodaySummary } from "@/lib/activitySummary";
 import { Bell, HeartPulse, KeyRound, LayoutGrid, Ruler, Shield, Target, UserRound, Users } from "lucide-react";
 import Link from "next/link";
 import QRCode from "qrcode";
 import { aiLimitFor, aiUsedToday } from "@/lib/aiLimit";
 import { setUnitSystem } from "./actions";
 
-export const metadata: Metadata = { title: "Profile" };
+export const metadata: Metadata = { title: "Settings" };
 
 export default async function ProfilePage() {
   const sessionUser = await requireUser();
@@ -33,13 +32,11 @@ export default async function ProfilePage() {
   });
 
   const siteUrl = (process.env.NEXTAUTH_URL ?? "https://calorness.vercel.app").replace(/\/$/, "");
-  const [qrSvg, aiUsed, aiLimit, lastHealth, summary, workoutCount] = await Promise.all([
-    QRCode.toString(siteUrl, { type: "svg", margin: 0, color: { dark: "#17212b", light: "#ffffff" } }),
+  const [qrSvg, aiUsed, aiLimit, lastHealth] = await Promise.all([
+    QRCode.toString(siteUrl, { type: "svg", margin: 0, color: { dark: "#0e141d", light: "#ffffff" } }),
     aiUsedToday(user.id),
     aiLimitFor(user.id),
     db.dailyActivity.findFirst({ where: { userId: user.id }, orderBy: { updatedAt: "desc" }, select: { updatedAt: true, steps: true, date: true } }),
-    getTodaySummary(user.id),
-    db.workout.count({ where: { userId: user.id, endedAt: { not: null } } }),
   ]);
   const imperial = user.unitSystem === "IMPERIAL";
   const age = user.birthYear ? new Date().getFullYear() - user.birthYear : null;
@@ -49,34 +46,10 @@ export default async function ProfilePage() {
   // page stays short; the search box finds any of them by name.
   return (
     <>
-      <PageHeader title="Profile">
+      <PageHeader title="Settings">
         <SignOutButton />
       </PageHeader>
 
-      {/* Who you are at a glance */}
-      <section className="mx-5 mb-4 rounded-2xl bg-rack-raised p-5" aria-label="Your profile">
-        <div className="flex items-center gap-4">
-          <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-plate-blue font-display text-2xl font-bold text-white" aria-hidden>
-            {(user.name ?? user.email ?? "?").trim().charAt(0).toUpperCase()}
-          </span>
-          <span className="min-w-0">
-            <span className="block truncate font-display text-2xl font-semibold">{user.name ?? "Lifter"}</span>
-            {user.email && <span className="block truncate text-sm text-chalk-muted">{user.email}</span>}
-          </span>
-        </div>
-        <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
-          {[
-            { label: "Day streak", value: summary.logStreak },
-            { label: "Workouts", value: workoutCount },
-            { label: "Goal", value: user.goal ? { LOSE: "Lose", MAINTAIN: "Maintain", GAIN: "Gain" }[user.goal.goalType] : "—" },
-          ].map((x) => (
-            <div key={x.label} className="rounded-xl bg-rack py-2.5">
-              <dd className="font-display text-xl font-bold tabular-nums">{x.value}</dd>
-              <dt className="text-[11px] text-chalk-muted">{x.label}</dt>
-            </div>
-          ))}
-        </dl>
-      </section>
 
       <SearchableSections placeholder="Search settings">
         <SectionGroup title="Your goals" />

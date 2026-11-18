@@ -358,7 +358,7 @@ function Water({ ml, goalMl, imperial, onChange }: { ml: number; goalMl: number;
         ))}
       </ol>
       <div className="mt-3 flex gap-2">
-        <button onClick={() => { haptic(); onChange(glass); }} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-plate-blue py-2.5 font-medium text-white">
+        <button onClick={() => { haptic(); onChange(glass); }} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-plate-blue py-2.5 font-medium text-rack">
           <Droplet size={17} aria-hidden /> Add {imperial ? "8 oz" : "250 ml"}
         </button>
         {ml > 0 && (

@@ -16,7 +16,7 @@ export function BodyweightForm({ unit }: { unit: string }) {
         <input name="weight" type="number" inputMode="decimal" step="0.1" required
           className="mt-1 w-full rounded-xl border border-rack-line bg-rack px-3 py-2.5 font-display text-xl text-chalk tabular-nums focus:border-plate-yellow focus:outline-none" />
       </label>
-      <button disabled={pending} className="rounded-xl bg-plate-green px-5 py-3 font-display text-lg font-semibold text-white disabled:opacity-60">
+      <button disabled={pending} className="rounded-xl bg-plate-blue px-5 py-3 font-display text-lg font-semibold text-rack disabled:opacity-60">
         {pending ? "Saving…" : state.ok ? "Saved" : "Log"}
       </button>
       {state.error && <p role="alert" className="text-sm text-plate-red">{state.error}</p>}

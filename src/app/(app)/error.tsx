@@ -15,7 +15,7 @@ export default function AppError({ error, reset }: { error: Error & { digest?: s
       <p className="mt-2 text-chalk-muted">
         This screen couldn&apos;t load. Your data is safe. Check your connection and try again.
       </p>
-      <button onClick={reset} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-plate-red px-5 py-3 font-display text-lg font-semibold text-white">
+      <button onClick={reset} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-plate-blue px-5 py-3 font-display text-lg font-semibold text-rack">
         <RotateCcw size={18} aria-hidden /> Try again
       </button>
       {error.digest && <p className="mt-4 text-xs text-chalk-muted">Error code: {error.digest}</p>}
