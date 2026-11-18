@@ -98,6 +98,13 @@ tracking that shares data with training.
 **Never stuck when the AI fails**
 - Photo and description estimates try the main model (55 s, larger answers), then a faster model (`AI_FAST_MODEL`, default claude-haiku-5-5); if both fail, a "Log it another way" sheet offers close database matches or a calories quick add. Failed tries don't count toward the daily AI allowance
 
+**Feed (Step 3)**
+- Opt-in community profile: a username (no real name), optional bio, and switches for what's shared; food, weight, and body stats are never shared
+- Following needs approval; requests show at the top of the Feed with approve/decline, and push notifications for requests and approvals
+- Posts are snapshots: finished workouts with new records (automatic), weekly recaps on Sundays and logging-streak milestones (daily job), and programs you choose to share, which followers can copy in one tap (switched on)
+- Props (one-tap cheers), public profile pages (/u/handle) with follow, remove follower, report, and block; blocking removes follows both ways and hides each person from the other
+- Reports go to the owner's admin page (hide post or dismiss); Settings → Community profile edits it, lists blocked people, or leaves the feed (removes username, posts, and follows)
+
 **Progress**
 - Tappable muscle map: pick a muscle (on the body or the list) to see every set that counted toward it, with the main/helper split, for this week, the last 7 days, or last week
 - Muscle map: sets per muscle over the last 7 days, front and back

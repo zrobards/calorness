@@ -30,7 +30,7 @@ export default async function ProgressPage() {
     getCalorieWeek(user.id, today),
     db.goal.findUnique({ where: { userId: user.id }, select: { calories: true } }),
     getTodaySummary(user.id),
-    db.user.findUniqueOrThrow({ where: { id: user.id }, select: { name: true, email: true } }),
+    db.user.findUniqueOrThrow({ where: { id: user.id }, select: { name: true, email: true, handle: true, _count: { select: { followers: { where: { status: "ACCEPTED" } }, following: { where: { status: "ACCEPTED" } } } } } }),
     db.workout.count({ where: { userId: user.id, endedAt: { not: null } } }),
   ]);
   const loggedDays = calorieWeek.filter((d) => d.calories > 0);
@@ -62,10 +62,14 @@ export default async function ProgressPage() {
           {(me.name ?? me.email ?? "?").trim().charAt(0).toUpperCase()}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-xl font-bold">{me.name ?? "Lifter"}</span>
-          <span className="mt-1 flex gap-4 text-sm text-chalk-muted">
+          <span className="block truncate text-xl font-bold">{me.handle ? `@${me.handle}` : me.name ?? "Lifter"}</span>
+          <span className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-chalk-muted">
             <span><b className="text-chalk">{workoutCount}</b> workouts</span>
-            <span><b className="text-chalk">{summary.logStreak}</b>-day streak</span>
+            {me.handle ? (
+              <Link href={`/u/${me.handle}`}><b className="text-chalk">{me._count.followers}</b> followers · <b className="text-chalk">{me._count.following}</b> following</Link>
+            ) : (
+              <span><b className="text-chalk">{summary.logStreak}</b>-day streak</span>
+            )}
           </span>
         </span>
       </section>

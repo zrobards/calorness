@@ -18,6 +18,8 @@ const PLACES: SearchHit[] = [
   { group: "Go to", title: "Program templates", detail: "Push/Pull/Legs, 5×5, and more", href: "/train/templates" },
   { group: "Go to", title: "Exercise library", href: "/train/exercises" },
   { group: "Go to", title: "Coach", detail: "Ask about training or food", href: "/coach" },
+  { group: "Go to", title: "Feed", detail: "Friends' workouts, find people, follow requests", href: "/feed" },
+  { group: "Settings", title: "Community profile", detail: "Username, what you share, blocked people", href: "/profile#community" },
   { group: "Go to", title: "You", detail: "Your progress: lifts, muscles, weight", href: "/progress" },
   { group: "Go to", title: "Activity", detail: "Steps, active calories, walking speed", href: "/progress/activity" },
   { group: "Settings", title: "Daily targets", detail: "Calories, protein, carbs, fat, water", href: "/profile#goals" },

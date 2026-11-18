@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
-import { ArrowDown, ArrowUp, ChevronDown, FolderPlus, Pencil, Play, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, FolderPlus, Pencil, Play, Trash2, Share2 } from "lucide-react";
 import { haptic } from "@/lib/haptics";
+import { shareProgram } from "@/app/(app)/feed/actions";
 import { startWorkout } from "@/app/(app)/train/actions";
 import { createProgram, deleteProgram, moveProgram, moveRoutine, renameProgram, setActiveProgram, setRoutineProgram } from "@/lib/clientActions";
 
@@ -92,6 +93,13 @@ export function TrainPlan({ programs, standalone, savedId }: { programs: PlanPro
                 <h3 className="truncate font-display text-2xl font-semibold">{active.name}</h3>
                 {active.summary && <p className="mt-0.5 line-clamp-2 text-xs text-chalk-muted">{active.summary}</p>}
               </div>
+              <button onClick={() => act(async () => {
+                  const r = await shareProgram(active.id).catch(() => ({ error: "No connection. Try again." }));
+                  alert("error" in r && r.error ? r.error : `Shared "${active.name}" with your followers. They can copy it in one tap.`);
+                })}
+                className="rounded-full bg-rack px-3 py-1.5 text-xs font-semibold text-plate-blue" aria-label={`Share ${active.name} to your feed`}>
+                <Share2 size={14} className="mr-1 inline" aria-hidden />Share
+              </button>
               <Switch on label={`Turn off ${active.name}`} onChange={() => act(() => setActiveProgram(null))} />
             </div>
             {active.routines.length ? routineList(active.routines) : <p className="py-4 text-sm text-chalk-muted">No routines in this program yet. Use Organize to move some in.</p>}

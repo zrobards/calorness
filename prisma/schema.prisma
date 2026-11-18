@@ -21,6 +21,11 @@ model User {
   emailVerified DateTime?
   image         String?
   passwordHash  String? // only for email + password accounts (bcrypt)
+  // Community profile (opt-in). No handle = not on the feed at all.
+  handle        String?    @unique // lowercase, 3–20 letters, numbers, _ or .
+  bio           String?
+  shareWorkouts Boolean    @default(true) // finished workouts and new records
+  shareRecaps   Boolean    @default(true) // weekly recaps and streak milestones
   unitSystem    UnitSystem @default(IMPERIAL)
   timeZone      String     @default("America/New_York") // the phone's zone, so "today" matches your day
   restAlarmAt   DateTime? // when a "rest's over" notification is due; cleared to cancel it
@@ -61,6 +66,13 @@ model User {
   foodSubmissions FoodSubmission[]
   dailyActivity   DailyActivity[]
   programs        Program[]
+  following       Follow[]   @relation("follower")
+  followers       Follow[]   @relation("followed")
+  blocking        Block[]    @relation("blocker")
+  blockedBy       Block[]    @relation("blocked")
+  posts           Post[]
+  props           PostProp[]
+  reportsMade     Report[]   @relation("reporter")
   aiCorrections   AiCorrection[]
 }
 
@@ -645,4 +657,89 @@ model DailyActivity {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
+}
+
+// ─── Community: following (with approval), the feed, and safety ──────────
+
+enum FollowStatus {
+  PENDING // waiting for the other person to approve
+  ACCEPTED
+}
+
+model Follow {
+  id          String       @id @default(cuid())
+  followerId  String
+  followingId String
+  status      FollowStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+
+  follower  User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("followed", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId, status])
+}
+
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker User @relation("blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+}
+
+enum PostKind {
+  WORKOUT // a finished workout, with any new records
+  PROGRAM // a program someone shared; others can copy it
+  RECAP // a weekly recap or a streak milestone
+}
+
+// What a post shows is a snapshot taken when it was made, so later edits or
+// deletions of the workout or program don't change (or break) the feed.
+model Post {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      PostKind
+  data      Json
+  key       String? // stops duplicates, e.g. "workout:<id>" or "recap:2026-W47"
+  hidden    Boolean  @default(false) // taken down after a report
+  createdAt DateTime @default(now())
+
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  props   PostProp[]
+  reports Report[]
+
+  @@unique([userId, key])
+  @@index([userId, createdAt])
+}
+
+// "Props": a single tap to cheer someone on
+model PostProp {
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+}
+
+model Report {
+  id         String   @id @default(cuid())
+  reporterId String
+  postId     String?
+  userId     String? // the person being reported
+  reason     String
+  resolved   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  reporter User  @relation("reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  post     Post? @relation(fields: [postId], references: [id], onDelete: SetNull)
+
+  @@index([resolved, createdAt])
 }

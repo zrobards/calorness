@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Reports } from "./Reports";
 import { requireUser } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
 import { db } from "@/lib/db";
@@ -16,6 +17,9 @@ export default async function AdminPage() {
   const user = await requireUser();
   if (!isAdmin(user.email)) notFound();
   const weekAgo = sevenDaysAgo();
+  const reportRows = await db.report.findMany({ where: { resolved: false }, orderBy: { createdAt: "desc" }, take: 50, include: { reporter: { select: { handle: true } }, post: { select: { data: true } } } });
+  const reportedUsers = await db.user.findMany({ where: { id: { in: reportRows.map((r) => r.userId).filter((x): x is string => !!x) } }, select: { id: true, handle: true } });
+  const openReports = reportRows.map((r) => ({ ...r, reportedHandle: reportedUsers.find((u) => u.id === r.userId)?.handle ?? null }));
 
   const [users, activeUsers, foodsBySource, sharedFoods, cachedSearches, topSearches, topFoods, aiByKind, exercises, customExercises] = await Promise.all([
     db.user.count(),
@@ -45,6 +49,11 @@ export default async function AdminPage() {
   return (
     <div className="pb-8">
       <PageHeader title="Data" />
+      <div className="mx-5 mb-4">
+        <Card title={`Feed reports (${openReports.length})`}>
+          <Reports reports={openReports.map((r) => ({ id: r.id, reason: r.reason, createdAt: r.createdAt.toISOString(), reporter: r.reporter.handle, reported: r.reportedHandle, post: r.post ? JSON.stringify(r.post.data).slice(0, 240) : null, hasPost: !!r.post }))} />
+        </Card>
+      </div>
       <div className="space-y-4 px-5">
         <Card title="People">
           <Stat label="Accounts" value={users} />
