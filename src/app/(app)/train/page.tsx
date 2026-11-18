@@ -50,12 +50,9 @@ export default async function TrainPage({ searchParams }: { searchParams: Promis
 
       {/* Anything Coach is keeping in mind about pain or injuries */}
       {injuries.length > 0 && (
-        <Link href="/coach" className="mx-5 mb-4 flex items-start gap-3 rounded-2xl border border-plate-yellow/40 bg-plate-yellow/10 px-4 py-3 text-sm">
-          <Sparkles size={18} className="mt-0.5 shrink-0 text-plate-yellow" aria-hidden />
-          <span className="flex-1">
-            {injuries.map((n) => <span key={n.id} className="block">{n.text}</span>)}
-            <span className="text-chalk-muted">Tap to talk it through with Coach</span>
-          </span>
+        <Link href="/coach" className="mx-5 mb-4 inline-flex items-center gap-1.5 rounded-full bg-plate-yellow/15 px-3 py-1.5 text-xs font-medium text-plate-yellow">
+          <Sparkles size={13} aria-hidden /> Coach is working around {injuries.length === 1 ? "1 injury" : `${injuries.length} injuries`}
+          <ChevronRight size={13} aria-hidden />
         </Link>
       )}
 
