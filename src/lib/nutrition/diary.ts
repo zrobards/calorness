@@ -144,7 +144,7 @@ export async function searchSavedFoods(userId: string, query: string) {
   const conditions = words.map((w) => Prisma.sql`"search_key" LIKE ${"%" + w.replace(/[^a-z0-9]/g, "") + "%"}`);
   const rows = await db.$queryRaw<{ id: string }[]>`
     SELECT "id" FROM "Food"
-    WHERE ("createdById" IS NULL OR "createdById" = ${userId} OR "shared" = true)
+    WHERE ("createdById" = ${userId} OR (("createdById" IS NULL OR "shared" = true) AND "hidden" = false))
       AND (${Prisma.join(conditions, " OR ")})
     ORDER BY ${Prisma.join(conditions.map((c) => Prisma.sql`(${c})::int`), " + ")} DESC
     LIMIT 40`;
@@ -154,7 +154,7 @@ export async function searchSavedFoods(userId: string, query: string) {
 }
 
 export async function findFoodByBarcode(userId: string, barcode: string) {
-  const food = await db.food.findFirst({ where: { barcode, OR: [{ createdById: null }, { createdById: userId }, { shared: true }] } });
+  const food = await db.food.findFirst({ where: { barcode, OR: [{ createdById: userId }, { createdById: null, hidden: false }, { shared: true, hidden: false }] } });
   return food ? toCandidate(food) : null;
 }
 

@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { summaryText } from "@/lib/apiKeys";
 import { consumeAiQuota } from "@/lib/aiLimit";
+import { withAi } from "@/lib/ai/usage";
 import { plainText, userFromApiKey } from "@/lib/apiAuth";
 import { estimateFoods } from "@/lib/ai/foodVision";
 import { getDiaryDay, MEALS, MEAL_LABELS, type MealName } from "@/lib/nutrition/diary";
@@ -87,7 +88,7 @@ export async function POST(req: Request) {
 
   const allowed = await consumeAiQuota(user.id, "shortcut");
   if ("error" in allowed) return text(allowed.error ?? "AI limit reached.", 429);
-  const result = await estimateFoods({ image, text: words });
+  const result = await withAi(user.id, "shortcut", () => estimateFoods({ image, text: words }));
   if ("error" in result) return text(result.error, 422);
   if ("label" in result) return text("That's a nutrition label. Open Calorness and snap it there to save the exact numbers.", 422);
 

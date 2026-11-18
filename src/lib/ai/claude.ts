@@ -1,4 +1,6 @@
 import "server-only";
+import { recordUsage } from "./usage";
+import type { Usage } from "./pricing";
 
 // One place that talks to the Claude API, so model settings and errors are
 // handled the same way for photos, labels, descriptions, and Coach.
@@ -47,50 +49,107 @@ function friendly(status: number, detail: string) {
 const isModelProblem = (status: number, detail: string) => status === 404 || (status === 400 && /model/i.test(detail));
 
 /**
+ * Prompt caching: the long instructions (and tool definitions before them)
+ * are identical for everyone, so Anthropic can keep them warm for a few
+ * minutes and charge about a tenth for them on the next request. The model
+ * reads exactly the same prompt either way, so answers don't change.
+ * `conversation` also caches a growing chat (Coach), which helps when one
+ * reply takes several rounds of tool calls.
+ */
+export function withCaching(body: Record<string, unknown>, conversation = false): Record<string, unknown> {
+  const out = { ...body };
+  if (typeof out.system === "string" && out.system) {
+    out.system = [{ type: "text", text: out.system, cache_control: { type: "ephemeral" } }];
+  }
+  if (conversation) out.cache_control = { type: "ephemeral" };
+  return out;
+}
+
+const stripCaching = (body: Record<string, unknown>): Record<string, unknown> => {
+  const { cache_control: _top, ...rest } = body;
+  void _top;
+  if (Array.isArray(rest.system)) {
+    rest.system = (rest.system as { text: string }[]).map((b) => b.text).join("\n\n");
+  }
+  return rest;
+};
+
+// If the API (or a proxy in front of it) ever rejects caching, stop asking for it
+let cachingRejected = false;
+
+/**
  * POST /v1/messages. If the configured model is the problem (misspelled or
  * not available on this account), retry once with the default so the app
- * keeps working, and log loudly so the setting gets fixed.
+ * keeps working, and log loudly so the setting gets fixed. Every call's
+ * tokens and cost are recorded (see usage.ts).
  */
 // Models that refused a forced tool_choice; skip forcing for them next time
 const noForcedTools = new Set<string>();
 
-export async function claudeMessages(body: Record<string, unknown>, fallbackModel: string, timeoutMs = 30_000): Promise<unknown> {
+export async function claudeMessages(
+  body: Record<string, unknown>,
+  fallbackModel: string,
+  timeoutMs = 30_000,
+  opts: { cacheConversation?: boolean } = {},
+): Promise<unknown> {
   const base = process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com";
-  const send = (model: string) =>
-    fetch(`${base}/v1/messages`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY ?? "", "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ ...body, model }),
-      signal: AbortSignal.timeout(timeoutMs),
-    });
+  body = cachingRejected ? body : withCaching(body, opts.cacheConversation);
+  const send = async (model: string) => {
+    const started = performance.now();
+    try {
+      const res = await fetch(`${base}/v1/messages`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY ?? "", "anthropic-version": "2023-06-01" },
+        body: JSON.stringify({ ...body, model }),
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      const ms = performance.now() - started;
+      if (!res.ok) {
+        await recordUsage(model, undefined, ms, res.status);
+        return { ok: false as const, status: res.status, detail: await res.text().catch(() => "") };
+      }
+      const json = (await res.json()) as { usage?: Usage; model?: string };
+      await recordUsage(model, json.usage, ms, 200);
+      return { ok: true as const, json };
+    } catch (e) {
+      await recordUsage(model, undefined, performance.now() - started, 0);
+      throw e;
+    }
+  };
 
   const model = String(body.model);
   if (noForcedTools.has(model) && body.tool_choice) body = { ...body, tool_choice: { type: "auto" } };
   let res = await send(model);
-  if (!res.ok) {
-    let detail = await res.text().catch(() => "");
-    // Some newer models (which think before answering) don't allow forcing a
-    // specific tool. Ask again letting the model choose; the system prompt
-    // already tells it to answer with the tool.
-    if (res.status === 400 && /tool_choice/i.test(detail) && body.tool_choice) {
-      const { tool_choice: _forced, ...rest } = body;
-      void _forced;
-      body = { ...rest, tool_choice: { type: "auto" } };
-      noForcedTools.add(model);
-      res = await send(model);
-      if (res.ok) return res.json();
-      detail = await res.text().catch(() => "");
-    }
-    if (isModelProblem(res.status, detail) && model !== fallbackModel) {
-      console.error(`Claude model "${model}" failed (${res.status}); falling back to ${fallbackModel}. Fix the model setting in Vercel.`, detail);
-      res = await send(fallbackModel);
-      if (res.ok) return res.json();
-      const again = await res.text().catch(() => "");
-      console.error("Claude API error after fallback", res.status, again);
-      throw new ClaudeError(res.status, friendly(res.status, again));
-    }
-    console.error("Claude API error", res.status, detail);
-    throw new ClaudeError(res.status, friendly(res.status, detail));
+  if (res.ok) return res.json;
+  let { status, detail } = res;
+  // Caching is only a discount; never let it stop a request
+  if (status === 400 && /cache_control|caching/i.test(detail)) {
+    console.error("Prompt caching was rejected; continuing without it.", detail.slice(0, 200));
+    cachingRejected = true;
+    body = stripCaching(body);
+    res = await send(model);
+    if (res.ok) return res.json;
+    ({ status, detail } = res);
   }
-  return res.json();
+  // Some newer models (which think before answering) don't allow forcing a
+  // specific tool. Ask again letting the model choose; the system prompt
+  // already tells it to answer with the tool.
+  if (status === 400 && /tool_choice/i.test(detail) && body.tool_choice) {
+    const { tool_choice: _forced, ...rest } = body;
+    void _forced;
+    body = { ...rest, tool_choice: { type: "auto" } };
+    noForcedTools.add(model);
+    res = await send(model);
+    if (res.ok) return res.json;
+    ({ status, detail } = res);
+  }
+  if (isModelProblem(status, detail) && model !== fallbackModel) {
+    console.error(`Claude model "${model}" failed (${status}); falling back to ${fallbackModel}. Fix the model setting in Vercel.`, detail);
+    res = await send(fallbackModel);
+    if (res.ok) return res.json;
+    console.error("Claude API error after fallback", res.status, res.detail);
+    throw new ClaudeError(res.status, friendly(res.status, res.detail));
+  }
+  console.error("Claude API error", status, detail);
+  throw new ClaudeError(status, friendly(status, detail));
 }

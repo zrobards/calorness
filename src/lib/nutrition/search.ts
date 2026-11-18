@@ -1,4 +1,5 @@
 import "server-only";
+import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/lib/db";
 import { searchOpenFoodFacts, searchUsda } from "./sources";
 import { searchSavedFoods, toCandidate } from "./diary";
@@ -30,7 +31,7 @@ export async function findFoods(userId: string, query: string, scope: "local" | 
   // The food APIs need the usual spelling ("chick-fil-a"), not what was typed ("chickfila")
   const apiQuery = expandQuery(q.data);
   const key = pickKey(q.data);
-  const [saved, usda, off, picks, community] = await Promise.all([
+  const [saved, usda, off, picks, community, hiddenIds] = await Promise.all([
     searchSavedFoods(userId, q.data),
     scope === "all" ? searchUsda(apiQuery) : Promise.resolve([] as FoodCandidate[]),
     scope === "all" ? searchOpenFoodFacts(apiQuery) : Promise.resolve([] as FoodCandidate[]),
@@ -44,7 +45,9 @@ export async function findFoods(userId: string, query: string, scope: "local" | 
     // What everyone else picked for this exact search (counts only; a food
     // still has to be visible to you to show up, so private foods never leak)
     db.searchPick.groupBy({ by: ["foodId"], where: { query: key, NOT: { userId } }, _sum: { count: true } }),
+    hiddenFoods(),
   ]);
+  const hidden = new Set(hiddenIds);
   const popularity = new Map(community.map((c) => [c.foodId, c._sum.count ?? 0]));
   const pickedCount = new Map<string, number>();
   for (const p of picks) pickedCount.set(p.foodId, (pickedCount.get(p.foodId) ?? 0) + p.count);
@@ -54,7 +57,10 @@ export async function findFoods(userId: string, query: string, scope: "local" | 
   // picked for this search before. Badly inconsistent entries are dropped.
   const SOURCE_BONUS = { CUSTOM: 0.25, USDA: 0.12, COMMUNITY: 0.1, AI_ESTIMATE: 0.05, OPEN_FOOD_FACTS: 0 } as const;
   const minMatch = normalize(apiQuery).split(" ").length >= 3 ? 0.75 : 0.6;
-  const candidates = [...picks.map((p) => toCandidate(p.food)), ...saved, ...usda, ...off];
+  // Foods the owner hid (duplicates, bad data) stay out, except your own
+  const visiblePicks = picks.filter((p) => !p.food.hidden || p.food.createdById === userId);
+  // (USDA and Open Food Facts are searched live, so a hidden one is matched by its outside id)
+  const candidates = [...visiblePicks.map((p) => toCandidate(p.food)), ...saved, ...usda.concat(off).filter((f) => !hidden.has(`${f.source}:${f.externalId}`))];
   const seen = new Set<string>();
   const scored = candidates
     .filter((f) => {
@@ -103,3 +109,12 @@ export async function findFoods(userId: string, query: string, scope: "local" | 
   return best.sort((a, b) => b.score - a.score).slice(0, 30).map((x) => x.f);
 }
 
+
+/** USDA and Open Food Facts foods the owner hid. Rarely changes, so it's cached. */
+async function hiddenFoods(): Promise<string[]> {
+  "use cache";
+  cacheLife("days");
+  cacheTag("hidden-foods");
+  const rows = await db.food.findMany({ where: { hidden: true, externalId: { not: null } }, select: { source: true, externalId: true }, take: 5000 });
+  return rows.map((r) => `${r.source}:${r.externalId}`);
+}

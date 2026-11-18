@@ -14,6 +14,8 @@ import { getMyFoods, getRecentFoods } from "@/lib/nutrition/diary";
 import type { FoodCandidate } from "@/lib/nutrition/normalize";
 import type { MyFood } from "@/lib/ai/foodVision";
 import { consumeAiQuota } from "@/lib/aiLimit";
+import { withAi } from "@/lib/ai/usage";
+import { forgetAnswer, reusableAnswer, saveAnswer } from "@/lib/ai/answers";
 import { candidateSchema, ensureFood } from "@/lib/nutrition/foods";
 
 const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -25,6 +27,8 @@ export async function aiEstimate(input: {
   text?: string;
   previous?: unknown[];
   correction?: string;
+  /** Ask the AI again even if you typed these exact words before */
+  fresh?: boolean;
 }) {
   const user = await requireUser();
   const parsed = z
@@ -40,17 +44,25 @@ export async function aiEstimate(input: {
     return { error: "Add a photo or describe what you ate." };
   }
   const { imageBase64, mediaType, text, previous, correction } = parsed.data;
-  const allowed = await consumeAiQuota(user.id, correction ? "recheck" : imageBase64 ? "photo" : "describe");
-  if ("error" in allowed) return { error: allowed.error };
+  // Typed words only (never photos): the exact same words you typed before
+  // get the same answer back, free and instant. Correcting it forgets it.
+  const typedOnly = !imageBase64 && !!text?.trim();
+  if (typedOnly && correction) await forgetAnswer(user.id, text!);
+  const reused = typedOnly && !correction && !input.fresh ? await reusableAnswer(user.id, text!) : null;
+  if (!reused) {
+    const allowed = await consumeAiQuota(user.id, correction ? "recheck" : imageBase64 ? "photo" : "describe");
+    if ("error" in allowed) return { error: allowed.error };
+  }
   // Your own foods, so "my usual shake" logs your exact numbers
   const mine = await yourFoodsForAi(user.id);
-  const result = await estimateFoods({
+  const kind = correction ? "recheck" : imageBase64 ? "photo" : "describe";
+  const result = reused ?? (await withAi(user.id, kind, () => estimateFoods({
     image: imageBase64 ? { base64: imageBase64, mediaType: mediaType ?? "image/jpeg" } : undefined,
     text,
     previous,
     correction,
     myFoods: mine.map((m) => m.prompt),
-  });
+  })));
   if ("error" in result) {
     // A failed try shouldn't use up the daily allowance
     const last = await db.aiCall.findFirst({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, select: { id: true } });
@@ -59,6 +71,7 @@ export async function aiEstimate(input: {
   }
   // A photo of a Nutrition Facts label: hand back the exact printed numbers
   if ("label" in result) return { label: result.label };
+  if (typedOnly && !correction && !reused) await saveAnswer(user.id, text!, result);
   // Packaged foods: swap the guess for the real label values when we can find the product
   const grounded = await groundItems(user.id, result.items);
   // Items the AI recognized as one of your foods use that food, exactly
@@ -67,11 +80,12 @@ export async function aiEstimate(input: {
     return own ? { ...item, matches: [{ food: own.food, score: 1 }, ...(item.matches ?? [])], suggestedServings: item.my_food_servings ?? 1 } : item;
   });
   // What everyone's corrections have taught us about foods like these
-  return { ...result, items: await applyCorrections(withMine) };
+  // Matches, label lookups, and corrections are worked out fresh every time, even for a reused answer
+  return { ...result, items: await applyCorrections(withMine), reused: !!reused };
 }
 
 /** Save reviewed AI estimates as foods and log them in one go. */
-export async function logAiItems(input: { day: string; meal: string; items: unknown[] }) {
+export async function logAiItems(input: { day: string; meal: string; items: unknown[]; text?: string }) {
   const user = await requireUser();
   const parsed = z
     .object({
@@ -104,6 +118,8 @@ export async function logAiItems(input: { day: string; meal: string; items: unkn
     });
   await saveAiItems(user.id, day, meal, items.filter((i) => !i.match));
   await recordCorrections(user.id, items.filter((i) => i.edited && !i.match));
+  // You had to fix the numbers, so don't reuse this answer for these words again
+  if (input.text && items.some((i) => i.edited)) await forgetAnswer(user.id, String(input.text).slice(0, 500));
   revalidatePath("/diary");
   revalidatePath("/log");
   return { ok: true, count: items.length };
@@ -131,7 +147,7 @@ export async function scanLabel(input: { imageBase64: string; mediaType: string 
   if (!parsed.success) return { error: "Couldn't read that photo." };
   const allowed = await consumeAiQuota(user.id, "label");
   if ("error" in allowed) return { error: allowed.error };
-  return readLabel({ base64: parsed.data.imageBase64, mediaType: parsed.data.mediaType });
+  return withAi(user.id, "label", () => readLabel({ base64: parsed.data.imageBase64, mediaType: parsed.data.mediaType }));
 }
 
 /** Up to 25 of your foods (recent and created), with short ids for the AI. */

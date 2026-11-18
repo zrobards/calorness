@@ -161,10 +161,14 @@ async function buildContext(userId: string) {
 type Block = { type: string; text?: string; id?: string; name?: string; input?: unknown };
 type Message = { role: "user" | "assistant"; content: string | unknown[] };
 
-async function callClaude(system: string, messages: Message[]) {
+type System = { type: "text"; text: string; cache_control?: { type: "ephemeral" } }[];
+
+async function callClaude(system: System, messages: Message[]) {
   // A full program sent through propose_program is long (often 2–5k tokens);
-  // with a small limit it was cut off mid-tool-call and the reply came back empty
-  return (await claudeMessages({ model: coachModel(), max_tokens: 8000, system, tools: TOOLS, messages }, DEFAULTS.text, 120_000)) as {
+  // with a small limit it was cut off mid-tool-call and the reply came back empty.
+  // The chat is cached as it grows, so the rounds of one reply (and the next
+  // message, within a few minutes) don't pay full price for it again.
+  return (await claudeMessages({ model: coachModel(), max_tokens: 8000, system, tools: TOOLS, messages }, DEFAULTS.text, 120_000, { cacheConversation: true })) as {
     content: Block[];
     stop_reason: string;
   };
@@ -203,7 +207,12 @@ const CLAIMS_DELIVERY = /\b(here (it|they|'s|is|are)|i('ve| have) (made|built|cr
 
 export async function runCoach(userId: string, history: { role: "user" | "assistant"; content: string }[], userText: string) {
   const { text: context, routines } = await buildContext(userId);
-  const system = `${SYSTEM}\n\n--- The user's data ---\n${context}`;
+  // Coach's instructions are the same for everyone (cached once for all);
+  // the person's own data comes after them
+  const system: System = [
+    { type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } },
+    { type: "text", text: `--- The user's data ---\n${context}` },
+  ];
   const messages: Message[] = [...history.map((m) => ({ role: m.role, content: m.content })), { role: "user", content: userText }];
   const routineProposals: CoachProposal[] = [];
   let program: CoachProgramProposal | null = null;

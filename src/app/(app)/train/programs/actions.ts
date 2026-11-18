@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { consumeAiQuota } from "@/lib/aiLimit";
 import { aiConfigured } from "@/lib/ai/foodVision";
+import { withAi } from "@/lib/ai/usage";
 import { generateProgram, saveProgram, type ProgramDraft } from "@/lib/ai/program";
 
 const prefsSchema = z.object({
@@ -50,7 +51,7 @@ const draftSchema = z.object({
 
 async function guard(userId: string) {
   if (!aiConfigured()) return { error: "The AI isn't set up yet." };
-  const allowed = await consumeAiQuota(userId, "coach");
+  const allowed = await consumeAiQuota(userId, "program");
   return "error" in allowed ? { error: allowed.error ?? "Daily AI limit reached." } : null;
 }
 
@@ -60,7 +61,7 @@ export async function buildProgram(prefs: z.input<typeof prefsSchema>) {
   if (!p.success) return { error: "Pick your goal, days, and equipment." };
   const blocked = await guard(user.id);
   if (blocked) return blocked;
-  const r = await generateProgram(user.id, { prefs: p.data });
+  const r = await withAi(user.id, "program", () => generateProgram(user.id, { prefs: p.data }));
   return "error" in r ? r : { draft: r };
 }
 
@@ -71,7 +72,7 @@ export async function importProgramText(text: string) {
   if (!t.success) return { error: t.error.issues[0]?.message ?? "Paste your program first." };
   const blocked = await guard(user.id);
   if (blocked) return blocked;
-  const r = await generateProgram(user.id, { paste: t.data });
+  const r = await withAi(user.id, "program", () => generateProgram(user.id, { paste: t.data }));
   return "error" in r ? r : { draft: r };
 }
 
@@ -82,7 +83,7 @@ export async function reviseProgram(draft: ProgramDraft, instruction: string) {
   if (!d.success || !ask.success) return { error: "Say what to change." };
   const blocked = await guard(user.id);
   if (blocked) return blocked;
-  const r = await generateProgram(user.id, { draft: d.data, instruction: ask.data });
+  const r = await withAi(user.id, "program", () => generateProgram(user.id, { draft: d.data, instruction: ask.data }));
   return "error" in r ? r : { draft: r };
 }
 

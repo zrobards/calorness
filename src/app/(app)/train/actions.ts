@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { redirect } from "next/navigation";
+import { maybePromote } from "@/lib/exerciseLibrary";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { postWorkout } from "@/lib/community";
@@ -344,7 +345,13 @@ export async function createExercise(input: z.input<typeof exerciseSchema>) {
   const e = await db.exercise.create({
     data: { slug, name, category, equipment, primaryMuscles: [primaryMuscle], secondaryMuscles, createdById: user.id },
   });
+  // Enough people made this one? It joins the shared library (and this copy becomes it)
+  const promoted = await maybePromote(name);
   revalidatePath("/train");
+  if (promoted) {
+    const lib = await db.exercise.findUnique({ where: { id: promoted.id } });
+    if (lib) return { exercise: { id: lib.id, slug: lib.slug, name: lib.name, equipment: lib.equipment, primaryMuscles: lib.primaryMuscles, image: null, aliases: lib.aliases } };
+  }
   return {
     exercise: { id: e.id, slug: e.slug, name: e.name, equipment: e.equipment, primaryMuscles: e.primaryMuscles, image: null, aliases: [], custom: true },
   };

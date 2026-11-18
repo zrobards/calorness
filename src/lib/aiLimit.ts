@@ -19,7 +19,7 @@ export async function aiUsedToday(userId: string) {
 }
 
 /** Records one AI request, or explains why it can't run. */
-export async function consumeAiQuota(userId: string, kind: "photo" | "describe" | "label" | "shortcut" | "recheck" | "coach") {
+export async function consumeAiQuota(userId: string, kind: "photo" | "describe" | "label" | "shortcut" | "recheck" | "coach" | "program") {
   const limit = await aiLimitFor(userId);
   if (Number.isFinite(limit) && (await aiUsedToday(userId)) >= limit) {
     return {

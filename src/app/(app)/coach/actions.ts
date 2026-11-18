@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { aiConfigured } from "@/lib/ai/foodVision";
 import { consumeAiQuota } from "@/lib/aiLimit";
+import { withAi } from "@/lib/ai/usage";
 import { runCoach, type CoachProgramProposal, type CoachProposal } from "@/lib/ai/coach";
 import { ClaudeError } from "@/lib/ai/claude";
 import { saveProgram } from "@/lib/ai/program";
@@ -47,7 +48,7 @@ export async function sendCoachMessage(text: string, conversationId?: string | n
 
   await db.coachMessage.create({ data: { userId: user.id, conversationId: chat.id, role: "user", content: message.data } });
   try {
-    const { reply, proposal, notesChanged } = await runCoach(user.id, history, message.data);
+    const { reply, proposal, notesChanged } = await withAi(user.id, "coach", () => runCoach(user.id, history, message.data));
     const saved = await db.coachMessage.create({
       data: { userId: user.id, conversationId: chat.id, role: "assistant", content: reply, proposal: proposal ?? undefined },
     });

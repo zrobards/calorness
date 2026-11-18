@@ -74,6 +74,8 @@ export function QuickLog({
   const [review, setReview] = useState<{
     items: GroundedItem[];
     note?: string;
+    /** the same words you typed before: this is that earlier answer */
+    reused?: boolean;
     photo?: string | null;
     // kept so the AI can look again when you correct it
     source: { imageBase64?: string; mediaType?: string; text?: string };
@@ -96,10 +98,10 @@ export function QuickLog({
     if (mode === "snap") fileRef.current?.focus();
   }, [mode]);
 
-  const runAi = async (input: { imageBase64?: string; mediaType?: string; text?: string }, photo?: string | null) => {
+  const runAi = async (input: { imageBase64?: string; mediaType?: string; text?: string }, photo?: string | null, fresh = false) => {
     const id = ++runId.current;
     setProgress({ task: input.imageBase64 ? "photo" : "describe", photo });
-    const result = await aiEstimate(input).catch(() => ({ error: "Couldn't reach the AI. Check your connection and try again." }));
+    const result = await aiEstimate({ ...input, fresh }).catch(() => ({ error: "Couldn't reach the AI. Check your connection and try again." }));
     if (id !== runId.current) return; // cancelled
     setProgress(null);
     if ("error" in result) {
@@ -115,7 +117,7 @@ export function QuickLog({
       setLabelPrefill({ name: l.name || "Scanned food", brand: l.brand ?? null, servingLabel: l.serving_label, servingSize: l.serving_grams ?? null, calories: l.calories, proteinG: l.protein_g, carbsG: l.carbs_g, fatG: l.fat_g });
       return;
     }
-    setReview({ items: result.items, note: result.note, photo, source: input, version: 0 });
+    setReview((r) => ({ items: result.items, note: result.note, reused: "reused" in result && !!result.reused, photo, source: input, version: (r?.version ?? 0) + 1 }));
   };
 
   const onPhoto = async (file: File | undefined) => {
@@ -201,12 +203,12 @@ export function QuickLog({
     }
     if (!("items" in result)) return;
     haptic("success");
-    setReview((r) => r && { ...r, items: result.items, note: result.note, version: r.version + 1 });
+    setReview((r) => r && { ...r, items: result.items, note: result.note, reused: false, version: r.version + 1 });
   };
 
   const logReviewed = (items: ReviewedItem[]) =>
     start(async () => {
-      const result = await logAiItems({ day, meal, items });
+      const result = await logAiItems({ day, meal, items, text: review?.source.imageBase64 ? undefined : review?.source.text });
       if ("error" in result && result.error) return setToast({ message: result.error });
       setReview(null);
       setCelebrate((c) => c + 1);
@@ -448,6 +450,8 @@ export function QuickLog({
           key={review.version}
           items={review.items}
           note={review.note}
+          reused={review.reused}
+          onFresh={() => { const { source, photo } = review; setReview(null); runAi(source, photo, true); }}
           photo={review.photo}
           mealLabel={MEAL_LABELS[meal]}
           pending={pending}
