@@ -15,10 +15,11 @@ import { DeleteAccount } from "./DeleteAccount";
 import { Collapsible, SearchableSections, SectionGroup } from "@/components/ui/Collapsible";
 import { ProfileSetup } from "@/components/feed/Feed";
 import { CommunityExtras } from "./CommunityExtras";
-import { Bell, HeartPulse, KeyRound, LayoutGrid, Ruler, Shield, Target, UserRound, Users } from "lucide-react";
+import { BarChart3, Bell, HeartPulse, KeyRound, LayoutGrid, Ruler, Shield, Target, UserRound, Users } from "lucide-react";
 import Link from "next/link";
 import QRCode from "qrcode";
 import { aiLimitFor, aiUsedToday } from "@/lib/aiLimit";
+import { isAdmin } from "@/lib/admin";
 import { setUnitSystem } from "./actions";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -54,6 +55,14 @@ export default async function ProfilePage() {
         <SignOutButton />
       </PageHeader>
 
+      {/* Only the app owner (ADMIN_EMAILS) sees this */}
+      {isAdmin(user.email) && (
+        <Link href="/admin" className="mx-5 mb-4 flex items-center gap-3 rounded-2xl bg-plate-yellow px-4 py-3 font-semibold text-rack">
+          <BarChart3 size={20} aria-hidden />
+          <span className="flex-1">Admin: costs, metrics, foods, exercises</span>
+          <span aria-hidden>›</span>
+        </Link>
+      )}
 
       <SearchableSections placeholder="Search settings">
         <SectionGroup title="Your goals" />
