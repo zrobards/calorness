@@ -20,7 +20,7 @@ export function Toast({ toast, onDone }: { toast: ToastData | null; onDone: () =
     >
       <span className="flex-1 text-sm font-medium">{toast.message}</span>
       {toast.action && (
-        <button onClick={() => { toast.action!.onClick(); onDone(); }} className="font-display text-lg font-bold text-plate-red">
+        <button onClick={() => { toast.action!.onClick(); onDone(); }} className="font-display text-lg font-bold text-plate-yellow">
           {toast.action.label}
         </button>
       )}

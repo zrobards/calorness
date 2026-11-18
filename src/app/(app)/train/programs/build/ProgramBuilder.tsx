@@ -132,7 +132,7 @@ export function ProgramBuilder({ library, initialDraft, avoid: initialAvoid, sta
             </label>
             <p className="mt-1 text-right text-xs text-chalk-muted tabular-nums">{pasted.length.toLocaleString("en-US")} / 12,000</p>
             {error && <p role="alert" className="mt-2 text-sm text-plate-red">{error}</p>}
-            <button onClick={formatPasted} disabled={pasted.trim().length < 10} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-plate-red py-4 font-display text-xl font-semibold text-white disabled:opacity-50">
+            <button onClick={formatPasted} disabled={pasted.trim().length < 10} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-plate-blue py-4 font-display text-xl font-semibold text-rack disabled:opacity-50">
               <Sparkles size={20} aria-hidden /> Set up my program
             </button>
           </div>
@@ -168,7 +168,7 @@ export function ProgramBuilder({ library, initialDraft, avoid: initialAvoid, sta
           </label>
 
           {error && <p role="alert" className="mt-3 text-sm text-plate-red">{error}</p>}
-          <button onClick={build} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-plate-red py-4 font-display text-xl font-semibold text-white">
+          <button onClick={build} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-plate-blue py-4 font-display text-xl font-semibold text-rack">
             <Sparkles size={20} aria-hidden /> Build my program
           </button>
           <Link href="/train/templates" className="mt-3 block text-center text-sm text-chalk-muted underline underline-offset-4">Or start from a ready-made program</Link>
@@ -295,7 +295,7 @@ export function ProgramBuilder({ library, initialDraft, avoid: initialAvoid, sta
       <div className="vv-pin fixed inset-x-0 z-20 px-5" style={{ bottom: "calc(env(safe-area-inset-bottom) + 5rem)" }}>
         <div className="mx-auto flex max-w-md gap-2">
           <button onClick={() => { if (confirm("Start over? This program won't be saved.")) setDraft(null); }} className="rounded-2xl bg-rack-raised px-4 font-medium text-chalk-muted">Start over</button>
-          <button onClick={save} disabled={saving} className="flex-1 rounded-2xl bg-plate-red py-3.5 font-display text-xl font-semibold text-white shadow-xl disabled:opacity-60">
+          <button onClick={save} disabled={saving} className="flex-1 rounded-2xl bg-plate-blue py-3.5 font-display text-xl font-semibold text-rack shadow-xl disabled:opacity-60">
             {saving ? "Saving…" : `Save ${draft.days.length} ${draft.days.length === 1 ? "routine" : "routines"}`}
           </button>
         </div>

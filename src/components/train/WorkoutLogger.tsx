@@ -253,7 +253,7 @@ export function WorkoutLogger({
           <button
             onClick={finish}
             disabled={pending}
-            className="rounded-xl bg-plate-red px-5 py-2 font-display text-lg font-semibold text-white disabled:opacity-60"
+            className="rounded-xl bg-plate-blue px-5 py-2 font-display text-lg font-semibold text-rack disabled:opacity-60"
           >
             {pending ? "Saving…" : mode === "edit" ? "Save" : "Finish"}
           </button>
@@ -295,7 +295,7 @@ export function WorkoutLogger({
       <div className="mt-4 space-y-3 px-3">
         <button
           onClick={() => setPicking(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-plate-blue py-3.5 font-display text-xl font-semibold text-white"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-plate-blue py-3.5 font-display text-xl font-semibold text-rack"
         >
           <Plus size={20} aria-hidden /> Add exercise
         </button>

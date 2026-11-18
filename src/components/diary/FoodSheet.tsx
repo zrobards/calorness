@@ -107,7 +107,7 @@ export function FoodSheet({
 
       <div className="mt-5 flex items-baseline justify-between border-t border-rack-line pt-4">
         <span className="text-chalk-muted">Calories</span>
-        <span className="font-display text-4xl font-bold text-plate-red tabular-nums">{Math.round(scaled.calories)}</span>
+        <span className="font-display text-4xl font-bold text-plate-yellow tabular-nums">{Math.round(scaled.calories)}</span>
       </div>
       <div className="mt-3">
         <MacroSplit {...scaled} />
@@ -126,7 +126,7 @@ export function FoodSheet({
             onConfirm(Math.round(servings * 1000) / 1000);
           }}
           disabled={pending || servings <= 0}
-          className="flex-1 rounded-xl bg-plate-red py-3.5 font-display text-xl font-semibold text-white disabled:opacity-50"
+          className="flex-1 rounded-xl bg-plate-blue py-3.5 font-display text-xl font-semibold text-rack disabled:opacity-50"
         >
           {pending ? "Saving…" : confirmLabel}
         </button>

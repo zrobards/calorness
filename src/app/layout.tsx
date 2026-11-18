@@ -1,20 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Barlow, Barlow_Condensed } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { ViewportGuard } from "@/components/ViewportGuard";
 import { OfflineBanner } from "@/components/OfflineBanner";
 
-const barlow = Barlow({
-  variable: "--font-barlow",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
+const inter = Inter({ variable: "--font-inter", subsets: ["latin"], display: "swap" });
 
-const barlowCondensed = Barlow_Condensed({
-  variable: "--font-barlow-condensed",
-  subsets: ["latin"],
-  weight: ["600", "700"],
-});
 
 export const metadata: Metadata = {
   title: { default: "Calorness", template: "%s · Calorness" },
@@ -26,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#17212b",
+  themeColor: "#0e141d",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover", // let the app draw under the iPhone notch/home bar
@@ -34,7 +25,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${barlow.variable} ${barlowCondensed.variable} antialiased`}>
+    <html lang="en" className={`${inter.variable} antialiased`}>
       <body>
         <ViewportGuard />
         <OfflineBanner />

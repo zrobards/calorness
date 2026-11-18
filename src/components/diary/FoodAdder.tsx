@@ -111,7 +111,7 @@ export function FoodAdder({
         </label>
 
         <div className="mt-3 grid grid-cols-2 gap-2">
-          <button onClick={() => setScanning(true)} className="flex items-center justify-center gap-2 rounded-xl bg-plate-blue py-3 font-display text-lg font-semibold text-white">
+          <button onClick={() => setScanning(true)} className="flex items-center justify-center gap-2 rounded-xl bg-plate-blue py-3 font-display text-lg font-semibold text-rack">
             <Barcode size={20} aria-hidden /> Scan barcode
           </button>
           <button

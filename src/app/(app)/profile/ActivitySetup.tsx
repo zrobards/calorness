@@ -79,7 +79,7 @@ export function HealthSetup({ shortcutUrl, initialStatus }: {
       {shortcutUrl ? (
         <>
           <p className="text-chalk-muted">Sends your steps and active calories from your iPhone every evening.</p>
-          <button onClick={copyKeyThenAdd} disabled={pending} className="mt-3 w-full rounded-xl bg-plate-red py-3 font-semibold text-white disabled:opacity-60">
+          <button onClick={copyKeyThenAdd} disabled={pending} className="mt-3 w-full rounded-xl bg-plate-blue py-3 font-semibold text-rack disabled:opacity-60">
             {pending ? "One moment…" : copied ? "Key copied. Opening Shortcuts…" : "Connect Apple Health"}
           </button>
           <p className="mt-2 text-xs text-chalk-muted">Tap Add Shortcut, paste when it asks for your key (it&apos;s already copied), and you&apos;re done.</p>

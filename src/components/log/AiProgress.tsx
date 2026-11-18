@@ -42,15 +42,15 @@ export function AiProgress({ task, photo, onCancel }: { task: AiTask; photo?: st
         </div>
       ) : (
         <div className="relative flex size-24 items-center justify-center">
-          <span className="absolute inset-0 animate-ping rounded-full bg-plate-red/25" aria-hidden />
-          <Loader2 size={44} className="animate-spin text-plate-red" aria-hidden />
+          <span className="absolute inset-0 animate-ping rounded-full bg-plate-yellow/25" aria-hidden />
+          <Loader2 size={44} className="animate-spin text-plate-yellow" aria-hidden />
         </div>
       )}
 
       <ol className="mt-8 w-full max-w-xs space-y-2.5">
         {steps.map((s, i) => (
           <li key={s} className={`flex items-center gap-3 transition-opacity ${i > step ? "opacity-35" : "opacity-100"}`}>
-            <span className={`flex size-6 shrink-0 items-center justify-center rounded-full ${i < step ? "bg-plate-green text-white" : i === step ? "bg-plate-red text-white" : "bg-rack-line"}`}>
+            <span className={`flex size-6 shrink-0 items-center justify-center rounded-full ${i < step ? "bg-plate-green text-rack" : i === step ? "bg-plate-blue text-rack" : "bg-rack-line"}`}>
               {i < step ? <Check size={14} strokeWidth={3} aria-hidden /> : i === step ? <Loader2 size={14} className="animate-spin" aria-hidden /> : null}
             </span>
             <span className={i === step ? "font-semibold" : ""}>{s}</span>

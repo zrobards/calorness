@@ -68,7 +68,7 @@ export function CreateExerciseSheet({
           <div className="mt-2 flex flex-wrap gap-1.5">
             {MUSCLES.filter((m) => m !== "neck").map((m) => (
               <button key={m} type="button" onClick={() => setPrimary(m)} aria-pressed={primary === m}
-                className={`rounded-full px-3 py-1.5 text-sm font-medium ${primary === m ? "bg-plate-red text-white" : "bg-rack text-chalk-muted"}`}>
+                className={`rounded-full px-3 py-1.5 text-sm font-medium ${primary === m ? "bg-plate-blue text-rack" : "bg-rack text-chalk-muted"}`}>
                 {label(m)}
               </button>
             ))}
@@ -105,7 +105,7 @@ export function CreateExerciseSheet({
         </label>
 
         {error && <p role="alert" className="text-sm text-plate-red">{error}</p>}
-        <button disabled={pending} className="w-full rounded-xl bg-plate-red py-3.5 font-display text-xl font-semibold text-white disabled:opacity-60">
+        <button disabled={pending} className="w-full rounded-xl bg-plate-blue py-3.5 font-display text-xl font-semibold text-rack disabled:opacity-60">
           {pending ? "Saving…" : "Create exercise"}
         </button>
       </form>

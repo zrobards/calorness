@@ -11,8 +11,8 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#17212b",
-    theme_color: "#17212b",
+    background_color: "#0e141d",
+    theme_color: "#0e141d",
     // Long-press the app icon (Android) to jump straight to these
     shortcuts: [
       { name: "Snap a meal", short_name: "Snap", url: "/log?mode=snap", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },

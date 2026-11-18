@@ -62,7 +62,7 @@ export function EmailForm() {
       </label>
       {mode === "signup" && <p className="text-xs text-chalk-muted">At least 8 characters.</p>}
       {error && <p role="alert" className="rounded-xl border border-plate-red/50 bg-plate-red/10 p-3 text-sm">{error}</p>}
-      <button disabled={pending} className="w-full rounded-xl bg-plate-red py-3.5 font-display text-xl font-semibold text-white disabled:opacity-60">
+      <button disabled={pending} className="w-full rounded-xl bg-plate-blue py-3.5 font-display text-xl font-semibold text-rack disabled:opacity-60">
         {pending ? "One moment…" : mode === "signin" ? "Sign in" : "Create account"}
       </button>
     </form>

@@ -33,7 +33,7 @@ export function InviteCard({ url, qrSvg }: { url: string; qrSvg: string }) {
   return (
     <div>
       <p className="mt-1 text-sm text-chalk-muted">Free accounts, private data. Friends get their own diary, workouts, and goals.</p>
-      <button onClick={share} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-plate-red py-3.5 font-display text-xl font-semibold text-white">
+      <button onClick={share} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-plate-blue py-3.5 font-display text-xl font-semibold text-rack">
         {copied ? <Check size={20} aria-hidden /> : <Share2 size={20} aria-hidden />}
         {copied ? "Invite copied, paste it in a text" : "Invite a friend"}
       </button>

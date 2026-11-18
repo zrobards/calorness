@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { haptic } from "@/lib/haptics";
 
-const COLORS = ["#d8453e", "#4a86dc", "#e8b931", "#41a86d", "#eceee8"];
+const COLORS = ["#f5c518", "#4c8dff", "#f5c518", "#f1f4f8", "#4c8dff"];
 
 /**
  * Celebration: a burst of tiny bumper plates that fly up and fall.
@@ -58,7 +58,7 @@ export function PlateBurst({ fire = true }: { fire?: boolean }) {
         ctx.beginPath();
         ctx.arc(0, 0, p.r, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = "#17212b";
+        ctx.fillStyle = "#0e141d";
         ctx.beginPath();
         ctx.arc(0, 0, p.r * 0.32, 0, Math.PI * 2);
         ctx.fill();

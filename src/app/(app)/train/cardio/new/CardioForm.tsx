@@ -134,7 +134,7 @@ export function CardioForm({ day, imperial, credit, body, recentKeys }: { day: s
           <div className="mt-2 grid gap-2" style={{ gridTemplateColumns: `repeat(${levels.length}, minmax(0, 1fr))` }}>
             {levels.map((l) => (
               <button key={l} type="button" onClick={() => { haptic(); setIntensity(l); }} aria-pressed={intensity === l}
-                className={`rounded-xl px-2 py-2.5 text-left ${intensity === l ? "bg-plate-red text-white" : "bg-rack-raised"}`}>
+                className={`rounded-xl px-2 py-2.5 text-left ${intensity === l ? "bg-plate-blue text-rack" : "bg-rack-raised"}`}>
                 <span className="block text-sm font-semibold capitalize">{l}</span>
                 {activity.hints?.[l] && <span className={`block text-xs ${intensity === l ? "text-white" : "text-chalk-muted"}`}>{activity.hints[l]}</span>}
               </button>
@@ -197,7 +197,7 @@ export function CardioForm({ day, imperial, credit, body, recentKeys }: { day: s
       )}
 
       {error && <p role="alert" className="text-sm text-plate-red">{error}</p>}
-      <button disabled={pending} className="w-full rounded-xl bg-plate-red py-3.5 font-display text-xl font-semibold text-white disabled:opacity-60">
+      <button disabled={pending} className="w-full rounded-xl bg-plate-blue py-3.5 font-display text-xl font-semibold text-rack disabled:opacity-60">
         {pending ? "Saving…" : "Log it"}
       </button>
     </form>

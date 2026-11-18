@@ -77,7 +77,7 @@ export function NotificationsCard() {
         <button
           onClick={status === "on" ? disable : enable}
           disabled={pending}
-          className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 font-display text-lg font-semibold disabled:opacity-60 ${status === "on" ? "bg-rack text-chalk" : "bg-plate-blue text-white"}`}
+          className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 font-display text-lg font-semibold disabled:opacity-60 ${status === "on" ? "bg-rack text-chalk" : "bg-plate-blue text-rack"}`}
         >
           {status === "on" ? <BellOff size={18} aria-hidden /> : <Bell size={18} aria-hidden />}
           {pending ? "One moment…" : status === "on" ? "Turn off notifications" : "Turn on notifications"}

@@ -125,7 +125,7 @@ export const ExerciseBlock = memo(function ExerciseBlock({ ex, previous, unit, j
                     }
                     aria-pressed={set.completed}
                     aria-label={`Mark set ${i + 1} ${set.completed ? "not done" : "done"}`}
-                    className={`inline-flex h-9 w-9 items-center justify-center rounded-lg ${set.completed ? "bg-plate-green text-white" : "bg-rack text-chalk-muted"} ${flash ? "animate-pop" : ""}`}
+                    className={`inline-flex h-9 w-9 items-center justify-center rounded-lg ${set.completed ? "bg-plate-blue text-rack" : "bg-rack text-chalk-muted"} ${flash ? "animate-pop" : ""}`}
                   >
                     <Check size={20} strokeWidth={3} />
                   </button>

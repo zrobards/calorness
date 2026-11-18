@@ -59,7 +59,7 @@ export default async function TrainPage({ searchParams }: { searchParams: Promis
       {active && (
         <Link
           href={`/train/workout/${active.id}`}
-          className="mx-5 mb-4 flex items-center gap-3 rounded-2xl bg-plate-green px-5 py-4 text-white"
+          className="mx-5 mb-4 flex items-center gap-3 rounded-2xl bg-plate-blue px-5 py-4 text-rack"
         >
           <span className="relative flex size-3">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-60 motion-reduce:hidden" />
@@ -86,7 +86,7 @@ export default async function TrainPage({ searchParams }: { searchParams: Promis
               <li key={i} className="flex flex-col items-center gap-2">
                 <div className="flex h-11 items-center justify-center">
                   {d.workouts > 0 ? (
-                    <span className="animate-plate-on rounded-full border-4 border-[#a8302c] bg-plate-red" style={{ width: size, height: size, "--i": i } as React.CSSProperties} aria-label={`${formatDay(d.date, { weekday: "long", timeZone: "UTC" })}: trained`} />
+                    <span className="animate-plate-on rounded-full border-4 border-[#b8930f] bg-plate-yellow" role="img" style={{ width: size, height: size, "--i": i } as React.CSSProperties} aria-label={`${formatDay(d.date, { weekday: "long", timeZone: "UTC" })}: trained`} />
                   ) : (
                     <span className="h-1.5 w-5 rounded-full bg-rack-line" />
                   )}
@@ -101,17 +101,17 @@ export default async function TrainPage({ searchParams }: { searchParams: Promis
         <dl className="mt-5 grid grid-cols-3 gap-3 border-t border-rack-line pt-4">
           <div>
             <dt className="text-xs text-chalk-muted">Volume</dt>
-            <dd className="font-display text-3xl font-bold tabular-nums">
+            <dd className="font-display text-2xl font-bold whitespace-nowrap tabular-nums">
               <AnimatedNumber id="week-volume" value={Math.round(displayWeight(week.volumeKg, unitSystem))} /> <span className="text-base font-semibold text-chalk-muted">{unit}</span>
             </dd>
           </div>
           <div>
             <dt className="text-xs text-chalk-muted">Working sets</dt>
-            <dd className="font-display text-3xl font-bold tabular-nums"><AnimatedNumber id="week-sets" value={week.sets} /></dd>
+            <dd className="font-display text-2xl font-bold whitespace-nowrap tabular-nums"><AnimatedNumber id="week-sets" value={week.sets} /></dd>
           </div>
           <div>
             <dt className="text-xs text-chalk-muted">Cardio</dt>
-            <dd className="font-display text-3xl font-bold tabular-nums">
+            <dd className="font-display text-2xl font-bold whitespace-nowrap tabular-nums">
               <AnimatedNumber id="week-cardio" value={activeCalories} /> <span className="text-base font-semibold text-chalk-muted">cal</span>
             </dd>
           </div>
@@ -121,7 +121,7 @@ export default async function TrainPage({ searchParams }: { searchParams: Promis
       <div className="mx-5 mt-4 grid grid-cols-[1.4fr_1fr] gap-3">
         {!active ? (
           <form action={startWorkout.bind(null, null)}>
-            <button className="flex w-full items-center justify-center gap-2 rounded-2xl bg-plate-red py-4 font-display text-lg font-semibold text-white">
+            <button className="flex w-full items-center justify-center gap-2 rounded-2xl bg-plate-blue py-4 font-display text-lg font-semibold text-rack">
               <Play size={18} fill="currentColor" aria-hidden /> Start workout
             </button>
           </form>

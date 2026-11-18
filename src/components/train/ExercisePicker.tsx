@@ -128,7 +128,7 @@ export function ExercisePicker({
         >
           <button
             onClick={() => onAdd(all.filter((e) => selected.includes(e.id)))}
-            className="mx-auto block w-full max-w-md rounded-xl bg-plate-blue py-3.5 font-display text-xl font-semibold text-white"
+            className="mx-auto block w-full max-w-md rounded-xl bg-plate-blue py-3.5 font-display text-xl font-semibold text-rack"
           >
             Add {selected.length} {selected.length === 1 ? "exercise" : "exercises"}
           </button>

@@ -86,7 +86,7 @@ export function GoalForm({ unitSystem }: { unitSystem: "IMPERIAL" | "METRIC" }) 
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-xl bg-plate-red py-3 font-display text-lg font-semibold text-white disabled:opacity-60"
+        className="w-full rounded-xl bg-plate-blue py-3 font-display text-lg font-semibold text-rack disabled:opacity-60"
       >
         {pending ? "Calculating…" : "Calculate my targets"}
       </button>

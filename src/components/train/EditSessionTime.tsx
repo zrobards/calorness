@@ -71,7 +71,7 @@ export function EditSessionTime({ kind, id, minutes, effort, onSaved, onCancel }
       {error && <p role="alert" className="mt-2 text-sm text-plate-red">{error}</p>}
       <div className="mt-3 flex gap-2">
         {onCancel && <button type="button" onClick={onCancel} className="rounded-xl bg-rack-raised px-4 py-2 text-sm font-medium">Cancel</button>}
-        <button type="button" onClick={save} disabled={pending || !(n >= 1)} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-plate-red py-2 font-semibold text-white disabled:opacity-50">
+        <button type="button" onClick={save} disabled={pending || !(n >= 1)} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-plate-blue py-2 font-semibold text-rack disabled:opacity-50">
           {saved ? <><Check size={16} aria-hidden /> Updated</> : pending ? "Saving…" : "Update calories"}
         </button>
       </div>

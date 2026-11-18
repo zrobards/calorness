@@ -55,7 +55,7 @@ export function ShortcutKeys({ keys }: { keys: Key[] }) {
             if ("error" in r && r.error) setError(r.error);
             else if ("key" in r && r.key) { haptic("success"); setFresh(r.key); }
           })}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-plate-blue py-3 font-display text-lg font-semibold text-white disabled:opacity-60"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-plate-blue py-3 font-display text-lg font-semibold text-rack disabled:opacity-60"
         >
           <KeyRound size={18} aria-hidden /> {pending ? "Making a key…" : "Make a shortcut key"}
         </button>
