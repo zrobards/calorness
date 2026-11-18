@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { sendPush } from "@/lib/push";
 import { getTodaySummary } from "@/lib/activitySummary";
+import { postRecaps } from "@/lib/community";
 import { dayInZone, hourInZone } from "@/lib/time";
 
 /*
@@ -37,5 +38,14 @@ export async function GET(req: Request) {
       tag: "reminder",
     });
   }
-  return Response.json({ users: users.length, sent });
+  // Weekly recaps and streak milestones for people sharing on the feed
+  const sharers = await db.user.findMany({ where: { handle: { not: null }, shareRecaps: true }, select: { id: true, timeZone: true } });
+  let recaps = 0;
+  for (const u of sharers) {
+    const summary = await getTodaySummary(u.id).catch(() => null);
+    if (!summary) continue;
+    await postRecaps(u, now, summary).catch(() => null);
+    recaps++;
+  }
+  return Response.json({ users: users.length, sent, recaps });
 }

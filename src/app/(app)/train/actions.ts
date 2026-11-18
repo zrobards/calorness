@@ -4,6 +4,7 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
+import { postWorkout } from "@/lib/community";
 import { db } from "@/lib/db";
 import { toKg, type UnitSystem } from "@/lib/fitness/units";
 import type { Prisma } from "@prisma/client";
@@ -225,9 +226,12 @@ export async function finishWorkout(workoutId: string, input: FinishWorkoutInput
     notes: parsed.data.notes,
     endedAt: new Date(),
   });
+  // Shared with followers if you have a community profile and share workouts
+  await postWorkout(user.id, workoutId);
 
   revalidatePath("/train");
   revalidatePath("/progress");
+  revalidatePath("/feed");
   redirect(`/train/history/${workoutId}?finished=1`);
 }
 

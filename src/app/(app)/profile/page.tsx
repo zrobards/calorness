@@ -13,6 +13,8 @@ import { BodyStatsCard } from "./BodyStatsCard";
 import { ActivityGoals, HealthSetup, InstallApp } from "./ActivitySetup";
 import { DeleteAccount } from "./DeleteAccount";
 import { Collapsible, SearchableSections, SectionGroup } from "@/components/ui/Collapsible";
+import { ProfileSetup } from "@/components/feed/Feed";
+import { CommunityExtras } from "./CommunityExtras";
 import { Bell, HeartPulse, KeyRound, LayoutGrid, Ruler, Shield, Target, UserRound, Users } from "lucide-react";
 import Link from "next/link";
 import QRCode from "qrcode";
@@ -32,12 +34,14 @@ export default async function ProfilePage() {
   });
 
   const siteUrl = (process.env.NEXTAUTH_URL ?? "https://calorness.vercel.app").replace(/\/$/, "");
-  const [qrSvg, aiUsed, aiLimit, lastHealth] = await Promise.all([
+  const [qrSvg, aiUsed, aiLimit, lastHealth, blockRows] = await Promise.all([
     QRCode.toString(siteUrl, { type: "svg", margin: 0, color: { dark: "#0e141d", light: "#ffffff" } }),
     aiUsedToday(user.id),
     aiLimitFor(user.id),
     db.dailyActivity.findFirst({ where: { userId: user.id }, orderBy: { updatedAt: "desc" }, select: { updatedAt: true, steps: true, date: true } }),
+    db.block.findMany({ where: { blockerId: user.id }, select: { blocked: { select: { handle: true } } } }),
   ]);
+  const blocked = blockRows.map((b) => b.blocked.handle).filter((h): h is string => !!h);
   const imperial = user.unitSystem === "IMPERIAL";
   const age = user.birthYear ? new Date().getFullYear() - user.birthYear : null;
   const height = user.heightCm ? (imperial ? `${Math.floor(user.heightCm / 2.54 / 12)}′${Math.round((user.heightCm / 2.54) % 12)}″` : `${Math.round(user.heightCm)} cm`) : null;
@@ -104,6 +108,21 @@ export default async function ProfilePage() {
         </Collapsible>
         <Collapsible id="notifications" title="Notifications" icon={<Bell size={20} />} summary="Rest timer and daily reminders" keywords="push alerts reminders rest timer">
           <NotificationsCard />
+        </Collapsible>
+        <SectionGroup title="Community" />
+        <Collapsible id="community" title="Community profile" icon={<Users size={20} />}
+          summary={user.handle ? `@${user.handle}${blocked.length ? `, ${blocked.length} blocked` : ""}` : "Not on the feed"}
+          keywords="feed username handle bio share followers block privacy community">
+          <div className="mt-3">
+            {user.handle ? (
+              <>
+                <ProfileSetup initial={{ handle: user.handle, bio: user.bio ?? "", shareWorkouts: user.shareWorkouts, shareRecaps: user.shareRecaps }} />
+                <CommunityExtras blocked={blocked} />
+              </>
+            ) : (
+              <p className="text-sm text-chalk-muted">You&apos;re not on the feed. Open the Feed tab to pick a username.</p>
+            )}
+          </div>
         </Collapsible>
         <SectionGroup title="Account" />
         <Collapsible id="account" title="Units and sign-in" icon={<UserRound size={20} />}

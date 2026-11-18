@@ -15,6 +15,10 @@ const SECTIONS = [
     body: "When you snap a meal, describe one, or scan a label, the photo or text is sent to Anthropic's Claude AI to estimate nutrition. Calorness doesn't keep the photo. Anthropic's API doesn't use it to train its models.",
   },
   {
+    title: "The feed",
+    body: "Only if you pick a username on the Feed tab. People ask to follow you and see nothing until you approve them. Approved followers see your username, bio, workout and follower counts, and the posts you share: finished workouts and new records, weekly recaps and streaks (each can be turned off), and programs you choose to share. Your food, weight, body stats, and real name are never shared. You can remove followers, block or report people, delete posts, or leave the feed at any time, which removes your username, posts, and follows.",
+  },
+  {
     title: "Apple Health",
     body: "Only if you set up the Apple Health Shortcut: the daily totals it sends (steps, active calories, exercise minutes, distance, walking speed, and resting heart rate) are saved to your account to show your activity and streaks. Nothing else is read from Apple Health, it's never shared with other users, and deleting your account deletes it.",
   },

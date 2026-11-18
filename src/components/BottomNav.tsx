@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Dumbbell, House, NotebookPen, UserRound } from "lucide-react";
+import { Dumbbell, House, NotebookPen, UserRound, Users } from "lucide-react";
 
 // Home is Quick log: logging food is one tap from anywhere. "You" holds your
 // progress and profile; settings open from there.
@@ -10,6 +10,7 @@ const TABS = [
   { href: "/log", match: ["/log"], label: "Home", Icon: House },
   { href: "/diary", match: ["/diary"], label: "Diary", Icon: NotebookPen },
   { href: "/train", match: ["/train"], label: "Train", Icon: Dumbbell },
+  { href: "/feed", match: ["/feed", "/u/"], label: "Feed", Icon: Users },
   { href: "/progress", match: ["/progress", "/profile", "/coach"], label: "You", Icon: UserRound },
 ] as const;
 
@@ -26,7 +27,7 @@ export function NavBar({ pathname }: { pathname: string | null }) {
       className="vv-pin fixed inset-x-0 bottom-0 z-10 border-t border-rack-line bg-rack/95 backdrop-blur"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <ul className="mx-auto grid max-w-md grid-cols-4">
+      <ul className="mx-auto grid max-w-md grid-cols-5">
         {TABS.map(({ href, match, label, Icon }) => {
           const active = match.some((m) => pathname?.startsWith(m)) ?? false;
           return (
