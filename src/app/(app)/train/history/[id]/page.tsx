@@ -8,6 +8,8 @@ import { bestSet, findNewRecords, type PersonalRecords } from "@/lib/fitness/str
 import { displayWeight, weightUnit } from "@/lib/fitness/units";
 import { formatDay, formatDuration } from "@/lib/fitness/dates";
 import { WorkoutTimeEditor } from "./WorkoutTimeEditor";
+import { CoachFeedback } from "./CoachFeedback";
+import { Suspense } from "react";
 import { DeleteWorkoutButton } from "./DeleteWorkoutButton";
 import { PlateBurst } from "@/components/motion/PlateBurst";
 import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
@@ -73,6 +75,9 @@ export default async function WorkoutDetailPage({
         ))}
       </dl>
       {workout.endedAt && <WorkoutTimeEditor id={workout.id} minutes={Math.max(1, Math.round(workout.durationMs / 60000))} effort={workout.effort ?? null} />}
+      <Suspense fallback={<div className="mt-6 h-40 animate-pulse rounded-2xl bg-rack-raised" />}>
+        <CoachFeedback userId={user.id} workoutId={workout.id} unitSystem={unitSystem} />
+      </Suspense>
 
       {prs.length > 0 && (
         <section className="animate-rise mt-6 overflow-hidden rounded-2xl border border-plate-yellow/40 bg-plate-yellow/10 p-5" style={{ "--i": 3 } as React.CSSProperties} aria-label="Personal records">

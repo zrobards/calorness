@@ -1,5 +1,5 @@
 import "server-only";
-import { ClaudeError, claudeMessages, DEFAULTS, textModel, visionModel } from "./claude";
+import { ClaudeError, claudeMessages, DEFAULTS, fastModel, textModel, visionModel } from "./claude";
 import { LOG_FOODS_TOOL, READ_LABEL_TOOL, parseLabelResponse, parseLogFoodsResponse, type AiFoodItem, type AiFoodResult, type LabelResult } from "./parse";
 
 // Claude reads a meal photo or a typed description and estimates nutrition.
@@ -45,20 +45,33 @@ export async function estimateFoods(input: {
   }
   content.push({ type: "text", text: buildPrompt(input) });
 
-  try {
-    const model = input.image ? visionModel() : textModel();
-    const body = await claudeMessages(
-      { model, max_tokens: 1500, system: SYSTEM, tools: [LOG_FOODS_TOOL], tool_choice: { type: "tool", name: LOG_FOODS_TOOL.name }, messages: [{ role: "user", content }] },
-      input.image ? DEFAULTS.vision : DEFAULTS.text,
-    );
-    const result = parseLogFoodsResponse(body as { content?: [] });
-    if (!result) return { error: "The AI's answer didn't make sense. Try again." };
-    if (result.items.length === 0) return { error: result.note || "No food found. Try a closer photo, or describe it." };
-    return result;
-  } catch (e) {
-    if (e instanceof ClaudeError) return { error: e.userMessage };
-    return { error: "The AI took too long to answer. Check your connection and try again." };
+  // Two tries: the main model with plenty of time, then a faster model if the
+  // first was busy, slow, cut off, or answered with something unusable. Busy
+  // moments at lunch were the usual cause of errors here.
+  const attempts = [
+    { model: input.image ? visionModel() : textModel(), fallback: input.image ? DEFAULTS.vision : DEFAULTS.text, timeout: 55_000 },
+    { model: fastModel(), fallback: input.image ? DEFAULTS.vision : DEFAULTS.text, timeout: 40_000 },
+  ];
+  let lastError = "The AI couldn't work that out.";
+  for (const a of attempts) {
+    try {
+      const body = await claudeMessages(
+        { model: a.model, max_tokens: 3000, system: SYSTEM, tools: [LOG_FOODS_TOOL], tool_choice: { type: "tool", name: LOG_FOODS_TOOL.name }, messages: [{ role: "user", content }] },
+        a.fallback,
+        a.timeout,
+      );
+      const result = parseLogFoodsResponse(body as { content?: [] });
+      if (result && result.items.length) return result;
+      // Nothing recognized isn't worth a second try; it's the same picture
+      if (result) return { error: result.note || "I couldn't spot any food in that." };
+      lastError = "The AI's answer didn't make sense.";
+    } catch (e) {
+      lastError = e instanceof ClaudeError ? e.userMessage : "The AI took too long to answer.";
+      if (e instanceof ClaudeError && (e.status === 401 || e.status === 403)) break; // a settings problem, not a busy moment
+    }
   }
+  return { error: lastError };
+
 }
 
 /** The user-facing words we send along with the photo. Exported for tests. */

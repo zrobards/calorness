@@ -11,9 +11,9 @@ export const metadata: Metadata = { title: "Coach" };
 
 // /coach opens your most recent chat (or a new one); /coach?c=<id> opens a
 // specific chat; /coach?new=1 starts fresh.
-export default async function CoachPage({ searchParams }: { searchParams: Promise<{ c?: string; new?: string }> }) {
+export default async function CoachPage({ searchParams }: { searchParams: Promise<{ c?: string; new?: string; q?: string }> }) {
   const user = await requireUser();
-  const { c, new: fresh } = await searchParams;
+  const { c, new: fresh, q } = await searchParams;
   const chat = fresh
     ? null
     : c
@@ -34,6 +34,7 @@ export default async function CoachPage({ searchParams }: { searchParams: Promis
         proposal: (m.proposal as CoachProposal | CoachProgramProposal | null) ?? null,
       }))}
       notes={notes.map((n) => ({ id: n.id, kind: n.kind, text: n.text }))}
+      draft={q?.slice(0, 1000) ?? ""}
     />
   );
 }

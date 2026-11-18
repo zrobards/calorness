@@ -162,7 +162,9 @@ type Block = { type: string; text?: string; id?: string; name?: string; input?: 
 type Message = { role: "user" | "assistant"; content: string | unknown[] };
 
 async function callClaude(system: string, messages: Message[]) {
-  return (await claudeMessages({ model: coachModel(), max_tokens: 1200, system, tools: TOOLS, messages }, DEFAULTS.text, 45_000)) as {
+  // A full program sent through propose_program is long (often 2–5k tokens);
+  // with a small limit it was cut off mid-tool-call and the reply came back empty
+  return (await claudeMessages({ model: coachModel(), max_tokens: 8000, system, tools: TOOLS, messages }, DEFAULTS.text, 120_000)) as {
     content: Block[];
     stop_reason: string;
   };
@@ -208,12 +210,26 @@ export async function runCoach(userId: string, history: { role: "user" | "assist
   const notesChanged: string[] = [];
   let reply = "";
   let nudged = false;
+  let cutOff = false;
 
   for (let round = 0; round < 6; round++) {
     const res = await callClaude(system, messages);
     const text = res.content.filter((b) => b.type === "text").map((b) => b.text).join("\n").trim();
     if (text) reply = text;
     const calls = res.content.filter((b) => b.type === "tool_use");
+
+    // Ran out of room mid-answer (a tool call cut off can't be used). Ask once
+    // for a tighter version instead of giving up silently.
+    if (res.stop_reason === "max_tokens" && !cutOff) {
+      cutOff = true;
+      const kept = res.content.filter((b) => b.type === "text");
+      if (kept.length) messages.push({ role: "assistant", content: kept });
+      messages.push({
+        role: "user",
+        content: "(App note: your last answer was cut off because it was too long. Answer again, shorter: keep the reply to a few sentences, and if you're proposing a program, call propose_program once with short notes and at most 8 exercises a day.)",
+      });
+      continue;
+    }
 
     if (res.stop_reason !== "tool_use" || calls.length === 0) {
       // Honesty check: it says it made something, but no tool call worked this turn.
@@ -291,7 +307,9 @@ export async function runCoach(userId: string, history: { role: "user" | "assist
       ? "Here it is. Tap Customize to change anything, or save it as is."
       : notesChanged.length
         ? "Got it, I'll keep that in mind."
-        : "Sorry, I didn't manage to put an answer together. Could you ask that again?";
+        : cutOff
+          ? "That one was too big to answer in a single reply. Try asking about one part at a time, or use Train → AI program to build the full plan."
+          : "Sorry, I didn't manage to put an answer together. Could you ask that again?";
   }
   return { reply, proposal, notesChanged };
 }

@@ -84,17 +84,19 @@ tracking that shares data with training.
 - Change how long a workout or activity lasted, and how hard it was, from the Diary's Exercise card (pencil) or a workout's page; calories burned are recalculated (lifting: 3.5 / 5 / 6 METs for light / moderate / hard)
 - The Diary shows goal + exercise − food = remaining; extra calories go about 70% to carbs and 30% to fat, protein stays put. Lifting sessions are estimated from their length
 
-**Music**
-- Paste a link from YouTube Music, Spotify, Apple Music, or SoundCloud (playlist, album, or song); Calorness looks up its name and plays it in that service's own embedded player
-- The player lives in the app layout, so music keeps playing while you switch tabs; it shrinks to a mini player or expands, without restarting
-- Saved music is one tap away from Train and the workout screen
-
 **Activity and motivation**
 - Apple Health sync through an iPhone Shortcut (`POST /api/health`): steps, active calories, exercise minutes, distance, walking speed, resting heart rate; values can arrive with units or as lists of samples, and days can be backfilled
+- Without a shared Shortcut link (`HEALTH_SHORTCUT_URL`), Profile offers simple manual entry of today's steps and active calories
 - Activity page: Move/Steps/Exercise rings, 7- and 30-day averages, walking-speed trend, distance, resting heart rate, goal hits and streaks, 30-day charts with goal lines
 - When Apple Health's active calories are synced, the Diary uses them for exercise (they already include workouts), and marks logged sessions as included instead of double counting
 - Today card on Quick log with rings, logging and active-day streaks, and one line of encouragement; the daily reminder mentions a streak at risk
-- Home-screen widget through the free Scriptable app (`GET /api/widget`): calories left, protein, steps, move, streak; tap to open Quick log
+- Add to Home Screen instructions in Profile (Share → Add to Home Screen); opens full-screen to Quick log
+
+**Instant workout feedback**
+- The workout summary shows Coach notes right away (no AI wait): new bests, drops, 3-session plateaus, "ready to go heavier", push vs pull balance for the week (climbing counts as pulling), and eating under target while trying to gain; "Talk it through with Coach" opens a chat with the question ready
+
+**Never stuck when the AI fails**
+- Photo and description estimates try the main model (55 s, larger answers), then a faster model (`AI_FAST_MODEL`, default claude-haiku-5-5); if both fail, a "Log it another way" sheet offers close database matches or a calories quick add. Failed tries don't count toward the daily AI allowance
 
 **Progress**
 - Tappable muscle map: pick a muscle (on the body or the list) to see every set that counted toward it, with the main/helper split, for this week, the last 7 days, or last week

@@ -191,7 +191,7 @@ export function RoutineEditor({
       {error && <p ref={errorRef} role="alert" className="mt-4 rounded-xl border border-plate-red/50 bg-plate-red/10 px-3 py-2 text-sm">{error}</p>}
 
       {/* Save stays in reach at the bottom of the screen */}
-      <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+5rem+var(--music-dock-h,0px))] z-10 -mx-5 mt-6 flex gap-3 bg-rack/95 px-5 py-3 backdrop-blur">
+      <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-10 -mx-5 mt-6 flex gap-3 bg-rack/95 px-5 py-3 backdrop-blur">
         {routine && (
           <button
             onClick={() => { if (confirm("Delete this routine? Past workouts stay in your history.")) startTransition(async () => { const r = await safe(() => deleteRoutine(routine.id)); if (failed(r)) setError(r.error); }); }}

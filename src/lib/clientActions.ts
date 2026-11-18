@@ -3,12 +3,11 @@
 // losing what you entered. Screens import saves from here, not from the
 // actions files directly. Reads are left as they are.
 import { safe } from "@/lib/safeAction";
-import { addDiaryEntry as addDiaryEntryServer, addWater as addWaterServer, copyMealFromDay as copyMealFromDayServer, copyWholeDay as copyWholeDayServer, createCustomFood as createCustomFoodServer, deleteDiaryEntries as deleteDiaryEntriesServer, deleteDiaryEntry as deleteDiaryEntryServer, deleteSavedMeal as deleteSavedMealServer, logSavedMeal as logSavedMealServer, saveMealFromDay as saveMealFromDayServer, updateCustomFood as updateCustomFoodServer, updateDiaryEntry as updateDiaryEntryServer } from "@/app/(app)/diary/actions";
+import { addDiaryEntry as addDiaryEntryServer, addWater as addWaterServer, copyMealFromDay as copyMealFromDayServer, copyWholeDay as copyWholeDayServer, createCustomFood as createCustomFoodServer, deleteDiaryEntries as deleteDiaryEntriesServer, deleteDiaryEntry as deleteDiaryEntryServer, deleteSavedMeal as deleteSavedMealServer, logSavedMeal as logSavedMealServer, saveMealFromDay as saveMealFromDayServer, updateCustomFood as updateCustomFoodServer, updateDiaryEntry as updateDiaryEntryServer, quickAddCalories as quickAddCaloriesServer } from "@/app/(app)/diary/actions";
 import { logAiItems as logAiItemsServer, quickRelog as quickRelogServer } from "@/app/(app)/log/actions";
 import { createExercise as createExerciseServer, createProgram as createProgramServer, deleteExercise as deleteExerciseServer, deleteProgram as deleteProgramServer, deleteRoutine as deleteRoutineServer, deleteWorkout as deleteWorkoutServer, discardWorkout as discardWorkoutServer, finishWorkout as finishWorkoutServer, importTemplate as importTemplateServer, logBodyweight as logBodyweightServer, moveProgram as moveProgramServer, moveRoutine as moveRoutineServer, renameProgram as renameProgramServer, saveWorkoutEdits as saveWorkoutEditsServer, setActiveProgram as setActiveProgramServer, setRoutineProgram as setRoutineProgramServer, updateWorkoutTime as updateWorkoutTimeServer } from "@/app/(app)/train/actions";
 import { deleteActivity as deleteActivityServer, logActivity as logActivityServer, saveBodyStats as saveBodyStatsServer, setExerciseCredit as setExerciseCreditServer, updateActivity as updateActivityServer } from "@/app/(app)/train/cardio/actions";
 import { createApiKey as createApiKeyServer, deleteApiKey as deleteApiKeyServer, setActivityGoals as setActivityGoalsServer, updateTargets as updateTargetsServer, saveGoals as saveGoalsServer, deleteAccount as deleteAccountServer } from "@/app/(app)/profile/actions";
-import { addMusic as addMusicServer, removeMusic as removeMusicServer } from "@/app/(app)/music/actions";
 import { setPassword as setPasswordServer } from "@/app/signin/actions";
 import { saveProgramDraft as saveProgramDraftServer } from "@/app/(app)/train/programs/actions";
 import { applyProposal as applyProposalServer, deleteChat as deleteChatServer, forgetNote as forgetNoteServer, saveCoachProgram as saveCoachProgramServer } from "@/app/(app)/coach/actions";
@@ -58,11 +57,10 @@ export const setActivityGoals = wrap(setActivityGoalsServer, 2);
 export const updateTargets = wrap(updateTargetsServer, 2);
 export const saveGoals = wrap(saveGoalsServer);
 export const deleteAccount = wrap(deleteAccountServer);
-export const addMusic = wrap(addMusicServer);
-export const removeMusic = wrap(removeMusicServer);
 export const setPassword = wrap(setPasswordServer);
 export const saveProgramDraft = wrap(saveProgramDraftServer);
 export const applyProposal = wrap(applyProposalServer);
 export const deleteChat = wrap(deleteChatServer);
 export const forgetNote = wrap(forgetNoteServer);
 export const saveCoachProgram = wrap(saveCoachProgramServer);
+export const quickAddCalories = wrap(quickAddCaloriesServer);

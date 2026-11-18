@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 /**
  * Keeps bars that are fixed to the bottom of the screen (tab bar, rest timer,
- * music player) where they belong on iPhone.
+ * save bars) where they belong on iPhone.
  *
  * iOS Safari, especially as an installed home-screen app, sometimes leaves
  * the page's layout area shorter than the screen after the keyboard closes or

@@ -10,7 +10,7 @@ import { ShortcutKeys } from "./ShortcutKeys";
 import { NotificationsCard } from "./NotificationsCard";
 import { InviteCard } from "./InviteCard";
 import { BodyStatsCard } from "./BodyStatsCard";
-import { ActivityGoals, HealthSetup, WidgetSetup } from "./ActivitySetup";
+import { ActivityGoals, HealthSetup, InstallApp } from "./ActivitySetup";
 import { DeleteAccount } from "./DeleteAccount";
 import { Collapsible, SearchableSections } from "@/components/ui/Collapsible";
 import { Bell, HeartPulse, KeyRound, LayoutGrid, Ruler, Shield, Target, UserRound, Users } from "lucide-react";
@@ -98,15 +98,15 @@ export default async function ProfilePage() {
         </Collapsible>
 
         <Collapsible id="health" title="Apple Health" icon={<HeartPulse size={20} />}
-          summary={lastHealth ? `Connected, last sync ${lastHealth.updatedAt.toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "Not connected. Tap to set up in a few minutes"}
+          summary={lastHealth ? `Updated ${lastHealth.updatedAt.toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "Add steps and active calories"}
           keywords="apple health watch steps active energy sync connect shortcut health auto export walking speed">
-          <HealthSetup origin={siteUrl} shortcutUrl={process.env.HEALTH_SHORTCUT_URL ?? null}
+          <HealthSetup shortcutUrl={process.env.HEALTH_SHORTCUT_URL ?? null}
             initialStatus={lastHealth ? { lastSync: lastHealth.updatedAt.toISOString(), steps: lastHealth.steps, day: lastHealth.date.toISOString().slice(0, 10) } : null} />
         </Collapsible>
 
-        <Collapsible id="widget" title="Home-screen widget" icon={<LayoutGrid size={20} />} summary="Calories left, steps, and streak on your home screen"
-          keywords="widget scriptable home screen">
-          <WidgetSetup origin={siteUrl} />
+        <Collapsible id="install" title="Add to Home Screen" icon={<LayoutGrid size={20} />} summary="Open Calorness like an app"
+          keywords="install home screen app icon widget share">
+          <InstallApp />
         </Collapsible>
 
         <Collapsible id="notifications" title="Notifications" icon={<Bell size={20} />} summary="Rest timer and daily reminders" keywords="push alerts reminders rest timer">

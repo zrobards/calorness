@@ -20,6 +20,8 @@ export function cleanModel(value: string | undefined | null): string | null {
 
 export const visionModel = () => cleanModel(process.env.AI_VISION_MODEL) ?? DEFAULTS.vision;
 export const textModel = () => cleanModel(process.env.AI_MODEL) ?? DEFAULTS.text;
+/** A faster model used as a second try when the main one is busy or slow. */
+export const fastModel = () => cleanModel(process.env.AI_FAST_MODEL) ?? "claude-haiku-5-5";
 export const coachModel = () => cleanModel(process.env.AI_COACH_MODEL) ?? cleanModel(process.env.AI_MODEL) ?? DEFAULTS.text;
 
 export class ClaudeError extends Error {

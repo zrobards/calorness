@@ -24,12 +24,12 @@ const STARTERS = [
 const NOTE_COLOR: Record<string, string> = { injury: "bg-plate-red/15 text-plate-red", goal: "bg-plate-green/15 text-plate-green", preference: "bg-plate-blue/15 text-plate-blue" };
 const isProgram = (p: Proposal): p is CoachProgramProposal => "kind" in p && p.kind === "program";
 
-export function CoachChat({ chat, initialMessages, notes }: { chat: { id: string; title: string } | null; initialMessages: Msg[]; notes: Note[] }) {
+export function CoachChat({ chat, initialMessages, notes, draft = "" }: { chat: { id: string; title: string } | null; initialMessages: Msg[]; notes: Note[]; draft?: string }) {
   const router = useRouter();
   const [chatId, setChatId] = useState(chat?.id ?? null);
   const [title, setTitle] = useState(chat?.title ?? "New chat");
   const [messages, setMessages] = useState(initialMessages);
-  const [text, setText] = useState("");
+  const [text, setText] = useState(draft); // e.g. prefilled from a workout's Coach notes
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [applied, setApplied] = useState<Record<string, string>>({});
@@ -157,7 +157,7 @@ export function CoachChat({ chat, initialMessages, notes }: { chat: { id: string
 
       <form
         onSubmit={(e) => { e.preventDefault(); send(text); }}
-        className="sticky bottom-[calc(env(safe-area-inset-bottom)+4.25rem+var(--music-dock-h,0px))] flex items-end gap-2 border-t border-rack-line bg-rack px-4 py-3"
+        className="sticky bottom-[calc(env(safe-area-inset-bottom)+4.25rem)] flex items-end gap-2 border-t border-rack-line bg-rack px-4 py-3"
       >
         <textarea
           value={text}
