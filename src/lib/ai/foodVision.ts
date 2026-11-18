@@ -36,7 +36,7 @@ export async function estimateFoods(input: {
   correction?: string;
   /** The user's own foods, so "my usual shake" logs their exact numbers */
   myFoods?: MyFood[];
-}): Promise<AiFoodResult | { error: string }> {
+}): Promise<AiFoodResult | { label: LabelResult } | { error: string }> {
   if (!aiConfigured()) return { error: "AI logging isn't set up yet. Add ANTHROPIC_API_KEY in Vercel." };
 
   const content: unknown[] = [];
@@ -56,10 +56,15 @@ export async function estimateFoods(input: {
   for (const a of attempts) {
     try {
       const body = await claudeMessages(
-        { model: a.model, max_tokens: 3000, system: SYSTEM, tools: [LOG_FOODS_TOOL], tool_choice: { type: "tool", name: LOG_FOODS_TOOL.name }, messages: [{ role: "user", content }] },
+        input.image && !input.previous
+          ? // One camera for everything: the AI decides whether it's a meal or a Nutrition Facts label
+            { model: a.model, max_tokens: 3000, system: `${SYSTEM}\n\nIf the photo is mainly a Nutrition Facts label (not a meal), call read_label instead and copy the printed per-serving numbers exactly.`, tools: [LOG_FOODS_TOOL, READ_LABEL_TOOL], tool_choice: { type: "any" }, messages: [{ role: "user", content }] }
+          : { model: a.model, max_tokens: 3000, system: SYSTEM, tools: [LOG_FOODS_TOOL], tool_choice: { type: "tool", name: LOG_FOODS_TOOL.name }, messages: [{ role: "user", content }] },
         a.fallback,
         a.timeout,
       );
+      const label = input.image ? parseLabelResponse(body as { content?: [] }) : null;
+      if (label?.readable) return { label };
       const result = parseLogFoodsResponse(body as { content?: [] });
       if (result && result.items.length) return result;
       // Nothing recognized isn't worth a second try; it's the same picture

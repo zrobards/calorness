@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Barcode, Bookmark, Camera, ChevronRight, Dumbbell, ImageUp, Mic, MessageSquareText, Play, Plus, Search } from "lucide-react";
+import { Bookmark, Camera, ChevronRight, Dumbbell, ImageUp, Mic, Play, Plus, Search, Sparkles } from "lucide-react";
 import type { FoodCandidate } from "@/lib/nutrition/normalize";
 import type { AiFoodItem } from "@/lib/ai/parse";
 import type { GroundedItem } from "@/lib/ai/ground";
 import { localDay, mealForTime, type MealName } from "@/lib/nutrition/meals";
 import { haptic } from "@/lib/haptics";
-import { lookupBarcode } from "@/app/(app)/diary/actions";
+import { lookupBarcode, searchFoods } from "@/app/(app)/diary/actions";
+import { CustomFoodForm, type FoodPrefill } from "@/components/diary/CustomFoodForm";
 import { addDiaryEntry, deleteDiaryEntry } from "@/lib/clientActions";
 import { aiEstimate } from "@/app/(app)/log/actions";
 import { logAiItems, quickRelog } from "@/lib/clientActions";
@@ -20,12 +21,10 @@ import { Toast, type ToastData } from "@/components/motion/Toast";
 import { PlateBurst } from "@/components/motion/PlateBurst";
 import { BarcodeScanner } from "@/components/diary/BarcodeScanner";
 import { FoodSheet } from "@/components/diary/FoodSheet";
-import { Sheet } from "@/components/diary/Sheet";
 import { LogAnywaySheet } from "./LogAnywaySheet";
 import { AiReviewSheet, type ReviewedItem } from "./AiReviewSheet";
 import { AiProgress, type AiTask } from "./AiProgress";
 import { AddFoodPanel } from "@/components/diary/AddFoodPanel";
-import { LabelScan } from "./LabelScan";
 import { resizeImage } from "./resizeImage";
 import { findBarcode } from "./findBarcode";
 
@@ -61,8 +60,10 @@ export function QuickLog({
   const [meal, setMeal] = useState<MealName>(() => mealForTime(new Date()));
   const [day] = useState(() => localDay(new Date()));
   const [scanning, setScanning] = useState(mode === "scan");
-  const [describing, setDescribing] = useState(mode === "describe");
   const [text, setText] = useState("");
+  const textRef = useRef<HTMLInputElement>(null);
+  const [matches, setMatches] = useState<FoodCandidate[] | null>(null);
+  const [labelPrefill, setLabelPrefill] = useState<FoodPrefill | null>(null);
   const [listening, setListening] = useState(false);
   // What the AI is working on, shown full-screen. Set OUTSIDE transitions:
   // state set inside startTransition only shows once the whole action ends,
@@ -108,6 +109,12 @@ export function QuickLog({
       return;
     }
     haptic("success");
+    if ("label" in result && result.label) {
+      // It was a Nutrition Facts label: confirm the printed numbers, then log
+      const l = result.label;
+      setLabelPrefill({ name: l.name || "Scanned food", brand: l.brand ?? null, servingLabel: l.serving_label, servingSize: l.serving_grams ?? null, calories: l.calories, proteinG: l.protein_g, carbsG: l.carbs_g, fatG: l.fat_g });
+      return;
+    }
     setReview({ items: result.items, note: result.note, photo, source: input, version: 0 });
   };
 
@@ -120,7 +127,7 @@ export function QuickLog({
     // A barcode in the shot means exact label values, so check for one first
     const code = await findBarcode(file);
     if (code) {
-      const { food } = await lookupBarcode(code);
+      const { food } = await lookupBarcode(code).catch(() => ({ food: null }));
       if (food) {
         setProgress(null);
         haptic("success");
@@ -138,6 +145,31 @@ export function QuickLog({
     } finally {
       setTimeout(() => URL.revokeObjectURL(preview), 30_000);
     }
+  };
+
+  // As you type, foods from the database that match; Enter asks the AI instead
+  useEffect(() => {
+    const q = text.trim();
+    let alive = true;
+    const t = setTimeout(async () => {
+      if (q.length < 2) { setMatches(null); return; }
+      const local = await searchFoods(q, "local").catch(() => ({ foods: [] as FoodCandidate[] }));
+      if (alive && local.foods.length) setMatches(local.foods.slice(0, 4));
+      const all = await searchFoods(q, "all").catch(() => ({ foods: [] as FoodCandidate[] }));
+      // one row per food, even when it comes from several sources
+      const seen = new Set<string>();
+      const unique = (all.foods.length ? all.foods : local.foods).filter((f) => { const k = `${f.name}|${f.brand ?? ""}`.toLowerCase(); return !seen.has(k) && !!seen.add(k); });
+      if (alive) setMatches(unique.slice(0, 4));
+    }, 300);
+    return () => { alive = false; clearTimeout(t); };
+  }, [text]);
+
+  const describe = () => {
+    const q = text.trim();
+    if (!q) return textRef.current?.focus();
+    (document.activeElement as HTMLElement | null)?.blur?.();
+    setMatches(null);
+    runAi({ text: q });
   };
 
   const listen = () => {
@@ -167,6 +199,7 @@ export function QuickLog({
       haptic("warning");
       return setToast({ message: result.error ?? "Something went wrong. Try again." });
     }
+    if (!("items" in result)) return;
     haptic("success");
     setReview((r) => r && { ...r, items: result.items, note: result.note, version: r.version + 1 });
   };
@@ -241,7 +274,7 @@ export function QuickLog({
   });
 
   return (
-    <div className="px-5 pb-6">
+    <div className="px-5 pb-2">
       {/* Today at a glance */}
       <div className="animate-rise flex items-end justify-between" style={{ "--i": 0 } as React.CSSProperties}>
         <div>
@@ -271,39 +304,54 @@ export function QuickLog({
         ))}
       </div>
 
-      {/* The big one: photo → AI. Tap the card to take a photo, or upload one you already took. */}
-      <div className={`animate-rise relative mt-4 h-44 overflow-hidden rounded-3xl bg-plate-red text-white ${mode === "snap" ? "ring-4 ring-plate-yellow" : ""}`} style={{ "--i": 2 } as React.CSSProperties}>
+      {/* One way in: a camera that figures out meal vs. label vs. barcode, and one text box */}
+      <div className="animate-rise mt-4 overflow-hidden rounded-3xl bg-rack-raised" style={{ "--i": 2 } as React.CSSProperties}>
         <input ref={fileRef} id="snap-camera" type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => { onPhoto(e.target.files?.[0]); e.target.value = ""; }} disabled={!aiReady} />
         <input ref={libraryRef} id="snap-library" type="file" accept="image/*" className="sr-only" onChange={(e) => { onPhoto(e.target.files?.[0]); e.target.value = ""; }} disabled={!aiReady} />
-        <label htmlFor="snap-camera" className="absolute inset-0 flex cursor-pointer flex-col justify-end p-5">
-          {/* bumper-plate rings in the corner */}
-          <span className="absolute -top-16 -right-16 size-56 rounded-full border-[18px] border-white/10" aria-hidden />
-          <span className="absolute -top-4 -right-4 size-28 rounded-full border-[10px] border-white/10" aria-hidden />
-          <Camera size={36} strokeWidth={2.2} aria-hidden />
-          <span className="mt-2 font-display text-3xl leading-none font-bold">Snap your meal</span>
-          <span className="mt-1 text-sm text-white">{aiReady ? "AI counts the calories for you" : "Add an AI key to turn this on"}</span>
-        </label>
-        <label htmlFor="snap-library" className="absolute top-4 right-4 flex cursor-pointer items-center gap-1.5 rounded-full bg-black/25 px-3.5 py-2 text-sm font-semibold backdrop-blur">
-          <ImageUp size={17} aria-hidden /> Upload
-        </label>
-      </div>
-
-      <div className="animate-rise mt-3 grid grid-cols-4 gap-2" style={{ "--i": 3 } as React.CSSProperties}>
-        <button onClick={() => { haptic(); setScanning(true); }} className="flex flex-col items-center gap-1.5 rounded-2xl bg-plate-blue py-4 font-semibold text-white">
-          <Barcode size={24} aria-hidden /> Scan
-        </button>
-        <LabelScan
-          disabled={!aiReady}
-          className="flex flex-col items-center gap-1.5 rounded-2xl bg-rack-raised py-4 font-semibold disabled:opacity-50"
-          onFood={(food) => setBarcodeFood(food)}
-          onError={(message) => setToast({ message })}
-        />
-        <button onClick={() => { haptic(); setDescribing(true); }} disabled={!aiReady} className="flex flex-col items-center gap-1.5 rounded-2xl bg-rack-raised py-4 font-semibold disabled:opacity-50">
-          <MessageSquareText size={24} aria-hidden /> Describe
-        </button>
-        <button onClick={() => { haptic(); setSearching(true); }} className="flex flex-col items-center gap-1.5 rounded-2xl bg-rack-raised py-4 font-semibold">
-          <Search size={24} aria-hidden /> Search
-        </button>
+        <div className={`relative h-36 bg-plate-red text-white ${mode === "snap" || mode === "scan" ? "ring-4 ring-plate-yellow ring-inset" : ""}`}>
+          <label htmlFor="snap-camera" className="absolute inset-0 flex cursor-pointer flex-col justify-end p-5">
+            <span className="absolute -top-16 -right-16 size-56 rounded-full border-[18px] border-white/10" aria-hidden />
+            <Camera size={34} strokeWidth={2.2} aria-hidden />
+            <span className="mt-2 font-display text-3xl leading-none font-bold">Snap it</span>
+            <span className="mt-1 text-sm text-white">{aiReady ? "A meal, a nutrition label, or a barcode" : "Add an AI key to turn this on"}</span>
+          </label>
+          <label htmlFor="snap-library" className="absolute top-4 right-4 flex cursor-pointer items-center gap-1.5 rounded-full bg-black/25 px-3.5 py-2 text-sm font-semibold backdrop-blur">
+            <ImageUp size={17} aria-hidden /> Upload
+          </label>
+        </div>
+        <form className="flex items-center gap-2 p-3" onSubmit={(e) => { e.preventDefault(); describe(); }}>
+          <input ref={textRef} value={text} onChange={(e) => setText(e.target.value)} maxLength={500} autoFocus={mode === "describe"}
+            placeholder="Or type what you ate" aria-label="What you ate" enterKeyHint="go"
+            className="min-w-0 flex-1 rounded-xl border border-rack-line bg-rack px-3.5 py-3 text-base focus:border-plate-yellow focus:outline-none" />
+          {speechSupported && (
+            <button type="button" onClick={listen} aria-pressed={listening} aria-label={listening ? "Stop listening" : "Say it instead"}
+              className={`rounded-xl p-3 ${listening ? "animate-pulse bg-plate-red text-white" : "bg-rack text-chalk-muted"}`}><Mic size={20} /></button>
+          )}
+        </form>
+        {text.trim().length >= 2 && (
+          <div className="border-t border-rack-line">
+            {aiReady && (
+              <button onClick={describe} className="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-rack-line/40">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-plate-yellow/20 text-plate-yellow" aria-hidden><Sparkles size={16} /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium">Count &ldquo;{text.trim()}&rdquo;</span>
+                  <span className="block text-xs text-chalk-muted">AI works out the calories, even for a whole meal</span>
+                </span>
+              </button>
+            )}
+            {matches?.map((f, i) => (
+              <button key={`${f.externalId ?? f.id ?? f.name}-${i}`} onClick={() => setBarcodeFood(f)} className="flex w-full items-center gap-3 border-t border-rack-line px-4 py-3 text-left active:bg-rack-line/40">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-rack text-chalk-muted" aria-hidden><Search size={15} /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium">{f.name}</span>
+                  <span className="block truncate text-xs text-chalk-muted">{[f.brand, f.servingLabel].filter(Boolean).join(", ")}</span>
+                </span>
+                <span className="font-display text-lg font-semibold tabular-nums">{Math.round(f.calories)}</span>
+              </button>
+            ))}
+            {matches === null && <p className="border-t border-rack-line px-4 py-3 text-sm text-chalk-muted">Searching foods…</p>}
+          </div>
+        )}
       </div>
 
       {/* Quick add: saved meals, foods that fit what's left, and recent foods, in one list */}
@@ -390,23 +438,9 @@ export function QuickLog({
         />
       )}
 
-      {describing && (
-        <Sheet title="What did you eat?" onClose={() => setDescribing(false)}>
-          <form className="mt-4" onSubmit={(e) => { e.preventDefault(); setDescribing(false); runAi({ text }); }}>
-            <div className="relative">
-              <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} autoFocus required maxLength={500}
-                placeholder="2 scrambled eggs, a slice of toast with butter, and a black coffee"
-                className="w-full resize-none rounded-2xl border border-rack-line bg-rack px-4 py-3 pr-14 text-lg focus:border-plate-yellow focus:outline-none" />
-              {speechSupported && (
-                <button type="button" onClick={listen} aria-pressed={listening} aria-label={listening ? "Stop listening" : "Speak instead"}
-                  className={`absolute right-2 bottom-3 rounded-full p-2.5 ${listening ? "animate-pulse bg-plate-red text-white" : "bg-rack-raised text-chalk-muted"}`}>
-                  <Mic size={20} />
-                </button>
-              )}
-            </div>
-            <button className="mt-4 w-full rounded-xl bg-plate-red py-3.5 font-display text-xl font-semibold text-white">Count it</button>
-          </form>
-        </Sheet>
+      {labelPrefill && (
+        <CustomFoodForm title="From the label" prefill={labelPrefill} onClose={() => setLabelPrefill(null)}
+          onCreated={(food) => { setLabelPrefill(null); setBarcodeFood(food); }} />
       )}
 
       {review && (

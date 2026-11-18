@@ -21,11 +21,11 @@ const IDEAS = ["Make sessions shorter", "Add more arm work", "Swap barbell lifts
 
 const chip = (on: boolean) => `rounded-full px-3.5 py-2 text-sm font-medium ${on ? "bg-chalk text-rack" : "bg-rack-raised text-chalk-muted"}`;
 
-export function ProgramBuilder({ library, initialDraft, avoid: initialAvoid }: { library: ExerciseOption[]; initialDraft: ProgramDraft | null; avoid: string }) {
+export function ProgramBuilder({ library, initialDraft, avoid: initialAvoid, startMode = "describe" }: { library: ExerciseOption[]; initialDraft: ProgramDraft | null; avoid: string; startMode?: "describe" | "paste" }) {
   const router = useRouter();
   const [draft, setDraft] = useState<ProgramDraft | null>(initialDraft);
   const [busy, setBusy] = useState<"build" | "revise" | "paste" | null>(null);
-  const [mode, setMode] = useState<"describe" | "paste">("describe");
+  const [mode, setMode] = useState<"describe" | "paste">(startMode);
   const [pasted, setPasted] = useState("");
   const [error, setError] = useState<string | null>(null);
 

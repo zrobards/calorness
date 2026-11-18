@@ -89,6 +89,7 @@ export async function POST(req: Request) {
   if ("error" in allowed) return text(allowed.error ?? "AI limit reached.", 429);
   const result = await estimateFoods({ image, text: words });
   if ("error" in result) return text(result.error, 422);
+  if ("label" in result) return text("That's a nutrition label. Open Calorness and snap it there to save the exact numbers.", 422);
 
   // nudged by what people's corrections have taught us about these foods
   const items = await applyCorrections(result.items);

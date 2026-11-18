@@ -10,9 +10,9 @@ export const maxDuration = 300;
 
 export const metadata: Metadata = { title: "Build a program" };
 
-export default async function BuildProgramPage({ searchParams }: { searchParams: Promise<{ from?: string }> }) {
+export default async function BuildProgramPage({ searchParams }: { searchParams: Promise<{ from?: string; mode?: string }> }) {
   const user = await requireUser();
-  const { from } = await searchParams;
+  const { from, mode } = await searchParams;
   const [library, notes, message] = await Promise.all([
     getExerciseOptions(user.id),
     db.coachNote.findMany({ where: { userId: user.id, active: true, kind: "injury" }, select: { text: true } }),
@@ -21,6 +21,7 @@ export default async function BuildProgramPage({ searchParams }: { searchParams:
   const p = message?.proposal as CoachProgramProposal | null | undefined;
   return (
     <ProgramBuilder
+      startMode={mode === "paste" ? "paste" : "describe"}
       library={library}
       initialDraft={p?.kind === "program" ? p.draft : null}
       avoid={notes.map((n) => n.text).join("; ")}
