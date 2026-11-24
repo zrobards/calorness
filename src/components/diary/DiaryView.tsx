@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
-import { Bookmark, ChevronLeft, ChevronRight, Copy, Droplet, Plus, Search, ShieldCheck, Target, Undo2 } from "lucide-react";
+import { Bookmark, CalendarDays, ChevronLeft, ChevronRight, Copy, Droplet, Plus, Search, ShieldCheck, Target, Undo2 } from "lucide-react";
 import type { FoodCandidate } from "@/lib/nutrition/normalize";
 import { dayTargets, itemNutrients, sumTotals, verifiedShare, type DiaryData, type DiaryItem, type DiaryMeal } from "@/lib/nutrition/diaryData";
 import { getDiary } from "@/app/(app)/diary/actions";
@@ -323,6 +323,7 @@ function Header({ day, today, goTo, syncing }: { day: string; today: string; goT
           {syncing && <span className="absolute -top-1 -right-1 size-1.5 animate-pulse rounded-full bg-plate-blue" aria-label="Updating" />}
         </button>
         <button onClick={() => goTo(shiftDay(day, 1))} className="rounded-lg p-1.5 text-chalk-muted" aria-label="Next day"><ChevronRight size={22} /></button>
+        <Link href={`/progress/calendar?day=${day}`} className="rounded-lg p-1.5 text-chalk-muted" aria-label="Month calendar"><CalendarDays size={21} /></Link>
       </nav>
     </header>
   );

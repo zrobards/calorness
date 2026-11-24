@@ -8,6 +8,7 @@ import { canSeePosts, getFeed, isBlockedEitherWay } from "@/lib/community";
 import { getUnitSystem } from "@/lib/training";
 import { Avatar, FollowButton, PostCard, ShareProfileLink } from "@/components/feed/Feed";
 import { ProfileMenu } from "./ProfileMenu";
+import { PhotoStrip } from "./PhotoStrip";
 
 export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }): Promise<Metadata> {
   return { title: `@${(await params).handle}` };
@@ -27,7 +28,13 @@ export default async function ProfilePage({ params }: { params: Promise<{ handle
     canSeePosts(user.id, them.id),
     getUnitSystem(user.id),
   ]);
-  const posts = visible ? await getFeed(user.id, { onlyUserId: them.id }) : [];
+  const [posts, photos] = visible
+    ? await Promise.all([
+        getFeed(user.id, { onlyUserId: them.id }),
+        // only photos they chose to share with followers (on your own profile too: this is what they see)
+        db.progressPhoto.findMany({ where: { userId: them.id, visibility: "FOLLOWERS" }, orderBy: { day: "desc" }, take: 12, select: { id: true, day: true } }),
+      ])
+    : [[], []];
   const siteUrl = (process.env.NEXTAUTH_URL ?? "https://calorness.vercel.app").replace(/\/$/, "");
 
   return (
@@ -47,6 +54,16 @@ export default async function ProfilePage({ params }: { params: Promise<{ handle
       <h1 className="mt-3 text-xl font-bold">@{them.handle}</h1>
       {them.bio && <p className="mt-0.5 text-sm text-chalk-muted">{them.bio}</p>}
       <div className="mt-3">{mine ? <ShareProfileLink url={`${siteUrl}/u/${them.handle}`} /> : <FollowButton key={rel?.status ?? "none"} handle={them.handle!} status={rel?.status ?? null} />}</div>
+
+      {photos.length > 0 && (
+        <section aria-labelledby="photos-heading" className="mt-6">
+          <div className="mb-2 flex items-baseline justify-between">
+            <h2 id="photos-heading" className="font-display text-xl font-semibold">Progress photos</h2>
+            {mine && <Link href="/progress/photos" className="text-sm font-medium text-plate-blue">Manage</Link>}
+          </div>
+          <PhotoStrip photos={photos.map((p) => ({ id: p.id, day: p.day.toISOString().slice(0, 10) }))} />
+        </section>
+      )}
 
       <div className="mt-6 space-y-4">
         {!visible ? (
