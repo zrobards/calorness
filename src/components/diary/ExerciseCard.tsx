@@ -48,7 +48,7 @@ export function ExerciseCard({ day, exercise, onChanged }: { day: string; exerci
               </div>
               {editing === x.id && x.kind !== "health" && (
                 <div className="mt-3">
-                  <EditSessionTime kind={x.kind} id={x.id} minutes={x.minutes} effort={x.effort}
+                  <EditSessionTime key={`${x.minutes}:${x.effort}`} kind={x.kind} id={x.id} minutes={x.minutes} effort={x.effort}
                     onSaved={() => { onChanged?.(); setTimeout(() => setEditing(null), 700); }} onCancel={() => setEditing(null)} />
                 </div>
               )}

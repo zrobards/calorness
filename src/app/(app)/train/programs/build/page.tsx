@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getExerciseOptions } from "@/lib/training";
 import type { CoachProgramProposal } from "@/lib/ai/coach";
 import { ProgramBuilder } from "./ProgramBuilder";
+import { dataKey } from "@/lib/dataKey";
 
 // AI answers can take a while; give server actions on this page up to 5 minutes
 export const maxDuration = 300;
@@ -21,6 +22,7 @@ export default async function BuildProgramPage({ searchParams }: { searchParams:
   const p = message?.proposal as CoachProgramProposal | null | undefined;
   return (
     <ProgramBuilder
+      key={dataKey([mode, p?.kind === "program" ? p.draft : null])}
       startMode={mode === "paste" ? "paste" : "describe"}
       library={library}
       initialDraft={p?.kind === "program" ? p.draft : null}

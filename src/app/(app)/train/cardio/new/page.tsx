@@ -7,6 +7,7 @@ import { getBody } from "@/lib/body";
 import { userToday } from "@/lib/userPrefs";
 import { displayWeight } from "@/lib/fitness/units";
 import { CardioForm } from "./CardioForm";
+import { dataKey } from "@/lib/dataKey";
 
 export const metadata: Metadata = { title: "Log cardio" };
 
@@ -27,6 +28,7 @@ export default async function NewCardioPage({ searchParams }: { searchParams: Pr
       </Link>
       <h1 className="font-display text-4xl font-bold tracking-tight">Log cardio</h1>
       <CardioForm
+        key={dataKey([dayParam, body, prefs.exerciseCredit])}
         day={dayParam && /^\d{4}-\d{2}-\d{2}$/.test(dayParam) ? dayParam : today}
         imperial={imperial}
         credit={prefs.exerciseCredit}

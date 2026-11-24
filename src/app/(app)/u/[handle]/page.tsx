@@ -46,7 +46,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ handle
       </div>
       <h1 className="mt-3 text-xl font-bold">@{them.handle}</h1>
       {them.bio && <p className="mt-0.5 text-sm text-chalk-muted">{them.bio}</p>}
-      <div className="mt-3">{mine ? <ShareProfileLink url={`${siteUrl}/u/${them.handle}`} /> : <FollowButton handle={them.handle!} status={rel?.status ?? null} />}</div>
+      <div className="mt-3">{mine ? <ShareProfileLink url={`${siteUrl}/u/${them.handle}`} /> : <FollowButton key={rel?.status ?? "none"} handle={them.handle!} status={rel?.status ?? null} />}</div>
 
       <div className="mt-6 space-y-4">
         {!visible ? (

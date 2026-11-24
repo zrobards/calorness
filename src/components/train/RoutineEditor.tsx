@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useLayoutEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import type { ExerciseOption } from "@/lib/training";
 import { saveRoutine, type RoutineInput } from "@/app/(app)/train/actions";
@@ -14,6 +15,9 @@ type Row = RoutineInput["exercises"][number] & { key: string; name: string; musc
 
 const REST_OPTIONS = [0, 30, 60, 90, 120, 150, 180, 240, 300];
 
+// A message to show after the form starts over with newer data (it remounts, so state can't carry it)
+let noticeAfterReload: string | null = null;
+
 export function RoutineEditor({
   library,
   routine,
@@ -21,7 +25,7 @@ export function RoutineEditor({
   initialProgramId = null,
 }: {
   library: ExerciseOption[];
-  routine?: { id: string; name: string; notes: string | null; exercises: Omit<Row, "key">[] };
+  routine?: { id: string; name: string; notes: string | null; exercises: Omit<Row, "key">[]; version?: string };
   /** Your programs, so a routine can be saved into one */
   programs?: { id: string; name: string; pinned: boolean }[];
   initialProgramId?: string | null;
@@ -37,8 +41,28 @@ export function RoutineEditor({
     () => routine?.exercises.map((e, i) => ({ ...e, key: `${e.exerciseId}-${i}` })) ?? [],
   );
   const [picking, setPicking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() => {
+    const n = noticeAfterReload;
+    noticeAfterReload = null;
+    return n;
+  });
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
+  // Leaving without saving (Cancel, another tab) drops the unsaved edits, so
+  // coming back never shows changes that look saved but aren't. Runs when
+  // the screen is hidden in the background or closed.
+  const initialRef = useRef({ routine, initialProgramId });
+  useLayoutEffect(() => () => {
+    const { routine: r, initialProgramId: p } = initialRef.current;
+    setName(r?.name ?? "");
+    setNotes(r?.notes ?? "");
+    setRows(r?.exercises.map((e, i) => ({ ...e, key: `${e.exerciseId}-${i}` })) ?? []);
+    setProgramId(p ?? (r ? "" : programs.find((x) => x.pinned)?.id ?? ""));
+    setError(null);
+    setPicking(false);
+    newId.current = null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const update = (key: string, patch: Partial<Row>) =>
     setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
@@ -87,11 +111,25 @@ export function RoutineEditor({
           targetRepsMax,
           restSeconds,
         })),
-      }, newId.current ?? undefined), { retries: 2 });
+      }, newId.current ?? undefined, routine?.version), { retries: 2 });
       if (failed(result)) {
         setError(result.error);
+        // Someone saved it in the meantime: load the latest (this form starts over from it)
+        if ("stale" in result && result.stale) {
+          noticeAfterReload = result.error;
+          router.refresh();
+        }
         setTimeout(() => errorRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }), 0);
+        return;
       }
+      if (!routine) {
+        // This screen stays alive in the background; start the next new routine blank
+        newId.current = null;
+        setName("");
+        setNotes("");
+        setRows([]);
+      }
+      router.push(`/train?saved=${result.id}`);
     });
   };
 
