@@ -60,6 +60,7 @@ model User {
   aiCalls         AiCall[]
   aiUsage         AiUsage[]
   aiAnswers       AiAnswer[]
+  progressPhotos  ProgressPhoto[]
   coachNotes      CoachNote[]
   coachMessages   CoachMessage[]
   coachChats      CoachConversation[]
@@ -362,6 +363,31 @@ model WaterEntry {
 }
 
 // ─── Body + goals ─────────────────────────────────────────────────────────
+
+// Progress photos, kept in the database so who can see them is checked on
+// every request (served only through /api/photos/[id]). Resized on the phone
+// first: ~1440px for full size, ~400px for the grid.
+model ProgressPhoto {
+  id         String          @id @default(cuid())
+  userId     String
+  day        DateTime        @db.Date // the day it was taken (your local calendar day)
+  image      Bytes // JPEG
+  thumb      Bytes // JPEG
+  width      Int
+  height     Int
+  visibility PhotoVisibility @default(PRIVATE)
+  note       String?
+  createdAt  DateTime        @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, day])
+}
+
+enum PhotoVisibility {
+  PRIVATE // only you
+  FOLLOWERS // people you approved, on your profile
+}
 
 model BodyweightEntry {
   id       String   @id @default(cuid())

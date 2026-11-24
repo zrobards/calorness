@@ -19,22 +19,22 @@ export function MacroBars({
   ];
 
   return (
-    <dl className="space-y-4">
+    <div className="space-y-4">
       {macros.filter((m) => showCalories || m.label !== "Calories").map((m) => {
         const pct = m.goal > 0 ? Math.min(100, (m.eaten / m.goal) * 100) : 0;
         const left = Math.max(0, Math.round(m.goal - m.eaten));
         return (
           <div key={m.label}>
             <div className="mb-1.5 flex items-baseline justify-between">
-              <dt className="font-medium">{m.label}</dt>
-              <dd className="text-sm text-chalk-muted">
+              <span className="font-medium">{m.label}</span>
+              <span className="text-sm text-chalk-muted">
                 <span className="font-display text-lg font-semibold text-chalk tabular-nums">
                   {left.toLocaleString()}
                   {m.unit}
                 </span>{" "}
                 left of {m.goal.toLocaleString()}
                 {m.unit}
-              </dd>
+              </span>
             </div>
             <div
               className="h-3 overflow-hidden rounded-full bg-rack-line"
@@ -49,6 +49,6 @@ export function MacroBars({
           </div>
         );
       })}
-    </dl>
+    </div>
   );
 }

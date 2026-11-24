@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Collapsible } from "@/components/ui/Collapsible";
 import Link from "next/link";
-import { ChevronRight, Settings, Sparkles } from "lucide-react";
+import { CalendarDays, Camera, ChevronRight, Settings, Sparkles } from "lucide-react";
 import { TrendingUp } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -86,6 +86,14 @@ export default async function ProgressPage() {
       </section>
 
       <nav aria-label="More progress" className="mx-5 mt-3 grid grid-cols-2 gap-3">
+        <Link href="/progress/calendar" className="flex items-center justify-between rounded-2xl bg-rack-raised px-4 py-3.5 font-semibold">
+          <span className="flex items-center gap-2"><CalendarDays size={18} className="text-plate-blue" aria-hidden /> Calendar</span>
+          <ChevronRight size={18} className="text-chalk-muted" aria-hidden />
+        </Link>
+        <Link href="/progress/photos" className="flex items-center justify-between rounded-2xl bg-rack-raised px-4 py-3.5 font-semibold">
+          <span className="flex items-center gap-2"><Camera size={18} className="text-plate-yellow" aria-hidden /> Photos</span>
+          <ChevronRight size={18} className="text-chalk-muted" aria-hidden />
+        </Link>
         <Link href="/progress/lifts" className="flex items-center justify-between rounded-2xl bg-rack-raised px-4 py-3.5 font-semibold">All lifts <ChevronRight size={18} className="text-chalk-muted" aria-hidden /></Link>
         <Link href="/progress/activity" className="flex items-center justify-between rounded-2xl bg-rack-raised px-4 py-3.5 font-semibold">Activity <ChevronRight size={18} className="text-chalk-muted" aria-hidden /></Link>
         <Link href="/coach" className="col-span-2 flex items-center justify-between rounded-2xl bg-rack-raised px-4 py-3.5 font-semibold">
