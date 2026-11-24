@@ -100,7 +100,7 @@ export function PeopleSearch() {
                 <Avatar handle={p.handle} size={36} />
                 <span className="min-w-0"><span className="block truncate font-semibold">@{p.handle}</span>{p.bio && <span className="block truncate text-xs text-chalk-muted">{p.bio}</span>}</span>
               </Link>
-              <FollowButton handle={p.handle} status={p.status} small />
+              <FollowButton key={p.status ?? "none"} handle={p.handle} status={p.status} small />
             </li>
           ))}
         </ul>

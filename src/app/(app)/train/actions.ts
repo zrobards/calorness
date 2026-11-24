@@ -36,7 +36,12 @@ const routineSchema = z.object({
 
 export type RoutineInput = z.infer<typeof routineSchema>;
 
-export async function saveRoutine(routineId: string | null, input: RoutineInput, newId?: string) {
+/**
+ * Save a routine. `version` is when the routine you were editing was last
+ * saved; if it has been saved since (another phone or tab), nothing is
+ * overwritten and you're asked to look at the latest first.
+ */
+export async function saveRoutine(routineId: string | null, input: RoutineInput, newId?: string, version?: string) {
   const user = await requireUser();
   const parsed = routineSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the routine." };
@@ -54,6 +59,9 @@ export async function saveRoutine(routineId: string | null, input: RoutineInput,
     // Make sure the routine belongs to this user before changing it
     const existing = await db.routine.findFirst({ where: { id: routineId, userId: user.id } });
     if (!existing) return { error: "That routine no longer exists." };
+    if (version && existing.updatedAt.getTime() > new Date(version).getTime() + 1) {
+      return { error: "This routine was changed since you opened it, so nothing was overwritten. The latest version is loaded now; make your change again.", stale: true as const };
+    }
     const moving = programId !== undefined && programId !== existing.programId;
     // Replace the exercise list in one transaction so a failure can't leave it half-saved
     await db.$transaction([
@@ -84,9 +92,10 @@ export async function saveRoutine(routineId: string | null, input: RoutineInput,
   }
 
   revalidatePath("/train");
+  revalidatePath(`/train/routines/${savedId}`);
   revalidatePath("/log");
-  // Back to Train, which shows where it was saved
-  redirect(`/train?saved=${savedId}`);
+  // The screen goes back to Train, which shows where it was saved
+  return { ok: true as const, id: savedId! };
 }
 
 export async function deleteRoutine(routineId: string) {

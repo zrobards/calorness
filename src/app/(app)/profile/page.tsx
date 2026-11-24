@@ -21,6 +21,7 @@ import QRCode from "qrcode";
 import { aiLimitFor, aiUsedToday } from "@/lib/aiLimit";
 import { isAdmin } from "@/lib/admin";
 import { setUnitSystem } from "./actions";
+import { dataKey } from "@/lib/dataKey";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -97,7 +98,7 @@ export default async function ProfilePage() {
         <Collapsible id="body" title="Body stats" icon={<Ruler size={20} />}
           summary={[user.sex ? (user.sex === "male" ? "Male" : "Female") : null, age ? `${age} years` : null, height].filter(Boolean).join(", ") || "Add for accurate calorie burn"}
           keywords="sex age height weight exercise credit calories burned">
-          <BodyStatsCard imperial={imperial} initial={{ sex: user.sex, age, heightCm: user.heightCm }} credit={user.exerciseCredit} />
+          <BodyStatsCard key={dataKey([imperial, user.sex, age, user.heightCm, user.exerciseCredit])} imperial={imperial} initial={{ sex: user.sex, age, heightCm: user.heightCm }} credit={user.exerciseCredit} />
         </Collapsible>
         <Collapsible id="activity-goals" title="Activity goals" icon={<LayoutGrid size={20} />}
           summary={`${user.stepGoal.toLocaleString("en-US")} steps, ${user.activeCalGoal} move cal, ${user.exerciseMinGoal} exercise min`}
@@ -125,8 +126,8 @@ export default async function ProfilePage() {
           <div className="mt-3">
             {user.handle ? (
               <>
-                <ProfileSetup initial={{ handle: user.handle, bio: user.bio ?? "", shareWorkouts: user.shareWorkouts, shareRecaps: user.shareRecaps }} />
-                <CommunityExtras blocked={blocked} />
+                <ProfileSetup key={dataKey([user.handle, user.bio, user.shareWorkouts, user.shareRecaps])} initial={{ handle: user.handle, bio: user.bio ?? "", shareWorkouts: user.shareWorkouts, shareRecaps: user.shareRecaps }} />
+                <CommunityExtras key={dataKey(blocked)} blocked={blocked} />
               </>
             ) : (
               <p className="text-sm text-chalk-muted">You&apos;re not on the feed. Open the Feed tab to pick a username.</p>

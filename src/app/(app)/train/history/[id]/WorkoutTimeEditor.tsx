@@ -16,7 +16,7 @@ export function WorkoutTimeEditor({ id, minutes, effort }: { id: string; minutes
           <Pencil size={14} aria-hidden /> Change length or effort (for calories burned)
         </button>
       ) : (
-        <EditSessionTime kind="workout" id={id} minutes={minutes} effort={effort ?? undefined}
+        <EditSessionTime key={`${minutes}:${effort}`} kind="workout" id={id} minutes={minutes} effort={effort ?? undefined}
           onSaved={() => { router.refresh(); setTimeout(() => setOpen(false), 700); }} onCancel={() => setOpen(false)} />
       )}
     </div>

@@ -6,6 +6,7 @@ import { RoutineEditor } from "@/components/train/RoutineEditor";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { exerciseImageUrl, getExerciseOptions, getRoutine } from "@/lib/training";
+import { dataKey } from "@/lib/dataKey";
 
 export const metadata: Metadata = { title: "Edit routine" };
 
@@ -25,11 +26,14 @@ export default async function EditRoutinePage({ params }: { params: Promise<{ id
         <Link href="/train" className="text-sm font-medium text-chalk-muted">Cancel</Link>
       </PageHeader>
       <RoutineEditor
+        // starts over from the saved routine whenever it changes (see dataKey)
+        key={dataKey([routine.updatedAt, routine.programId, routine.exercises.map((e) => [e.exerciseId, e.targetSets, e.targetRepsMin, e.targetRepsMax, e.restSeconds])])}
         programs={programs}
         initialProgramId={routine.programId}
         library={library}
         routine={{
           id: routine.id,
+          version: routine.updatedAt.toISOString(),
           name: routine.name,
           notes: routine.notes,
           exercises: routine.exercises.map((e) => ({

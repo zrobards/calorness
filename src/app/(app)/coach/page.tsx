@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import type { CoachProgramProposal, CoachProposal } from "@/lib/ai/coach";
 import { CoachChat } from "./CoachChat";
+import { dataKey } from "@/lib/dataKey";
 
 // AI answers can take a while; give server actions on this page up to 5 minutes
 export const maxDuration = 300;
@@ -25,7 +26,7 @@ export default async function CoachPage({ searchParams }: { searchParams: Promis
   ]);
   return (
     <CoachChat
-      key={chat?.id ?? "new"}
+      key={`${chat?.id ?? "new"}:${messages.length}:${dataKey(q ?? "")}`}
       chat={chat ? { id: chat.id, title: chat.title } : null}
       initialMessages={messages.map((m) => ({
         id: m.id,

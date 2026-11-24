@@ -159,6 +159,8 @@ export default async function TrainPage({ searchParams }: { searchParams: Promis
         ) : (
           <div className="mt-3">
             <TrainPlan
+              // a fresh screen after each save, so "Saved" always shows
+              key={saved ?? "plan"}
               savedId={saved}
               programs={plan.programs.map((p) => ({ id: p.id, name: p.name, summary: p.summary, pinned: p.pinned, routines: p.routines.map(toPlanRoutine) }))}
               standalone={plan.standalone.map(toPlanRoutine)}
